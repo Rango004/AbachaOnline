@@ -1,0 +1,2412 @@
+{
+  "locations": [
+    {
+      "id": "way_536106629",
+      "name": "1 Duplet SSQ",
+      "latitude": 8.110644236363637,
+      "longitude": -12.078847327272728,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "addr:housenumber": "1",
+        "addr:street": "University Guest House",
+        "building": "yes",
+        "building:levels": "1",
+        "name": "1 Duplet SSQ"
+      }
+    },
+    {
+      "id": "way_534336047",
+      "name": "Auditorium",
+      "latitude": 8.1174667,
+      "longitude": -12.06862772,
+      "type": "building",
+      "marker_color": "#95E1D3",
+      "source": "osm",
+      "tags": {
+        "building": "university",
+        "name": "Auditorium"
+      }
+    },
+    {
+      "id": "way_1333850561",
+      "name": "Basketball court",
+      "latitude": 8.11408772,
+      "longitude": -12.06379084,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "leisure": "pitch",
+        "name": "Basketball court",
+        "sport": "basketball"
+      }
+    },
+    {
+      "id": "way_534336037",
+      "name": "Biology Lab",
+      "latitude": 8.115728184615387,
+      "longitude": -12.068291938461538,
+      "type": "building",
+      "marker_color": "#95E1D3",
+      "source": "osm",
+      "tags": {
+        "building": "university",
+        "name": "Biology Lab"
+      }
+    },
+    {
+      "id": "way_545039431",
+      "name": "BQ11",
+      "latitude": 8.112784399999999,
+      "longitude": -12.069684200000001,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "BQ11",
+        "addr:street": "BQ11",
+        "building": "house",
+        "category": "c",
+        "designation": "Lecturer",
+        "name": "BQ11",
+        "rooms": "2",
+        "staff:name": "Samuella Senesie"
+      }
+    },
+    {
+      "id": "node_5194325200",
+      "name": "Carteen",
+      "latitude": 8.114374,
+      "longitude": -12.0707352,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "amenity": "restaurant",
+        "name": "Carteen"
+      }
+    },
+    {
+      "id": "way_534336036",
+      "name": "Chemistry & Physics Lab",
+      "latitude": 8.115958633333333,
+      "longitude": -12.068368777777778,
+      "type": "building",
+      "marker_color": "#95E1D3",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "building": "university",
+        "name": "Chemistry & Physics Lab"
+      }
+    },
+    {
+      "id": "way_563111524",
+      "name": "Connecting road to ESC and Campus",
+      "latitude": 8.11376425,
+      "longitude": -12.067399349999999,
+      "type": "road",
+      "marker_color": "#95A5A6",
+      "source": "osm",
+      "tags": {
+        "highway": "unclassified",
+        "name": "Connecting road to ESC and Campus"
+      }
+    },
+    {
+      "id": "way_1458042913",
+      "name": "Department of  Aquaculture  and fisheries",
+      "latitude": 8.11694246,
+      "longitude": -12.069358259999998,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "landuse": "aquaculture",
+        "name": "Department of  Aquaculture  and fisheries"
+      }
+    },
+    {
+      "id": "node_5194342682",
+      "name": "DEPARTMENT OF ANIMAL SCIENCE",
+      "latitude": 8.1135491,
+      "longitude": -12.0713914,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala",
+        "addr:street": "Road to Winters Hall",
+        "name": "DEPARTMENT OF ANIMAL SCIENCE",
+        "office": "educational_institution",
+        "opening_hours": "Mo-Su 03:26"
+      }
+    },
+    {
+      "id": "way_534331868",
+      "name": "Dinnign Hall Kitchen",
+      "latitude": 8.114662950000001,
+      "longitude": -12.068493133333334,
+      "type": "building",
+      "marker_color": "#95E1D3",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Dinnign Hall Kitchen"
+      }
+    },
+    {
+      "id": "node_6141041487",
+      "name": "Dinning Hall",
+      "latitude": 8.1146368,
+      "longitude": -12.0687758,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "amenity": "restaurant",
+        "name": "Dinning Hall"
+      }
+    },
+    {
+      "id": "way_536315124",
+      "name": "Duplex Quarter",
+      "latitude": 8.1128873,
+      "longitude": -12.06897708,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "DuplexB12",
+        "addr:street": "DuplexB12",
+        "building": "house",
+        "category": "B",
+        "designation": "JS",
+        "name": "Duplex Quarter",
+        "rooms": "1",
+        "staff:name": "Mamie Tommy"
+      }
+    },
+    {
+      "id": "way_536080774",
+      "name": "DVCs Office",
+      "latitude": 8.108908714285715,
+      "longitude": -12.079080285714285,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "DVCs Office"
+      }
+    },
+    {
+      "id": "node_13372297721",
+      "name": "ESC Printing",
+      "latitude": 8.1144228,
+      "longitude": -12.0680397,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "name": "ESC Printing",
+        "shop": "copyshop"
+      }
+    },
+    {
+      "id": "way_534331874",
+      "name": "ESC Printing",
+      "latitude": 8.114466075,
+      "longitude": -12.068057762499999,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "ESC Printing"
+      }
+    },
+    {
+      "id": "way_960793478",
+      "name": "estate office",
+      "latitude": 8.10902754,
+      "longitude": -12.078890480000002,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "estate office"
+      }
+    },
+    {
+      "id": "way_1333850564",
+      "name": "Experimental Road",
+      "latitude": 8.113851890000001,
+      "longitude": -12.06195135,
+      "type": "road",
+      "marker_color": "#95A5A6",
+      "source": "osm",
+      "tags": {
+        "highway": "footway",
+        "name": "Experimental Road"
+      }
+    },
+    {
+      "id": "way_1458042912",
+      "name": "Fibre Landing Station.",
+      "latitude": 8.11526244,
+      "longitude": -12.06816004,
+      "type": "pickup_point",
+      "marker_color": "#2ECC71",
+      "source": "osm",
+      "tags": {
+        "building": "apartments",
+        "name": "Fibre Landing Station."
+      }
+    },
+    {
+      "id": "node_5194341851",
+      "name": "fisheries department",
+      "latitude": 8.1175298,
+      "longitude": -12.0694271,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "name": "fisheries department",
+        "office": "educational_institution"
+      }
+    },
+    {
+      "id": "way_1457826364",
+      "name": "Foot path",
+      "latitude": 8.115397542857144,
+      "longitude": -12.070753657142857,
+      "type": "road",
+      "marker_color": "#95A5A6",
+      "source": "osm",
+      "tags": {
+        "highway": "unclassified",
+        "name": "Foot path"
+      }
+    },
+    {
+      "id": "way_1457826367",
+      "name": "foot path to block B",
+      "latitude": 8.118024533333333,
+      "longitude": -12.070080333333335,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "highway": "path",
+        "name": "foot path to block B"
+      }
+    },
+    {
+      "id": "way_1457826369",
+      "name": "foot path to block B",
+      "latitude": 8.118018433333333,
+      "longitude": -12.069685266666667,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "highway": "path",
+        "name": "foot path to block B",
+        "surface": "unpaved"
+      }
+    },
+    {
+      "id": "way_534865221",
+      "name": "Foot path to TK and Maths Department",
+      "latitude": 8.113547242857143,
+      "longitude": -12.069167171428573,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "highway": "residential",
+        "name": "Foot path to TK and Maths Department"
+      }
+    },
+    {
+      "id": "way_534327900",
+      "name": "Geo dev.",
+      "latitude": 8.113291380000001,
+      "longitude": -12.070639000000002,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Geo dev."
+      }
+    },
+    {
+      "id": "way_534327901",
+      "name": "Geo dev. 2",
+      "latitude": 8.113472483333334,
+      "longitude": -12.070607950000001,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Geo dev. 2"
+      }
+    },
+    {
+      "id": "node_9396774098",
+      "name": "Geodev",
+      "latitude": 8.1133805,
+      "longitude": -12.0706163,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "amenity": "university",
+        "name": "Geodev"
+      }
+    },
+    {
+      "id": "node_13372297725",
+      "name": "Heavens 1",
+      "latitude": 8.1174974,
+      "longitude": -12.0674132,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "Heavens 1",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_534336043",
+      "name": "Heavens 1",
+      "latitude": 8.117499953846155,
+      "longitude": -12.067432315384615,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "building": "dormitory",
+        "name": "Heavens 1"
+      }
+    },
+    {
+      "id": "node_13372297724",
+      "name": "Heavens 2",
+      "latitude": 8.1169224,
+      "longitude": -12.067421,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "Heavens 2",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_534336040",
+      "name": "Heavens 2",
+      "latitude": 8.116954615384616,
+      "longitude": -12.067426446153847,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "building": "dormitory",
+        "name": "Heavens 2"
+      }
+    },
+    {
+      "id": "way_536082042",
+      "name": "hospital",
+      "latitude": 8.10979828,
+      "longitude": -12.074449206666669,
+      "type": "building",
+      "marker_color": "#95E1D3",
+      "source": "osm",
+      "tags": {
+        "addr:city": "NJALA",
+        "addr:housenumber": "32",
+        "addr:street": "Road to Registry",
+        "building": "yes",
+        "building:levels": "2",
+        "name": "hospital"
+      }
+    },
+    {
+      "id": "node_5194341971",
+      "name": "I Duplet SSQ",
+      "latitude": 8.110627,
+      "longitude": -12.0788349,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "email": "baibunducarrick@gmail.com",
+        "name": "I Duplet SSQ",
+        "phone": "+23288983971"
+      }
+    },
+    {
+      "id": "node_5265267380",
+      "name": "ICT Facility",
+      "latitude": 8.1150266,
+      "longitude": -12.0679668,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "addr:country": "SL",
+        "amenity": "cafe",
+        "name": "ICT Facility"
+      }
+    },
+    {
+      "id": "way_534327913",
+      "name": "Institute of Environmental Management & Quality Control Department",
+      "latitude": 8.114314914285714,
+      "longitude": -12.069851814285714,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "building": "apartments",
+        "name": "Institute of Environmental Management & Quality Control Department"
+      }
+    },
+    {
+      "id": "node_5194342046",
+      "name": "INSTITUTE OF GEOGRAPHY AND DEVELOPMENT STUDIES",
+      "latitude": 8.1134783,
+      "longitude": -12.0706654,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala",
+        "addr:street": "Road to Quadrangle Hall",
+        "name": "INSTITUTE OF GEOGRAPHY AND DEVELOPMENT STUDIES",
+        "office": "educational_institution",
+        "phone": "+23230814907",
+        "start_date": "27/10/2017"
+      }
+    },
+    {
+      "id": "node_5197155903",
+      "name": "Internet Cafe",
+      "latitude": 8.1151215,
+      "longitude": -12.0679934,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "amenity": "cafe",
+        "name": "Internet Cafe"
+      }
+    },
+    {
+      "id": "node_5199093525",
+      "name": "Jacky Body Press-Pump",
+      "latitude": 8.1144713,
+      "longitude": -12.0704886,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "name": "Jacky Body Press-Pump"
+      }
+    },
+    {
+      "id": "node_13372297726",
+      "name": "John  Kamara (faculty) bulding",
+      "latitude": 8.1171742,
+      "longitude": -12.0689332,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "education": "university",
+        "name": "John  Kamara (faculty) bulding"
+      }
+    },
+    {
+      "id": "way_534336046",
+      "name": "John Abu Kamara Building",
+      "latitude": 8.11712405,
+      "longitude": -12.0689349,
+      "type": "building",
+      "marker_color": "#95E1D3",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:street": "Road to Faculty Building",
+        "building": "university",
+        "description": "A Building where students from different Faculty take Lecture.",
+        "name": "John Abu Kamara Building"
+      }
+    },
+    {
+      "id": "way_1458042921",
+      "name": "JS Office",
+      "latitude": 8.112405766666667,
+      "longitude": -12.072320944444444,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "building": "construction",
+        "name": "JS Office"
+      }
+    },
+    {
+      "id": "way_536075175",
+      "name": "JS Quarter",
+      "latitude": 8.112143754545455,
+      "longitude": -12.070532581818183,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "Duplex 14A & 14B",
+        "addr:street": "Hospital Quarter",
+        "building": "house",
+        "category": "D",
+        "name": "JS Quarter"
+      }
+    },
+    {
+      "id": "way_536076048",
+      "name": "JS Quarter",
+      "latitude": 8.112164892307693,
+      "longitude": -12.070319623076925,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "Duplex 13A & 13B",
+        "addr:street": "Hospital Quarter",
+        "amenity": "fast_food",
+        "building": "house",
+        "category": "D",
+        "designation": "Junior_Staff",
+        "name": "JS Quarter"
+      }
+    },
+    {
+      "id": "way_374549497",
+      "name": "JSQB7",
+      "latitude": 8.112627016666666,
+      "longitude": -12.07064845,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "JSQB7",
+        "addr:street": "LQ",
+        "building": "house",
+        "category": "c",
+        "designation": "SSS",
+        "name": "JSQB7",
+        "rooms": "2",
+        "staff:name": "Francis Nyalay"
+      }
+    },
+    {
+      "id": "way_536310555",
+      "name": "JSQB8",
+      "latitude": 8.112686772727272,
+      "longitude": -12.070384163636362,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "JSQB8",
+        "addr:street": "JSQB8",
+        "building": "house",
+        "category": "c",
+        "designation": "Lecturer",
+        "name": "JSQB8",
+        "rooms": "2",
+        "staff:name": "Thomas F Kamara"
+      }
+    },
+    {
+      "id": "node_13372294046",
+      "name": "KABA Ataya Base",
+      "latitude": 8.1102094,
+      "longitude": -12.0718274,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "amenity": "cafe",
+        "cuisine": "tea;coffee_shop",
+        "name": "KABA Ataya Base"
+      }
+    },
+    {
+      "id": "way_1458042929",
+      "name": "KABA Ataya Base",
+      "latitude": 8.1101976,
+      "longitude": -12.071833000000002,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "building": "retail",
+        "name": "KABA Ataya Base"
+      }
+    },
+    {
+      "id": "way_534336041",
+      "name": "Laundry",
+      "latitude": 8.117188899999999,
+      "longitude": -12.06753858,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Laundry"
+      }
+    },
+    {
+      "id": "way_534358690",
+      "name": "Laundry",
+      "latitude": 8.11839536,
+      "longitude": -12.06965134,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Laundry"
+      }
+    },
+    {
+      "id": "way_534331869",
+      "name": "Library",
+      "latitude": 8.114952016666665,
+      "longitude": -12.06821585,
+      "type": "building",
+      "marker_color": "#95E1D3",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Library"
+      }
+    },
+    {
+      "id": "manual_library_bookshop",
+      "name": "Library Bookshop",
+      "latitude": 8.115,
+      "longitude": -12.068,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "manual"
+    },
+    {
+      "id": "way_534331871",
+      "name": "Library Extension",
+      "latitude": 8.11490662,
+      "longitude": -12.0680058,
+      "type": "building",
+      "marker_color": "#95E1D3",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Library Extension"
+      }
+    },
+    {
+      "id": "manual_library_pickup",
+      "name": "Library Pickup Point",
+      "latitude": 8.1149,
+      "longitude": -12.0682,
+      "type": "pickup_point",
+      "marker_color": "#2ECC71",
+      "source": "manual"
+    },
+    {
+      "id": "way_536315062",
+      "name": "LQ1",
+      "latitude": 8.112804172727273,
+      "longitude": -12.069373972727272,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "LQ1",
+        "addr:street": "LQ1",
+        "building": "house",
+        "category": "c",
+        "designation": "SSS",
+        "name": "LQ1",
+        "rooms": "2",
+        "staff:name": "D W Betts"
+      }
+    },
+    {
+      "id": "way_536408416",
+      "name": "LQ14",
+      "latitude": 8.1127083125,
+      "longitude": -12.067932549999998,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "LQ 14",
+        "addr:street": "LQ 14",
+        "building": "house",
+        "category": "c",
+        "name": "LQ14",
+        "rooms": "2",
+        "staff:name": "Rowland Suluku"
+      }
+    },
+    {
+      "id": "way_545040365",
+      "name": "LQ15",
+      "latitude": 8.1122056,
+      "longitude": -12.068318325,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "LQ 15",
+        "addr:street": "LQ15",
+        "building": "house",
+        "category": "c",
+        "designation": "Lecturer",
+        "name": "LQ15",
+        "operator": "Shehu M Kanteh",
+        "rooms": "2"
+      }
+    },
+    {
+      "id": "way_545040253",
+      "name": "LQ16",
+      "latitude": 8.11216986,
+      "longitude": -12.06860134,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Compus",
+        "addr:country": "SL",
+        "addr:housenumber": "L Q16",
+        "addr:street": "LQ16",
+        "building": "house",
+        "category": "c",
+        "designation": "Lecturer",
+        "name": "LQ16",
+        "rooms": "2",
+        "staff:name": "Alie Kamara"
+      }
+    },
+    {
+      "id": "way_545040206",
+      "name": "LQ17",
+      "latitude": 8.112061266666666,
+      "longitude": -12.068888988888888,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "LQ17",
+        "addr:street": "LQ17",
+        "building": "house",
+        "category": "c",
+        "designation": "Lecture",
+        "name": "LQ17",
+        "rooms": "2",
+        "staff:name": "John Koroma"
+      }
+    },
+    {
+      "id": "way_545040767",
+      "name": "LQ18",
+      "latitude": 8.11202224,
+      "longitude": -12.0691649,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "LQ18",
+        "addr:street": "LQ18",
+        "building": "house",
+        "category": "c",
+        "designation": "Lecture",
+        "name": "LQ18",
+        "rooms": "2",
+        "staff:name": "Morrison K Lahai"
+      }
+    },
+    {
+      "id": "way_536312875",
+      "name": "LQ19",
+      "latitude": 8.111943685714285,
+      "longitude": -12.069432271428573,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "LQ19",
+        "addr:street": "LQ19",
+        "building": "house",
+        "category": "c",
+        "designation": "Lecture",
+        "name": "LQ19",
+        "rooms": "2",
+        "staff:name": "Mohamed Jalloh"
+      }
+    },
+    {
+      "id": "way_545270423",
+      "name": "LQ2",
+      "latitude": 8.113139863636365,
+      "longitude": -12.0686976,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "LQ2",
+        "addr:street": "LQ2",
+        "building": "house",
+        "category": "c",
+        "designation": "Lecturer",
+        "name": "LQ2",
+        "rooms": "2",
+        "staff:name": "Abigail Nyamawa"
+      }
+    },
+    {
+      "id": "way_536312910",
+      "name": "LQ20",
+      "latitude": 8.11188427142857,
+      "longitude": -12.06970382857143,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "LQ20",
+        "addr:street": "LQ20",
+        "building": "house",
+        "category": "c",
+        "designation": "Lecturer",
+        "name": "LQ20",
+        "rooms": "2",
+        "staff:name": "Jeremiah T M`boma"
+      }
+    },
+    {
+      "id": "way_536313574",
+      "name": "LQ21",
+      "latitude": 8.111798744444446,
+      "longitude": -12.069962366666667,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "LQ21",
+        "addr:street": "LQ21",
+        "building": "house",
+        "category": "c",
+        "designation": "Lecturer",
+        "name": "LQ21",
+        "rooms": "2",
+        "staff:name": "Augustine Kamara"
+      }
+    },
+    {
+      "id": "way_545271231",
+      "name": "LQ3",
+      "latitude": 8.113232885714286,
+      "longitude": -12.068331171428571,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "LQ3",
+        "addr:street": "LQ3",
+        "building": "house",
+        "category": "c",
+        "name": "LQ3",
+        "rooms": "2",
+        "staff:name": "Philip Kamanda"
+      }
+    },
+    {
+      "id": "way_545040687",
+      "name": "LQ5",
+      "latitude": 8.113029877777777,
+      "longitude": -12.06793538888889,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "LQ5",
+        "addr:street": "LQ5",
+        "building": "yes",
+        "category": "c",
+        "designation": "Lecturer",
+        "name": "LQ5",
+        "rooms": "2",
+        "staff:name": "Jesse Nyadebo"
+      }
+    },
+    {
+      "id": "way_536314212",
+      "name": "LQ7",
+      "latitude": 8.11221397142857,
+      "longitude": -12.070049785714286,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "LQ 7",
+        "addr:street": "LQ 7",
+        "building": "house",
+        "category": "C",
+        "designation": "Lecturer",
+        "name": "LQ7",
+        "staff:name": "Charles Dixson"
+      }
+    },
+    {
+      "id": "way_536312621",
+      "name": "LQ8",
+      "latitude": 8.112268275,
+      "longitude": -12.0697877875,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala campus",
+        "addr:housenumber": "LQ 8",
+        "addr:street": "LQ8",
+        "building": "university",
+        "category": "C",
+        "designation": "Lecturer",
+        "name": "LQ8",
+        "staff:name": "Mohamed Dumduya"
+      }
+    },
+    {
+      "id": "way_536312696",
+      "name": "LQ9",
+      "latitude": 8.112324685714286,
+      "longitude": -12.0695241,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:housenumber": "LQ 9",
+        "addr:street": "LQ 9",
+        "building": "house",
+        "category": "c",
+        "designation": "Lecturer",
+        "name": "LQ9",
+        "rooms": "2",
+        "staff:name": "Pious Sesay"
+      }
+    },
+    {
+      "id": "node_6141041286",
+      "name": "LR 1 & Staff Office",
+      "latitude": 8.1133399,
+      "longitude": -12.0705149,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "amenity": "college",
+        "name": "LR 1 & Staff Office"
+      }
+    },
+    {
+      "id": "node_6141041287",
+      "name": "LR 2 & 3",
+      "latitude": 8.1134509,
+      "longitude": -12.0705932,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "amenity": "college",
+        "name": "LR 2 & 3"
+      }
+    },
+    {
+      "id": "manual_main_gate_pickup",
+      "name": "Main Gate Pickup Point",
+      "latitude": 8.1126,
+      "longitude": -12.0715,
+      "type": "pickup_point",
+      "marker_color": "#2ECC71",
+      "source": "manual"
+    },
+    {
+      "id": "way_534327910",
+      "name": "Mathematics & Statistics Department",
+      "latitude": 8.11409026,
+      "longitude": -12.06976922,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "building": "apartments",
+        "name": "Mathematics & Statistics Department"
+      }
+    },
+    {
+      "id": "way_534327869",
+      "name": "Matron Quarter",
+      "latitude": 8.114547479999999,
+      "longitude": -12.07130746,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "building": "residential",
+        "name": "Matron Quarter"
+      }
+    },
+    {
+      "id": "node_13372297730",
+      "name": "Matturi Block A",
+      "latitude": 8.118805,
+      "longitude": -12.0699399,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "Matturi Block A",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_534358687",
+      "name": "MATTURI BLOCK A",
+      "latitude": 8.11882156,
+      "longitude": -12.0700018,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:street": "Road to Matturi Hall",
+        "building": "dormitory",
+        "description": "Male Hostel",
+        "name": "MATTURI BLOCK A"
+      }
+    },
+    {
+      "id": "node_13372297728",
+      "name": "Matturi Block B",
+      "latitude": 8.118337,
+      "longitude": -12.0699996,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "Matturi Block B",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_534358688",
+      "name": "MATTURI BLOCK B",
+      "latitude": 8.118358359999998,
+      "longitude": -12.07001494,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala campus",
+        "addr:street": "Road to Matturi Hall",
+        "building": "dormitory",
+        "description": "Male Hostel",
+        "name": "MATTURI BLOCK B"
+      }
+    },
+    {
+      "id": "node_13372297727",
+      "name": "Matturi Block C",
+      "latitude": 8.1183434,
+      "longitude": -12.069343,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "Matturi Block C",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_534358689",
+      "name": "MATTURI BLOCK C",
+      "latitude": 8.118355079999999,
+      "longitude": -12.06935774,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:street": "Road to Matturi Hall",
+        "building": "dormitory",
+        "description": "MaleHostel",
+        "name": "MATTURI BLOCK C"
+      }
+    },
+    {
+      "id": "node_6141041486",
+      "name": "MATTURI BLOCK D",
+      "latitude": 8.1183699,
+      "longitude": -12.0706575,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "MATTURI BLOCK D",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_534358682",
+      "name": "MATTURI BLOCK D",
+      "latitude": 8.11837532,
+      "longitude": -12.07070422,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "building": "dormitory",
+        "description": "Female Hostel",
+        "name": "MATTURI BLOCK D"
+      }
+    },
+    {
+      "id": "node_13372297733",
+      "name": "Matturi Block E",
+      "latitude": 8.118813,
+      "longitude": -12.0706562,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "Matturi Block E",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_534358683",
+      "name": "MATTURI BLOCK E",
+      "latitude": 8.11883738,
+      "longitude": -12.0706941,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "building": "dormitory",
+        "description": "MALE BLOCK",
+        "name": "MATTURI BLOCK E",
+        "operator": "NJALA UNIVERSITY",
+        "rooms": "42"
+      }
+    },
+    {
+      "id": "node_13372297731",
+      "name": "Matturi Block F",
+      "latitude": 8.1192762,
+      "longitude": -12.0693139,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "Matturi Block F",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_534394967",
+      "name": "MATTURI BLOCK F",
+      "latitude": 8.119351415384616,
+      "longitude": -12.069311807692307,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:street": "Road to Matturi Hall",
+        "building": "dormitory",
+        "description": "Male Hostel",
+        "name": "MATTURI BLOCK F"
+      }
+    },
+    {
+      "id": "node_13372297732",
+      "name": "Matturi Block G",
+      "latitude": 8.1192746,
+      "longitude": -12.0700077,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "historic": "ruins",
+        "name": "Matturi Block G"
+      }
+    },
+    {
+      "id": "way_534358692",
+      "name": "MATTURI BLOCK G",
+      "latitude": 8.11934976153846,
+      "longitude": -12.069999623076923,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:street": "Road to Matturi Hall",
+        "building": "ruins",
+        "description": "Male Hostel",
+        "name": "MATTURI BLOCK G"
+      }
+    },
+    {
+      "id": "node_13372297729",
+      "name": "Matturi Block H",
+      "latitude": 8.1188194,
+      "longitude": -12.0692962,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "Matturi Block H",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_534394965",
+      "name": "MATTURI BLOCK H",
+      "latitude": 8.1188287,
+      "longitude": -12.06932612,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "building": "dormitory",
+        "description": "Male Hostel",
+        "name": "MATTURI BLOCK H"
+      }
+    },
+    {
+      "id": "node_5194342005",
+      "name": "Matturi Mosque",
+      "latitude": 8.1185973,
+      "longitude": -12.0706029,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "amenity": "place_of_worship",
+        "denomination": "sunni",
+        "name": "Matturi Mosque",
+        "religion": "muslim"
+      }
+    },
+    {
+      "id": "manual_matturi_pickup",
+      "name": "Matturi Pickup Point",
+      "latitude": 8.1183,
+      "longitude": -12.0694,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "manual"
+    },
+    {
+      "id": "node_13372294075",
+      "name": "Med-Vic Ent.",
+      "latitude": 8.1126339,
+      "longitude": -12.0716181,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "name": "Med-Vic Ent.",
+        "shop": "yes"
+      }
+    },
+    {
+      "id": "way_536086501",
+      "name": "MISSIONROAD",
+      "latitude": 8.10987588,
+      "longitude": -12.07533004,
+      "type": "road",
+      "marker_color": "#95A5A6",
+      "source": "osm",
+      "tags": {
+        "access": "yes",
+        "cycleway:left": "yes",
+        "highway": "residential",
+        "lanes": "1",
+        "maxspeed": "20",
+        "name": "MISSIONROAD",
+        "surface": "ground"
+      }
+    },
+    {
+      "id": "node_13372294070",
+      "name": "Mobile Money",
+      "latitude": 8.1126373,
+      "longitude": -12.0715843,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "name": "Mobile Money",
+        "shop": "kiosk"
+      }
+    },
+    {
+      "id": "node_13372294061",
+      "name": "Muana Ent.",
+      "latitude": 8.112659,
+      "longitude": -12.0714301,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "name": "Muana Ent.",
+        "shop": "yes"
+      }
+    },
+    {
+      "id": "way_536090046",
+      "name": "NATC",
+      "latitude": 8.10687452,
+      "longitude": -12.07808794,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "addr:housenumber": "1",
+        "addr:street": "NATC",
+        "building": "yes",
+        "building:levels": "1",
+        "name": "NATC"
+      }
+    },
+    {
+      "id": "node_1871034824",
+      "name": "Njala",
+      "latitude": 8.1136183,
+      "longitude": -12.0740526,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "alt_name": "Njale",
+        "gns_ufi": "-1320081",
+        "name": "Njala",
+        "place": "town",
+        "source": "GNS",
+        "unocha:pcode": "SLE03030900081",
+        "wikidata": "Q11792572"
+      }
+    },
+    {
+      "id": "way_1315528443",
+      "name": "Njala Football field",
+      "latitude": 8.11556784166667,
+      "longitude": -12.070319966666668,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "leisure": "pitch",
+        "name": "Njala Football field",
+        "sport": "soccer",
+        "surface": "ground"
+      }
+    },
+    {
+      "id": "way_1292603643",
+      "name": "Njala University",
+      "latitude": 8.116249307692307,
+      "longitude": -12.070214253846151,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "amenity": "university",
+        "education": "university",
+        "name": "Njala University"
+      }
+    },
+    {
+      "id": "way_374549496",
+      "name": "Njala University Hospital",
+      "latitude": 8.112335966666668,
+      "longitude": -12.070937216666668,
+      "type": "building",
+      "marker_color": "#95E1D3",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:street": "Road to Registry",
+        "building": "hospital",
+        "name": "Njala University Hospital",
+        "operator": "Bah"
+      }
+    },
+    {
+      "id": "way_1292603644",
+      "name": "Njala University Hospital",
+      "latitude": 8.112736100000001,
+      "longitude": -12.070997499999999,
+      "type": "building",
+      "marker_color": "#95E1D3",
+      "source": "osm",
+      "tags": {
+        "fixme": "Is this a solar farm?",
+        "name": "Njala University Hospital",
+        "plant:method": "photovoltaic",
+        "plant:output:electricity": "yes",
+        "plant:source": "solar",
+        "power": "plant"
+      }
+    },
+    {
+      "id": "way_536114836",
+      "name": "Njala University International School",
+      "latitude": 8.1101869,
+      "longitude": -12.07934429,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Njala University International School"
+      }
+    },
+    {
+      "id": "node_5194342677",
+      "name": "NJALA UNIVERSITY LIBRARY",
+      "latitude": 8.1149722,
+      "longitude": -12.0681992,
+      "type": "building",
+      "marker_color": "#95E1D3",
+      "source": "osm",
+      "tags": {
+        "amenity": "school",
+        "description": "Its an electronic library, with standard books.",
+        "name": "NJALA UNIVERSITY LIBRARY",
+        "operator": "NJALA UNIVERSITY"
+      }
+    },
+    {
+      "id": "way_554067421",
+      "name": "Njala University Plantation Forest",
+      "latitude": 8.121018512500001,
+      "longitude": -12.070780487500002,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:country": "SL",
+        "department": "Department of Forestry",
+        "forestry": "yes",
+        "landuse": "forest",
+        "leaf_cycle": "evergreen",
+        "leaf_type": "broadleaved",
+        "name": "Njala University Plantation Forest",
+        "phone": "+23276695528",
+        "produce": "wood"
+      }
+    },
+    {
+      "id": "way_534327906",
+      "name": "Old Children's Library",
+      "latitude": 8.113386479999999,
+      "longitude": -12.06976748,
+      "type": "building",
+      "marker_color": "#95E1D3",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Old Children's Library"
+      }
+    },
+    {
+      "id": "way_1458105806",
+      "name": "Pharmacy",
+      "latitude": 8.110073719999999,
+      "longitude": -12.0729887,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "building": "retail",
+        "building:levels": "1",
+        "name": "Pharmacy"
+      }
+    },
+    {
+      "id": "node_6141045485",
+      "name": "Police Post",
+      "latitude": 8.1124812,
+      "longitude": -12.0719858,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "amenity": "police",
+        "name": "Police Post"
+      }
+    },
+    {
+      "id": "way_534336053",
+      "name": "Post",
+      "latitude": 8.1163255,
+      "longitude": -12.06976134,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Post"
+      }
+    },
+    {
+      "id": "node_13372297723",
+      "name": "Postgrad & Medicine",
+      "latitude": 8.1164181,
+      "longitude": -12.0674767,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "Postgrad & Medicine",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_534336038",
+      "name": "Postgrad & medicines Block",
+      "latitude": 8.116473447058823,
+      "longitude": -12.067539905882356,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "building": "dormitory",
+        "name": "Postgrad & medicines Block"
+      }
+    },
+    {
+      "id": "node_5194340074",
+      "name": "Quadrangle 1",
+      "latitude": 8.1138658,
+      "longitude": -12.0708755,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "description": "A hostel that is meant purposely for female student, it is a long structure with plenty roams and it is close to student union canteen",
+        "internet_access": "no",
+        "name": "Quadrangle 1",
+        "operator": "Njala University",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "node_13372294076",
+      "name": "Quadrangle 2",
+      "latitude": 8.1139857,
+      "longitude": -12.0704704,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "Quadrangle 2",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_534327881",
+      "name": "Quardrangle 1",
+      "latitude": 8.113879253846154,
+      "longitude": -12.070931115384617,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "addr:housenumber": "1",
+        "addr:street": "Road to Quadrangle Hall",
+        "building": "yes",
+        "name": "Quardrangle 1"
+      }
+    },
+    {
+      "id": "way_536075167",
+      "name": "Registry Building",
+      "latitude": 8.109274926923074,
+      "longitude": -12.079262369230767,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Registry Building"
+      }
+    },
+    {
+      "id": "node_5338764279",
+      "name": "Road to Mr. Sowyeer Farmlad",
+      "latitude": 8.1207145,
+      "longitude": -12.0635553,
+      "type": "road",
+      "marker_color": "#95A5A6",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala",
+        "addr:country": "SL",
+        "name": "Road to Mr. Sowyeer Farmlad"
+      }
+    },
+    {
+      "id": "way_545141945",
+      "name": "Road to registry",
+      "latitude": 8.112625677142857,
+      "longitude": -12.071250640000004,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "access": "yes",
+        "embankment": "yes",
+        "highway": "tertiary",
+        "lanes": "1",
+        "maxspeed": "40",
+        "name": "Road to registry",
+        "surface": "paved"
+      }
+    },
+    {
+      "id": "way_868013066",
+      "name": "saint. Thersa's parish",
+      "latitude": 8.113491466666666,
+      "longitude": -12.069329116666665,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "amenity": "place_of_worship",
+        "building": "yes",
+        "denomination": "roman_catholic",
+        "name": "saint. Thersa's parish",
+        "religion": "christian"
+      }
+    },
+    {
+      "id": "node_13372294062",
+      "name": "Sandy Ent.",
+      "latitude": 8.1126563,
+      "longitude": -12.0714756,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "name": "Sandy Ent.",
+        "shop": "yes"
+      }
+    },
+    {
+      "id": "way_1458042918",
+      "name": "Satff Quarter",
+      "latitude": 8.117014809090907,
+      "longitude": -12.069873272727273,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "building": "residential",
+        "name": "Satff Quarter"
+      }
+    },
+    {
+      "id": "node_6141041488",
+      "name": "School of Natural Resources Management",
+      "latitude": 8.1145083,
+      "longitude": -12.0694617,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "amenity": "school",
+        "name": "School of Natural Resources Management"
+      }
+    },
+    {
+      "id": "node_5194341286",
+      "name": "SCHOOL OF SOCIAL SCIENCES,DEPARTMENT OF AGRIC-ECONOMIC",
+      "latitude": 8.1135642,
+      "longitude": -12.071184,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala",
+        "addr:street": "Road to Winters Hall",
+        "name": "SCHOOL OF SOCIAL SCIENCES,DEPARTMENT OF AGRIC-ECONOMIC",
+        "office": "educational_institution",
+        "start_date": "27/10/2017"
+      }
+    },
+    {
+      "id": "node_5194344308",
+      "name": "SCHOOL OF TECHNOLOGY",
+      "latitude": 8.1133169,
+      "longitude": -12.0711516,
+      "type": "office",
+      "marker_color": "#9B59B6",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala",
+        "addr:street": "Road to Winters Hall",
+        "name": "SCHOOL OF TECHNOLOGY",
+        "office": "educational_institution"
+      }
+    },
+    {
+      "id": "node_6141041288",
+      "name": "Sierra Leone Commercial Bank",
+      "latitude": 8.1138118,
+      "longitude": -12.0679272,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "amenity": "bank",
+        "name": "Sierra Leone Commercial Bank",
+        "opening_hours": "Mo-Fr 08:30-16:00"
+      }
+    },
+    {
+      "id": "way_534336050",
+      "name": "Staff Quarter",
+      "latitude": 8.116312055555555,
+      "longitude": -12.068868277777778,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "building": "residential",
+        "name": "Staff Quarter"
+      }
+    },
+    {
+      "id": "way_534336052",
+      "name": "Staff Quarter",
+      "latitude": 8.116357422222222,
+      "longitude": -12.069900266666666,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Staff Quarter"
+      }
+    },
+    {
+      "id": "way_534336055",
+      "name": "Staff Quarter",
+      "latitude": 8.11672312,
+      "longitude": -12.070358520000001,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Staff Quarter"
+      }
+    },
+    {
+      "id": "way_534336058",
+      "name": "Staff Quarter",
+      "latitude": 8.11722604,
+      "longitude": -12.07118448,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "building": "residential",
+        "name": "Staff Quarter"
+      }
+    },
+    {
+      "id": "way_534336273",
+      "name": "Staff Quarters",
+      "latitude": 8.11632602,
+      "longitude": -12.070652040000002,
+      "type": "staff_quarter",
+      "marker_color": "#F39C12",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Staff Quarters"
+      }
+    },
+    {
+      "id": "way_534327891",
+      "name": "Student Union Canteen",
+      "latitude": 8.114220579999998,
+      "longitude": -12.07070314,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "amenity": "restaurant",
+        "building": "yes",
+        "name": "Student Union Canteen"
+      }
+    },
+    {
+      "id": "manual_student_union_shop",
+      "name": "Student Union Shop",
+      "latitude": 8.1142,
+      "longitude": -12.0707,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "manual"
+    },
+    {
+      "id": "way_534331865",
+      "name": "T.K Jamaica",
+      "latitude": 8.11374365,
+      "longitude": -12.068281475000001,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:street": "Road to Registry",
+        "building": "dormitory",
+        "name": "T.K Jamaica"
+      }
+    },
+    {
+      "id": "way_1458105817",
+      "name": "T.K Mosque",
+      "latitude": 8.11407942,
+      "longitude": -12.068930319999998,
+      "type": "building",
+      "marker_color": "#95E1D3",
+      "source": "osm",
+      "tags": {
+        "amenity": "place_of_worship",
+        "building": "yes",
+        "name": "T.K Mosque",
+        "religion": "muslim"
+      }
+    },
+    {
+      "id": "node_13372294055",
+      "name": "Tamaraneh Enterprise",
+      "latitude": 8.110055,
+      "longitude": -12.0730899,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "name": "Tamaraneh Enterprise",
+        "operator": "Mamie",
+        "shop": "yes"
+      }
+    },
+    {
+      "id": "way_1458105807",
+      "name": "Tamaraneh Enterprise",
+      "latitude": 8.110046360000002,
+      "longitude": -12.073073599999999,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "building": "retail",
+        "name": "Tamaraneh Enterprise"
+      }
+    },
+    {
+      "id": "way_1333850562",
+      "name": "Tennis court",
+      "latitude": 8.114090659999999,
+      "longitude": -12.06395412,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "leisure": "pitch",
+        "name": "Tennis court",
+        "sport": "tennis"
+      }
+    },
+    {
+      "id": "way_1333850563",
+      "name": "Tennis court 2",
+      "latitude": 8.11410464,
+      "longitude": -12.06411788,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "leisure": "pitch",
+        "name": "Tennis court 2",
+        "sport": "tennis"
+      }
+    },
+    {
+      "id": "way_1018784662",
+      "name": "Time off",
+      "latitude": 8.1128939,
+      "longitude": -12.072135020000001,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "amenity": "cinema",
+        "building": "yes",
+        "name": "Time off"
+      }
+    },
+    {
+      "id": "manual_tk_pickup",
+      "name": "TK Pickup Point",
+      "latitude": 8.1135,
+      "longitude": -12.0687,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "manual"
+    },
+    {
+      "id": "node_13372294080",
+      "name": "TK. Africa",
+      "latitude": 8.1140332,
+      "longitude": -12.0693395,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "TK. Africa",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_1458105812",
+      "name": "TK. Africa",
+      "latitude": 8.11404315,
+      "longitude": -12.069308900000001,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "TK. Africa",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "node_13372294082",
+      "name": "TK. America",
+      "latitude": 8.1141447,
+      "longitude": -12.0686472,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "TK. America",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_1458105811",
+      "name": "TK. America",
+      "latitude": 8.114136766666666,
+      "longitude": -12.068623699999998,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "TK. America",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_1458105814",
+      "name": "TK. America",
+      "latitude": 8.114324685714285,
+      "longitude": -12.068716114285715,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "TK. America",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "node_13372294081",
+      "name": "TK. Asia",
+      "latitude": 8.1142495,
+      "longitude": -12.0693038,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "TK. Asia",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_1458105813",
+      "name": "TK. Asia",
+      "latitude": 8.1142445,
+      "longitude": -12.069336833333333,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "TK. Asia",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "node_13372294083",
+      "name": "TK. Europe",
+      "latitude": 8.1143499,
+      "longitude": -12.0686082,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "TK. Europe",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "node_13372294079",
+      "name": "TK. Jamaica",
+      "latitude": 8.1138974,
+      "longitude": -12.068286,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "TK. Jamaica",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "node_13372297708",
+      "name": "TK. Mosque",
+      "latitude": 8.114074,
+      "longitude": -12.0689337,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "amenity": "place_of_worship",
+        "name": "TK. Mosque",
+        "religion": "muslim"
+      }
+    },
+    {
+      "id": "way_534331872",
+      "name": "Toilet",
+      "latitude": 8.11459546,
+      "longitude": -12.06812588,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Toilet"
+      }
+    },
+    {
+      "id": "node_13372294077",
+      "name": "Tourist",
+      "latitude": 8.1141939,
+      "longitude": -12.0701773,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "Tourist",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_534327895",
+      "name": "Tourist",
+      "latitude": 8.114022423809523,
+      "longitude": -12.07033927142857,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "building": "apartments",
+        "building:levels": "1",
+        "name": "Tourist",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "node_6193676485",
+      "name": "UMC Primary School, Mokondeh",
+      "latitude": 8.1070842,
+      "longitude": -12.0713518,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "amenity": "school",
+        "name": "UMC Primary School, Mokondeh"
+      }
+    },
+    {
+      "id": "node_6491702206",
+      "name": "Union Trust Bank",
+      "latitude": 8.1136723,
+      "longitude": -12.0697002,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala Campus",
+        "addr:street": "Road to Registry",
+        "amenity": "bank",
+        "atm": "no",
+        "currency:SLL": "yes",
+        "currency:USD": "yes",
+        "drive_through": "yes",
+        "name": "Union Trust Bank",
+        "operator": "Union Trust manl"
+      }
+    },
+    {
+      "id": "way_536112453",
+      "name": "University Guest House",
+      "latitude": 8.111258726086957,
+      "longitude": -12.07964399130435,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "addr:city": "Njala",
+        "addr:street": "University Guest House",
+        "building": "commercial",
+        "building:levels": "3",
+        "name": "University Guest House",
+        "smoking": "outside"
+      }
+    },
+    {
+      "id": "way_534403715",
+      "name": "University Hospital Medical Sotre",
+      "latitude": 8.11229748,
+      "longitude": -12.071415400000001,
+      "type": "building",
+      "marker_color": "#95E1D3",
+      "source": "osm",
+      "tags": {
+        "building": "warehouse",
+        "name": "University Hospital Medical Sotre"
+      }
+    },
+    {
+      "id": "node_5194341350",
+      "name": "University International School",
+      "latitude": 8.110263,
+      "longitude": -12.079372,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "University International School"
+      }
+    },
+    {
+      "id": "way_534405751",
+      "name": "University Musque",
+      "latitude": 8.111151746666668,
+      "longitude": -12.072223626666666,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "amenity": "place_of_worship",
+        "building": "yes",
+        "name": "University Musque",
+        "religion": "muslim"
+      }
+    },
+    {
+      "id": "way_534336045",
+      "name": "Water Reservoir",
+      "latitude": 8.11756402,
+      "longitude": -12.068015,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "name": "Water Reservoir",
+        "natural": "water",
+        "water": "reservoir"
+      }
+    },
+    {
+      "id": "way_536114073",
+      "name": "White House Restaurant",
+      "latitude": 8.112668600000001,
+      "longitude": -12.06999592857143,
+      "type": "merchant",
+      "marker_color": "#4ECDC4",
+      "source": "osm",
+      "tags": {
+        "building": "commercial",
+        "name": "White House Restaurant"
+      }
+    },
+    {
+      "id": "way_534327879",
+      "name": "Winters",
+      "latitude": 8.114066555555556,
+      "longitude": -12.071299433333332,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "addr:housenumber": "1",
+        "addr:street": "Road to Winters Hall",
+        "building": "yes",
+        "name": "Winters"
+      }
+    },
+    {
+      "id": "node_13372294078",
+      "name": "Winters Extension",
+      "latitude": 8.1144437,
+      "longitude": -12.0715245,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "name": "Winters Extension",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "way_534327873",
+      "name": "Winters Extension",
+      "latitude": 8.114470185714286,
+      "longitude": -12.071494042857141,
+      "type": "hostel",
+      "marker_color": "#FF6B6B",
+      "source": "osm",
+      "tags": {
+        "building": "yes",
+        "name": "Winters Extension",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "id": "node_5266968268",
+      "name": "Wisdon Tree",
+      "latitude": 8.1185084,
+      "longitude": -12.069687,
+      "type": "landmark",
+      "marker_color": "#FFE66D",
+      "source": "osm",
+      "tags": {
+        "amenity": "fast_food",
+        "delivery": "no",
+        "name": "Wisdon Tree"
+      }
+    }
+  ],
+  "bounds": {
+    "south": 8.10687452,
+    "west": -12.07964399130435,
+    "north": 8.121018512500001,
+    "east": -12.06195135
+  },
+  "campus_center": [
+    8.11394651625,
+    -12.070797670652174
+  ],
+  "statistics": {
+    "total_locations": 163,
+    "by_type": {
+      "landmark": 37,
+      "building": 14,
+      "staff_quarter": 24,
+      "merchant": 19,
+      "road": 5,
+      "office": 15,
+      "pickup_point": 3,
+      "hostel": 46
+    }
+  },
+  "color_scheme": {
+    "hostels": "#FF6B6B",
+    "merchants": "#4ECDC4",
+    "pickup_points": "#2ECC71",
+    "staff_quarters": "#F39C12",
+    "offices": "#9B59B6",
+    "roads": "#95A5A6",
+    "buildings": "#95E1D3",
+    "landmarks": "#FFE66D"
+  },
+  "generated_at": "2025-12-16T22:26:59.855Z",
+  "source_file": "Njala map updated.osm"
+}

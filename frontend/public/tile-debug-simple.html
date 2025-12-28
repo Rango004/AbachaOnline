@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tile & Marker Debug</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: monospace; background: #1a1a1a; color: #fff; }
+    .container { display: flex; height: 100vh; }
+    #map { flex: 1; }
+    .debug {
+      width: 500px;
+      background: #222;
+      border-left: 3px solid #00ff00;
+      padding: 16px;
+      overflow-y: auto;
+      font-size: 11px;
+    }
+    .debug h2 { color: #00ff00; margin-bottom: 12px; }
+    .section { margin-bottom: 16px; padding: 12px; background: #111; border-left: 3px solid #0066ff; }
+    .section h3 { color: #0066ff; margin-bottom: 8px; font-size: 12px; }
+    .row { display: flex; justify-content: space-between; margin: 4px 0; }
+    .label { color: #999; }
+    .value { color: #0f0; font-weight: bold; }
+    .error { color: #f00; }
+    .warning { color: #ff0; }
+    .success { color: #0f0; }
+    .tile-url {
+      background: #000;
+      padding: 8px;
+      margin: 4px 0;
+      border: 1px solid #333;
+      word-break: break-all;
+      color: #0f0;
+      font-size: 10px;
+    }
+    button {
+      background: #00ff00;
+      color: #000;
+      border: none;
+      padding: 6px 12px;
+      margin: 4px 0;
+      cursor: pointer;
+      font-weight: bold;
+      font-family: monospace;
+      width: 100%;
+    }
+    button:hover { background: #00cc00; }
+    .test-tiles {
+      background: #111;
+      padding: 12px;
+      border: 1px solid #333;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="map"></div>
+    <div class="debug">
+      <h2>🔍 TILE DEBUG</h2>
+
+      <div class="section">
+        <h3>MAP STATUS</h3>
+        <div class="row">
+          <span class="label">Center:</span>
+          <span class="value" id="mapCenter">-</span>
+        </div>
+        <div class="row">
+          <span class="label">Zoom:</span>
+          <span class="value" id="mapZoom">-</span>
+        </div>
+        <div class="row">
+          <span class="label">Bounds:</span>
+          <span class="value" id="mapBounds" style="font-size: 9px;">-</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>TILE REQUESTS</h3>
+        <div id="tileStatus">Waiting for requests...</div>
+        <div class="row">
+          <span class="label">Total Loaded:</span>
+          <span class="value" id="tileCount">0</span>
+        </div>
+        <div class="row">
+          <span class="label">Total Failed:</span>
+          <span class="value error" id="failCount">0</span>
+        </div>
+        <div class="row">
+          <span class="label">Success Rate:</span>
+          <span class="value" id="successRate">-</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>SAMPLE TILE URL</h3>
+        <div class="tile-url" id="sampleTileUrl">No tiles loaded yet</div>
+      </div>
+
+      <div class="section">
+        <h3>FAILED TILES</h3>
+        <div id="failedTiles" style="max-height: 120px; overflow-y: auto;">None</div>
+      </div>
+
+      <div class="section">
+        <h3>MARKERS</h3>
+        <div class="row">
+          <span class="label">Loaded:</span>
+          <span class="value" id="markerCount">0</span>
+        </div>
+        <div class="row">
+          <span class="label">Expected:</span>
+          <span class="value" id="markerExpected">56</span>
+        </div>
+        <div id="markerStatus">Checking...</div>
+      </div>
+
+      <div class="section">
+        <h3>TEST ACTIONS</h3>
+        <button onclick="testManualTile()">Test Tile URL</button>
+        <button onclick="testZoom(15)">Zoom 15</button>
+        <button onclick="testZoom(17)">Zoom 17</button>
+        <button onclick="testZoom(19)">Zoom 19</button>
+        <button onclick="logDiagnostics()">Export Logs</button>
+      </div>
+
+      <div class="section">
+        <h3>COORDINATE CHECK</h3>
+        <div class="row">
+          <span class="label">Campus Lat:</span>
+          <span class="value">8.1147</span>
+        </div>
+        <div class="row">
+          <span class="label">Campus Lon:</span>
+          <span class="value">-12.0702</span>
+        </div>
+        <button onclick="checkCoordinates()" style="margin-top: 8px;">Verify API</button>
+        <div id="coordStatus" style="margin-top: 8px; font-size: 10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+    });
+
+    const state = {
+      tileCount: 0,
+      failCount: 0,
+      failedTiles: new Set(),
+      loadedTiles: [],
+      markerCount: 0
+    };
+
+    // Initialize map
+    const map = L.map('map', { crs: L.CRS.EPSG3857 }).setView([8.1147, -12.0702], 17);
+
+    // Add tile layer
+    const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19,
+      minZoom: 13,
+      keepBuffer: 4,
+      updateWhenZooming: true,
+      updateWhenIdle: true,
+      maxNativeZoom: 18,
+      minNativeZoom: 13,
+      tms: false,
+      crossOrigin: 'anonymous'
+    }).addTo(map);
+
+    // Monitor tile events
+    tileLayer.on('tileloadstart', (e) => {
+      console.log(`[TILE] START: z=${e.coords.z} x=${e.coords.x} y=${e.coords.y}`);
+    });
+
+    tileLayer.on('tileload', (e) => {
+      state.tileCount++;
+      state.loadedTiles.push({
+        z: e.coords.z,
+        x: e.coords.x,
+        y: e.coords.y,
+        url: e.tile.src
+      });
+      if (state.loadedTiles.length > 1) {
+        document.getElementById('sampleTileUrl').textContent = state.loadedTiles[0].url;
+      }
+      console.log(`[TILE] LOAD: ${state.tileCount} total`);
+      updateStatus();
+    });
+
+    tileLayer.on('tileerror', (e) => {
+      state.failCount++;
+      const id = `z${e.coords.z}x${e.coords.x}y${e.coords.y}`;
+      state.failedTiles.add(id);
+      console.error(`[TILE] ERROR: z=${e.coords.z} x=${e.coords.x} y=${e.coords.y}`);
+      updateStatus();
+    });
+
+    // Load markers from API
+    fetch('/api/v1/locations/geojson')
+      .then(r => r.json())
+      .then(data => {
+        console.log('Markers:', data.features.length);
+        state.markerCount = data.features.length;
+
+        data.features.forEach(f => {
+          const [lon, lat] = f.geometry.coordinates;
+          L.marker([lat, lon], {
+            title: f.properties.name
+          }).addTo(map).bindPopup(f.properties.name);
+        });
+
+        updateStatus();
+      })
+      .catch(e => {
+        console.error('Failed to load markers:', e);
+        document.getElementById('markerStatus').innerHTML = `<span class="error">ERROR: ${e.message}</span>`;
+      });
+
+    // Update map events
+    map.on('moveend', updateStatus);
+    map.on('zoomend', updateStatus);
+
+    function updateStatus() {
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      const bounds = map.getBounds();
+
+      document.getElementById('mapCenter').textContent =
+        `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`;
+      document.getElementById('mapZoom').textContent = zoom;
+      document.getElementById('mapBounds').textContent =
+        `N${bounds.getNorth().toFixed(2)} S${bounds.getSouth().toFixed(2)} E${bounds.getEast().toFixed(2)} W${bounds.getWest().toFixed(2)}`;
+
+      document.getElementById('tileCount').textContent = state.tileCount;
+      document.getElementById('failCount').textContent = state.failCount;
+
+      const total = state.tileCount + state.failCount;
+      const rate = total > 0 ? ((state.tileCount / total) * 100).toFixed(1) : '-';
+      document.getElementById('successRate').textContent = rate + '%';
+
+      document.getElementById('markerCount').textContent = state.markerCount;
+
+      if (state.markerCount === 56) {
+        document.getElementById('markerStatus').innerHTML =
+          `<span class="success">✓ All 56 markers loaded</span>`;
+      } else if (state.markerCount > 0) {
+        document.getElementById('markerStatus').innerHTML =
+          `<span class="warning">⚠ ${state.markerCount}/56 markers</span>`;
+      }
+
+      // Update failed tiles list
+      if (state.failedTiles.size > 0) {
+        document.getElementById('failedTiles').innerHTML =
+          Array.from(state.failedTiles).slice(0, 10)
+            .map(t => `<div class="error">${t}</div>`).join('');
+      }
+    }
+
+    function testZoom(z) {
+      map.setZoom(z);
+      console.log(`Testing zoom ${z}`);
+    }
+
+    function testManualTile() {
+      const tile = state.loadedTiles[0];
+      if (!tile) {
+        alert('No tiles loaded yet');
+        return;
+      }
+      window.open(tile.url, 'tiletest');
+    }
+
+    function checkCoordinates() {
+      const status = document.getElementById('coordStatus');
+      status.innerHTML = 'Checking API...';
+
+      fetch('/api/v1/locations/geojson')
+        .then(r => r.json())
+        .then(data => {
+          if (data.features.length > 0) {
+            const first = data.features[0];
+            status.innerHTML = `<span class="success">✓ API OK</span><br/>
+              First marker: ${first.properties.name}<br/>
+              Coords: [${first.geometry.coordinates[1]}, ${first.geometry.coordinates[0]}]`;
+          }
+        })
+        .catch(e => {
+          status.innerHTML = `<span class="error">✗ API Error: ${e.message}</span>`;
+        });
+    }
+
+    function logDiagnostics() {
+      const diag = {
+        timestamp: new Date().toISOString(),
+        map: {
+          center: map.getCenter(),
+          zoom: map.getZoom(),
+          bounds: map.getBounds()
+        },
+        tiles: {
+          loaded: state.tileCount,
+          failed: state.failCount,
+          failedTiles: Array.from(state.failedTiles),
+          sampleTile: state.loadedTiles[0] || null
+        },
+        markers: state.markerCount
+      };
+      console.log('=== DIAGNOSTICS ===');
+      console.log(JSON.stringify(diag, null, 2));
+      alert('Diagnostics logged to console');
+    }
+
+    // Initial status
+    setTimeout(updateStatus, 1000);
+  </script>
+</body>
+</html>

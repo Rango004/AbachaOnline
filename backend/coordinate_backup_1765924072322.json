@@ -1,0 +1,356 @@
+{
+  "timestamp": "2025-12-16T22:27:52.318Z",
+  "locations": [
+    {
+      "id": 1,
+      "name": "Quad 1",
+      "latitude": "8.11390828",
+      "longitude": "-12.07088031",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 2,
+      "name": "Quad 2",
+      "latitude": "8.11389657",
+      "longitude": "-12.07045282",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 3,
+      "name": "Winters",
+      "latitude": "8.11405883",
+      "longitude": "-12.07122163",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 4,
+      "name": "Winters Extension",
+      "latitude": "8.11444190",
+      "longitude": "-12.07151732",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 5,
+      "name": "Tourist",
+      "latitude": "8.11413912",
+      "longitude": "-12.07017402",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 6,
+      "name": "TK Jamaica",
+      "latitude": "8.11386479",
+      "longitude": "-12.06827482",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 7,
+      "name": "TK Asia",
+      "latitude": "8.11411905",
+      "longitude": "-12.06858910",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 8,
+      "name": "TK Africa",
+      "latitude": "8.11402538",
+      "longitude": "-12.06921090",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 9,
+      "name": "TK Europe",
+      "latitude": "8.11431811",
+      "longitude": "-12.06863134",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 10,
+      "name": "TK America",
+      "latitude": "8.11419433",
+      "longitude": "-12.06940691",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 11,
+      "name": "Library",
+      "latitude": "8.11492532",
+      "longitude": "-12.06819878",
+      "type": "building",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 12,
+      "name": "ICT Center",
+      "latitude": "8.11502235",
+      "longitude": "-12.06801123",
+      "type": "building",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 13,
+      "name": "Post Grad Dorm",
+      "latitude": "8.11637513",
+      "longitude": "-12.06754110",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 14,
+      "name": "Heavens (Florence Carew) 1",
+      "latitude": "8.11692869",
+      "longitude": "-12.06742162",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 15,
+      "name": "Heavens 2",
+      "latitude": "8.11743257",
+      "longitude": "-12.06739295",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 16,
+      "name": "Faculty Building",
+      "latitude": "8.11700203",
+      "longitude": "-12.06889599",
+      "type": "building",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 17,
+      "name": "Matturi Block C",
+      "latitude": "8.11832678",
+      "longitude": "-12.06933567",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 18,
+      "name": "Matturi Block B",
+      "latitude": "8.11836700",
+      "longitude": "-12.06998564",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 19,
+      "name": "Matturi Block D",
+      "latitude": "8.11833388",
+      "longitude": "-12.07068578",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 20,
+      "name": "Matturi Block H",
+      "latitude": "8.11880700",
+      "longitude": "-12.06926398",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 21,
+      "name": "Matturi Block A",
+      "latitude": "8.11879518",
+      "longitude": "-12.07003343",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 22,
+      "name": "Matturi Block E",
+      "latitude": "8.11882356",
+      "longitude": "-12.07070490",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 23,
+      "name": "Matturi Block F",
+      "latitude": "8.11921862",
+      "longitude": "-12.06936674",
+      "type": "dormitory",
+      "created_at": "2025-12-01T17:59:09.478Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 24,
+      "name": "Riders Post",
+      "latitude": "8.11267867",
+      "longitude": "-12.07152845",
+      "type": "building",
+      "created_at": "2025-12-01T18:06:16.191Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    },
+    {
+      "id": 25,
+      "name": "Admin Office",
+      "latitude": "8.11638820",
+      "longitude": "-12.06884624",
+      "type": "building",
+      "created_at": "2025-12-01T18:06:44.092Z",
+      "marker_color": "#FFE66D",
+      "source_id": "legacy",
+      "metadata": {
+        "source": "legacy"
+      },
+      "updated_at": "2025-12-16T22:27:41.210Z"
+    }
+  ],
+  "dormitories": []
+}

@@ -1,0 +1,1764 @@
+# RASA NLU Training Data for AbachaOnline Bilingual Chatbot (English + Krio)
+# Version 2.0 - Revised for improved accuracy and reduced ambiguity
+# Krio orthography: ɛ, ɔ, ŋ phonetic symbols
+
+version: "3.1"
+
+nlu:
+# ============================================================
+# REGEX PATTERNS FOR ENTITY EXTRACTION
+# ============================================================
+- regex: order_id
+  examples: |
+    - WG[A-Z0-9]{10,}
+    - WG\d{6,}
+
+# ============================================================
+# GREETINGS - English + Krio (50+ examples)
+# ============================================================
+- intent: greet
+  examples: |
+    - hi
+    - hello
+    - hey
+    - hey there
+    - good morning
+    - good afternoon
+    - good evening
+    - good day
+    - hi bot
+    - hello bot
+    - hello there
+    - greetings
+    - what's up
+    - howdy
+    - yo
+    - hiya
+    - morning
+    - evening
+    - afternoon
+    - sup
+    - hi there
+    - hello hello
+    - heyy
+    - heyyy
+    - hey bot
+    - hey you
+    - hellooo
+    - helloooo
+    - hi hi
+    - hello abachaonline
+    - hi abachaonline
+    - hey abachaonline
+    - hello abacha
+    - hi abacha
+    - hey abacha
+    - Kushɛ
+    - Kushɛ-o
+    - Kushɛ-ya
+    - Kushe
+    - Kushe-o
+    - ksuhe bot
+    - Kabɔ
+    - Kabo
+    - kabo
+    - Adu
+    - Aw di bɔdi
+    - Aw di bɔdi?
+    - aw d bodi
+    - aw d bodi?
+    - aw di bodi
+    - aw di bodi?
+    - Aw yu du
+    - Aw yu du?
+    - Di bɔdi
+    - Di bɔdi?
+    - Di bodi fyn
+    - Gud mɔnin
+    - Gud mɔnin-o
+    - Gud aftanun
+    - Gud ivnin
+    - Gud ivlin
+    - Aw di de
+    - Aw di de?
+    - Aw di go de go
+    - Aw di go de go?
+    - Wetin na di nyu
+    - Wetin na di nyu?
+    - Kushɛ bot
+    - A de kam
+    - Aw yu de
+    - Aw yu de?
+    - Misɛf kushɛ
+    - Di bɔdi fayn
+    - A wɛl
+    - A fayn fayn
+    - Aw di fambul
+    - Aw di fambul?
+    - Wɛlkɔm
+    - Welkom
+    - gud mornin
+    - gud aftanun
+    - gud ivnin
+    - kushe abachaonline
+    - kushe abacha
+    - a wel
+
+# ============================================================
+# GOODBYE - English + Krio (40+ examples)
+# ============================================================
+- intent: goodbye
+  examples: |
+    - bye
+    - goodbye
+    - bye bye
+    - see you
+    - see you later
+    - talk to you later
+    - catch you later
+    - later
+    - have a good day
+    - take care
+    - I'm leaving
+    - gotta go
+    - see ya
+    - bye for now
+    - good night
+    - night
+    - i have to go
+    - i need to go
+    - i'm off
+    - i'll talk to you later
+    - until next time
+    - bye now
+    - cya
+    - ttyl
+    - peace
+    - peace out
+    - have a nice day
+    - Gud bay
+    - Gudbay
+    - Gud bay-o
+    - A de go
+    - Wi go si
+    - Wi go si bak
+    - Wi go tɔk leta
+    - Bay bay
+    - Mek yu de fayn
+    - Si yu leta
+    - Tek kia
+    - A de go naw
+    - Wi de go
+    - Mekes ya
+    - A op yu de go fayn
+    - gud nait
+    - gud nɛt
+    - a de lef
+    - a de go os
+    - wi go tok leta
+
+# ============================================================
+# THANK YOU - English + Krio (40+ examples)
+# ============================================================
+- intent: thank_you
+  examples: |
+    - thanks
+    - thank you
+    - thank you so much
+    - thanks a lot
+    - thanks a bunch
+    - thank you very much
+    - appreciate it
+    - i appreciate it
+    - thanks for the help
+    - thanks for your help
+    - thanks for helping
+    - cheers
+    - much appreciated
+    - i'm grateful
+    - ty
+    - thx
+    - thanx
+    - thank u
+    - thanks mate
+    - thanks buddy
+    - thanks bot
+    - big thanks
+    - many thanks
+    - thanks for everything
+    - really appreciate it
+    - Tɛnki
+    - Tenki
+    - Tɛnki bɔku
+    - Tenki boku
+    - A tɛnki yu
+    - A tenki yu
+    - Tɛnki ya
+    - Tenki ya
+    - Tɛnki fɔ di ɛp
+    - Tenki fo di ep
+    - Tɛnki fɔ ɔl
+    - Tenki fo ol
+    - A aprɛsiet am
+    - Tɛnki tɛnki
+    - Tenki tenki
+    - Tɛnki-o
+    - God blɛs yu
+    - God bles yu
+    - Tɛnki fɔ ɔltin
+    - tenki boku
+    - a tenki yu boku
+
+# ============================================================
+# CHECK ORDER STATUS - English + Krio (60+ examples)
+# ============================================================
+- intent: check_order_status
+  examples: |
+    - where is my order
+    - where's my order
+    - track my order
+    - track order
+    - order status
+    - check order status
+    - track my order [WG123456](order_id)
+    - Track mi oda [WG603DC0224CA1CDDA](order_id)
+    - track mi odat [WG603DC0224CA1CDDA](order_id)
+    - order status for [WG789012](order_id)
+    - is my order delivered
+    - has my order arrived
+    - check order [WG456789](order_id)
+    - what's the status of [WG112233](order_id)
+    - what is the status of my order
+    - has my order shipped
+    - when will order [WG998877](order_id) arrive
+    - track delivery for [WG445566](order_id)
+    - my order status
+    - where is order [WG334455](order_id)
+    - order tracking
+    - delivery status
+    - check my delivery
+    - where's my package
+    - when is my order coming
+    - order [WG123456](order_id) status
+    - track [WG789012](order_id)
+    - status of [WG111222](order_id)
+    - i want to track my order
+    - can you track my order
+    - please track order [WG333444](order_id)
+    - find my order
+    - locate my order
+    - where is my delivery
+    - is my order on the way
+    - has my package shipped
+    - i ordered something where is it
+    - what happened to my order
+    - did my order ship
+    - when will i get my order
+    - check status of [WG555666](order_id)
+    - any update on my order
+    - update on order [WG777888](order_id)
+    - Usai mi oda de
+    - Usai mi oda de?
+    - usai mi oda de
+    - Usai mi oda [WG123456](order_id) de
+    - Usai mi oda [WG123456](order_id) de?
+    - A want chɛk mi oda
+    - A want chɛk mi oda [WG789012](order_id)
+    - Wetin apin to mi oda
+    - Wetin apin to mi oda [WG456789](order_id)?
+    - Dɛn dɔn dilibɛ mi oda
+    - Dɛn dɔn dilibɛ mi oda?
+    - Chɛk oda [WG112233](order_id)
+    - Wetin na di status fɔ [WG998877](order_id)
+    - Wetin na di status fɔ [WG998877](order_id)?
+    - Dɛn dɔn ship mi oda
+    - Dɛn dɔn ship mi oda?
+    - We taym oda [WG445566](order_id) go rich
+    - We taym oda [WG445566](order_id) go rich?
+    - Trak mi oda
+    - Trak mi oda [WG334455](order_id)
+    - Mi oda status
+    - A want fɛn mi oda
+    - Oda nɔmba [WG123456](order_id) dɔn rich
+    - Oda nɔmba [WG123456](order_id) dɔn rich?
+    - Mi pakɛj [WG123123](order_id) nɔ rich yet
+    - A de chɛk fɔ [WG888999](order_id)
+    - A want no usai mi tin [WG555444](order_id) de
+    - Mi oda [WG123456](order_id) dɔn kam
+    - Mi oda [WG123456](order_id) dɔn kam?
+    - Dɛn dɔn bring mi tin
+    - Dɛn dɔn bring mi tin?
+    - Wetin apin to [WG789012](order_id)
+    - Wetin apin to [WG789012](order_id)?
+    - chek mi oda
+    - trak oda
+    - track my order: [WG603DC0224CA1CDDA](order_id)
+    - check order: [WG123456](order_id)
+    - my order: [WG789012](order_id)
+    - order tracking: [WG456789](order_id)
+    - status: [WG112233](order_id)
+    - track order: [WG998877](order_id)
+    - trak mi oda: [WG603DC0224CA1CDDA](order_id)
+    - chɛk oda: [WG123456](order_id)
+    - mi oda: [WG789012](order_id)
+    - oda status: [WG456789](order_id)
+
+# ============================================================
+# INFORM ORDER ID - English + Krio (30+ examples)
+# ============================================================
+- intent: inform_order_id
+  examples: |
+    - my order number is [WG123456](order_id)
+    - the tracking ID is [WG789012](order_id)
+    - it's [WG456789](order_id)
+    - [WG112233](order_id)
+    - [WG603DC0224CA1CDDA](order_id)
+    - my order ID is [WG1199](order_id)
+    - The ID is [WG998877](order_id)
+    - my id is [WG998877](order_id)
+    - the id is [WG998877](order_id)
+    - order number [WG887766](order_id)
+    - tracking number [WG554433](order_id)
+    - here's my order [WG221100](order_id)
+    - the order is [WG333222](order_id)
+    - order id is [WG444555](order_id)
+    - its [WG666777](order_id)
+    - my order is [WG888999](order_id)
+    - number is [WG111000](order_id)
+    - [WG222333](order_id) is my order
+    - here [WG444666](order_id)
+    - mi oda nɔmba na [WG123456](order_id)
+    - di trakin ID na [WG789012](order_id)
+    - na [WG456789](order_id)
+    - Di nɔmba na [WG998877](order_id)
+    - Na [WG887766](order_id) i bi
+    - Dis na di nɔmba [WG554433](order_id)
+    - Di kɔd na [WG221100](order_id)
+    - Mi oda na [WG123456](order_id)
+    - di oda nomba na [WG333444](order_id)
+    - na dis [WG555666](order_id)
+    - oda id na [WG777888](order_id)
+
+# ============================================================
+# REQUEST REFUND - English + Krio (50+ examples)
+# ============================================================
+- intent: request_refund
+  examples: |
+    - I want a refund
+    - i need a refund
+    - refund my order
+    - refund please
+    - cancel order [WG123456](order_id)
+    - how to get refund
+    - how do i get a refund
+    - return my order
+    - I want to return order [WG789012](order_id)
+    - refund request for [WG456789](order_id)
+    - cancel my purchase
+    - I want my money back
+    - give me my money back
+    - i want to cancel
+    - process refund for [WG112233](order_id)
+    - how do I return items
+    - refund policy
+    - what is your refund policy
+    - can i get a refund
+    - can i return this
+    - i changed my mind
+    - cancel this order
+    - cancel my order
+    - i don't want this anymore
+    - please cancel
+    - need to cancel
+    - return request
+    - request a return
+    - money back please
+    - i want to cancel my order
+    - return [WG333444](order_id)
+    - A want rifɔnd
+    - A want rifond
+    - Rifɔnd mi oda
+    - Rifond mi oda
+    - refund mi moni
+    - Rifond mi moni
+    - Kansɛl oda [WG123456](order_id)
+    - Kansel oda [WG123456](order_id)
+    - Aw fɔ gɛt rifɔnd
+    - Aw fɔ gɛt rifɔnd?
+    - Aw fo get rifond?
+    - Ritɔn mi oda
+    - Riton mi oda
+    - A want ritɔn oda [WG789012](order_id)
+    - Rifɔnd rikwɛst fɔ [WG456789](order_id)
+    - Kansɛl mi tin we a bay
+    - A want mi mɔni bak
+    - A want mi moni bak
+    - Prosɛs rifɔnd fɔ [WG112233](order_id)
+    - Aw fɔ ritɔn tin dɛn
+    - Aw fɔ ritɔn tin dɛn?
+    - Wetin na una rifɔnd polisi
+    - Wetin na una rifɔnd polisi?
+    - Gi mi bak mi mɔni
+    - A nɔ want dis oda ɛgen
+    - Kansɛl am
+    - kansel mi oda
+    - a want mi moni
+
+# ============================================================
+# PRODUCT SEARCH - English + Krio (100+ examples)
+# This intent is for FINDING products. Use 'order_product' for BUYING.
+# ============================================================
+- intent: product_search
+  examples: |
+    # --- Generic Searches (for browsing, no specific item) ---
+    - I want to search for something
+    - search for an item
+    - browse products
+    - show me what you have
+    - what do you sell
+    - what products do you have
+    - find something to eat
+    - what do you have
+    - show me items
+
+    # --- Single Word Searches ---
+    - [rice](product_name)
+    - [water](product_name)
+    - [bread](product_name)
+    - [laptops](product_category)
+    - [phones](product_category)
+    - [snacks](product_category)
+    - [fud](product_category)
+    - [wata](product_name)
+    - [rais](product_name)
+    - [fon](product_category)
+    - [fish](product_name)
+    - [chicken](product_name)
+    - [Tea](product_name)
+    - [Jollof rice](product_name)
+
+    # --- English Phrase Searches ---
+    - show me [laptops](product_category)
+    - show me [phones](product_category)
+    - show [electronics](product_category)
+    - find [rice](product_name)
+    - find [water](product_name)
+    - find [fish](product_name)
+    - find [chicken](product_name)
+    - find [Jollof rice](product_name)
+    - search for [bread](product_name)
+    - products under [100000](price) leones
+    - products under [50000](price)
+    - cheap [phones](product_category)
+    - cheap [laptops](product_category)
+    - search for [notebooks](product_name)
+    - I'm looking for [electronics](product_category)
+    - looking for [food](product_category)
+    - do you have [cooking oil](product_name)
+    - do you have [rice](product_name)
+    - show [textbooks](product_category)
+    - find me [stationary](product_category)
+    - [headphones](product_name) available
+    - search [food items](product_category)
+    - show me products under [50000](price) leones
+    - [snacks](product_category) for sale
+    - find [Jollof Rice](product_name)
+    - do you have [Jollof Rice](product_name)
+    - search for [Jollof Rice](product_name)
+    - looking for [Jollof Rice](product_name)
+    - find [water](product_name)
+    - I need [water](product_name)
+    - show me [clothes](product_category)
+    - search [shoes](product_category)
+    - find [bread](product_name)
+    - looking for [drinks](product_category)
+    - any [chargers](product_name) available
+    - show [groceries](product_category)
+    - find [soap](product_name)
+    - search for [bags](product_category)
+    - what [phones](product_category) do you have
+    - list all [food](product_category)
+    - show available [electronics](product_category)
+    - browse [food](product_category)
+    - i need [juice](product_name)
+    - get me [milk](product_name)
+    - where can i find [sugar](product_name)
+
+    # --- Krio Phrase Searches (formal + informal) ---
+    - Sho mi [lɛptɔp](product_category)
+    - Sho mi [fon](product_category)
+    - sho mi fon
+    - Fɛn [rais](product_name)
+    - Fen [rais](product_name)
+    - fen rais
+    - fen rais fo mi
+    - fen fish
+    - fain rais
+    - Prɔdak ɔnda [100000](price)
+    - Chip [fon](product_category)
+    - Chip [lɛptɔp](product_category)
+    - Sach fɔ [notbuk](product_name)
+    - A de luk fɔ [ilɛktrɔnik](product_category)
+    - A de luk fo [elektronik](product_category)
+    - A de luk fo [fud](product_category)
+    - luk fo [wata](product_name)
+    - Una gɛt [kukin ɔyl](product_name)
+    - Una gɛt [kukin ɔyl](product_name)?
+    - Una get [kukin oyl](product_name)?
+    - una get [wata](product_name)
+    - Sho [buk dɛn](product_category)
+    - Fɛn mi [pɛpa ɛn pɛn](product_category)
+    - [hɛdfon](product_name) de sɛl
+    - [hɛdfon](product_name) de sɛl?
+    - Sach fɔ [kakra dɛn](product_category)
+    - Sho mi tin dɛn we dɛn de sɛl ɔnda [50000](price) liɔn
+    - [snak](product_category) we dɛn de sɛl
+    - Una gɛt [bred](product_name)
+    - Una gɛt [bred](product_name)?
+    - A de luk fɔ [watch](product_name)
+    - Fɛn mi [sus](product_category)
+    - Una gɛt [Jollof Rice](product_name)
+    - Una gɛt [Jollof Rice](product_name)?
+    - Fɛn [Jollof Rice](product_name)
+    - A de luk fɔ [Jollof Rice](product_name)
+    - Wetin una de sɛl
+    - Wetin una de sɛl?
+    - wetin una de sel
+    - Una gɛt [sop](product_name)
+    - Una gɛt [batri](product_name)
+    - Una gɛt [batri](product_name)?
+    - Fɛn [bag](product_category) fɔ mi
+    - Wetin [fon](product_category) una gɛt
+    - Wetin [fon](product_category) una gɛt?
+    - Lis ɔl [fud](product_category)
+    - Sho [ilɛktrɔnik](product_category) we de
+    - A de fɛn [swit](product_name)
+    - Una gɛt [biskit](product_name)
+    - Una gɛt [biskit](product_name)?
+    - Sho mi [sɔft drink](product_category)
+    - Fɛn [granat](product_name)
+    - A want [ɔrinch](product_name)
+    - Una de sɛl [mɛrɛsin](product_category)
+    - Una de sɛl [mɛrɛsin](product_category)?
+
+
+# ============================================================
+# ASK PRODUCT PRICE - English + Krio (60+ examples)
+# ============================================================
+- intent: ask_product_price
+  examples: |
+    # --- English ---
+    - how much is [rice](product_name)
+    - how much is [water](product_name)
+    - how much for [water](product_name)
+    - how much for this
+    - how much is it
+    - what's the price
+    - what is the price
+    - price please
+    - what's the price of [laptops](product_category)
+    - price for [water](product_name)
+    - how much does [bread](product_name) cost
+    - what does [cooking oil](product_name) cost
+    - price of [phones](product_category)
+    - how much for [headphones](product_name)
+    - cost of [Jollof Rice](product_name)
+    - what's the cost
+    - tell me the price
+    - how expensive is [laptops](product_category)
+    - how much is the [phone](product_category)
+    - what's this cost
+    - price check
+    - give me the price
+    - show me the price
+    - how much do you charge
+    - what do you charge for [delivery](product_name)
+    - cost please
+    - total price
+    - how much money
+    - what's it cost
+    - pricing for [electronics](product_category)
+
+    # --- Krio (formal + informal) ---
+    - Ɔmɔs fɔ [rais](product_name)
+    - Ɔmɔs fɔ [rais](product_name)?
+    - Omos fo [rais](product_name)?
+    - omos fo wata
+    - aw much fo wata
+    - aw much for water
+    - Ɔmɔs na di prais fɔ [lɛptɔp](product_category)
+    - Ɔmɔs na di prais fɔ [lɛptɔp](product_category)?
+    - Prais fɔ [wata](product_name)
+    - Ɔmɔs [bred](product_name) kɔst
+    - Ɔmɔs [bred](product_name) kɔst?
+    - Wetin [kukin ɔyl](product_name) kɔst
+    - Wetin [kukin ɔyl](product_name) kɔst?
+    - Prais fɔ [fon](product_category)
+    - Ɔmɔs fɔ [hɛdfon](product_name)
+    - Ɔmɔs fɔ [hɛdfon](product_name)?
+    - Kɔst fɔ [Jollof Rice](product_name)
+    - Wetin na di kɔst
+    - Wetin na di kɔst?
+    - Ɔmɔs fɔ am
+    - Ɔmɔs fɔ am?
+    - omos fo am
+    - aw much fo am
+    - Wetin na di prais
+    - Wetin na di prais?
+    - wetin na di prais
+    - Tɛl mi di prais
+    - Aw dia [lɛptɔp](product_category) de
+    - Aw dia [lɛptɔp](product_category) de?
+    - Ɔmɔs dis tin kɔst
+    - Ɔmɔs dis tin kɔst?
+    - aw much dis tin cost
+    - Di prais na ɔmɔs
+    - Di prais na ɔmɔs?
+    - I dia
+    - I dia?
+    - I chip
+    - I chip?
+    - Wetin na di mɔni fɔ am
+    - Wetin na di mɔni fɔ am?
+
+
+# ============================================================
+# ASK PRODUCT AVAILABILITY - English + Krio (40+ examples)
+# ============================================================
+- intent: ask_product_availability
+  examples: |
+    - is [rice](product_name) available
+    - is [water](product_name) available
+    - is it available
+    - is it in stock
+    - do you have [water](product_name) in stock
+    - is [bread](product_name) in stock
+    - any [laptops](product_category) available
+    - do you sell [phones](product_category)
+    - is [Jollof Rice](product_name) available now
+    - check if [cooking oil](product_name) is in stock
+    - availability of [headphones](product_name)
+    - do you have any [snacks](product_category)
+    - can I get [water](product_name) now
+    - is this available
+    - is this in stock
+    - do you have this
+    - is there any [rice](product_name) left
+    - got any [bread](product_name)
+    - any [milk](product_name) available
+    - still have [juice](product_name)
+    - do you still have it
+    - is it still available
+    - [rais](product_name) de
+    - [rais](product_name) de?
+    - Una gɛt [wata](product_name) na stɔk
+    - Una gɛt [wata](product_name) na stɔk?
+    - [bred](product_name) de na stɔk
+    - [bred](product_name) de na stɔk?
+    - Ɛni [lɛptɔp](product_category) de
+    - Ɛni [lɛptɔp](product_category) de?
+    - Una de sɛl [fon](product_category)
+    - Una de sɛl [fon](product_category)?
+    - [Jollof Rice](product_name) de naw
+    - [Jollof Rice](product_name) de naw?
+    - Chɛk if [kukin ɔyl](product_name) de na stɔk
+    - [hɛdfon](product_name) de
+    - [hɛdfon](product_name) de?
+    - Una gɛt ɛni [snak](product_category)
+    - Una gɛt ɛni [snak](product_category)?
+    - I de na stɔk
+    - I de na stɔk?
+    - I de
+    - I de?
+    - A go gɛt [wata](product_name) naw
+    - A go gɛt [wata](product_name) naw?
+    - Dis tin de
+    - Dis tin de?
+    - Una gɛt am
+    - Una gɛt am?
+    - I dɔn dɔn
+    - I dɔn dɔn?
+    - I stil de
+    - I stil de?
+    - una get am
+
+# ============================================================
+# ASK PRODUCT DETAILS - English + Krio (40+ examples)
+# ============================================================
+- intent: ask_product_details
+  examples: |
+    - tell me more about [rice](product_name)
+    - more about [laptops](product_category)
+    - details of [laptops](product_category)
+    - what are the specs of [phones](product_category)
+    - describe [Jollof Rice](product_name)
+    - more information about [headphones](product_name)
+    - what's included with [laptops](product_category)
+    - product description for [water](product_name)
+    - features of [phones](product_category)
+    - what brand is [cooking oil](product_name)
+    - tell me about this product
+    - more details please
+    - what's the description
+    - can you describe it
+    - what does it include
+    - product details
+    - give me details
+    - specifications please
+    - specs
+    - what are the features
+    - tell me more
+    - more info
+    - information please
+    - details please
+    - Tɛl mi mɔ bɔt [rais](product_name)
+    - Ditels fɔ [lɛptɔp](product_category)
+    - Wetin na di spɛk fɔ [fon](product_category)
+    - Wetin na di spɛk fɔ [fon](product_category)?
+    - Dɛskraib [Jollof Rice](product_name)
+    - Mɔ infɔmɛshɔn bɔt [hɛdfon](product_name)
+    - Wetin de insay [lɛptɔp](product_category)
+    - Wetin de insay [lɛptɔp](product_category)?
+    - Prɔdak dɛskripshɔn fɔ [wata](product_name)
+    - Ficha dɛn fɔ [fon](product_category)
+    - Wetin brand na [kukin ɔyl](product_name)
+    - Wetin brand na [kukin ɔyl](product_name)?
+    - Tɛl mi bɔt dis prɔdak
+    - Mɔ ditels duya
+    - Wetin na di dɛskripshɔn
+    - Wetin na di dɛskripshɔn?
+    - Aw dis tin de
+    - Aw dis tin de?
+    - Wetin mek dis wan gud
+    - Wetin mek dis wan gud?
+    - tel mi mo bot am
+
+# ============================================================
+# ASK DELIVERY TIME - English + Krio (40+ examples)
+# ============================================================
+- intent: ask_delivery_time
+  examples: |
+    - how long for delivery
+    - how long is delivery
+    - when will my order arrive
+    - delivery time
+    - delivery time to [Quad 1](location)
+    - how fast is delivery
+    - delivery duration
+    - how long does shipping take
+    - when can I expect my order
+    - delivery time to [Fourah Bay College](location)
+    - shipping time to [Njala Campus](location)
+    - how soon will it arrive
+    - delivery schedule
+    - estimated delivery time
+    - when will it come
+    - how long until delivery
+    - delivery to [Freetown](location)
+    - how long to deliver
+    - delivery estimate
+    - when do you deliver
+    - how fast can you deliver
+    - same day delivery
+    - next day delivery
+    - delivery options
+    - Aw lɔng di dilibri tek
+    - Aw lɔng di dilibri tek?
+    - Aw long di dilibri tek?
+    - We taym mi oda go rich
+    - We taym mi oda go rich?
+    - Dilibri taym to [Quad 1](location)
+    - Aw fast di dilibri de
+    - Aw fast di dilibri de?
+    - Aw lɔng di ship tek
+    - Aw lɔng di ship tek?
+    - We taym a go gɛt am
+    - We taym a go gɛt am?
+    - Dilibri taym to [Fourah Bay College](location)
+    - Ship taym to [Njala Campus](location)
+    - Aw kwik i go rich
+    - Aw kwik i go rich?
+    - Wetin na di dilibri skedjul
+    - Wetin na di dilibri skedjul?
+    - Aw lɔng bifo i rich
+    - Aw lɔng bifo i rich?
+    - We de dɛn go bring am
+    - We de dɛn go bring am?
+    - I go tek aw lɔng fɔ rich [Kissy](location)
+    - I go tek aw lɔng fɔ rich [Kissy](location)?
+    - If a ɔda naw we taym i go kam
+    - If a ɔda naw we taym i go kam?
+    - Dilibri to [Freetown](location)
+    - We taym dɛn go bring am
+    - We taym dɛn go bring am?
+    - Aw lɔng a go wet
+    - Aw lɔng a go wet?
+
+# ============================================================
+# ASK PAYMENT METHODS - English + Krio (40+ examples)
+# ============================================================
+- intent: ask_payment_methods
+  examples: |
+    - what payment methods do you accept
+    - payment methods
+    - how can I pay
+    - can I pay with mobile money
+    - payment options
+    - do you accept orange money
+    - cash on delivery available
+    - can I pay with card
+    - bank transfer option
+    - africell money payment
+    - do you take mobile money
+    - can I pay cash
+    - how do I pay
+    - what ways can I pay
+    - accepted payment methods
+    - do you take card
+    - credit card accepted
+    - debit card
+    - mobile payment
+    - can i pay on delivery
+    - COD available
+    - what methods of payment
+    - Wetin na di we dɛn we una de tek pe
+    - Wetin na di we dɛn we una de tek pe?
+    - A kin pe wit mobayl mɔni
+    - A kin pe wit mobayl mɔni?
+    - Aw fɔ pe
+    - Aw fɔ pe?
+    - Una de tek Orange Money
+    - Una de tek Orange Money?
+    - Kash pan dilibri de
+    - Kash pan dilibri de?
+    - Wetin na di pe we dɛn
+    - Wetin na di pe we dɛn?
+    - A kin pe wit kad
+    - A kin pe wit kad?
+    - Bank transfer de
+    - Bank transfer de?
+    - Africell Money pe de
+    - Africell Money pe de?
+    - Wetin wetin a kin yuz fɔ pe
+    - Wetin wetin a kin yuz fɔ pe?
+    - Una de tek mobayl mɔni
+    - Una de tek mobayl mɔni?
+    - A kin pe kash
+    - A kin pe kash?
+    - Aw a go pe
+    - Aw a go pe?
+    - Wetin we dɛn a kin pe
+    - Wetin we dɛn a kin pe?
+    - Aw di pe de go
+    - Aw di pe de go?
+
+# ============================================================
+# COMPLAINT - English + Krio (50+ examples)
+# ============================================================
+- intent: complaint
+  examples: |
+    - my order is damaged
+    - order damaged
+    - wrong item delivered
+    - wrong product
+    - I have a problem with my order
+    - problem with order
+    - complaint about order
+    - i want to complain
+    - product is broken
+    - broken product
+    - not satisfied with delivery
+    - order is incomplete
+    - incomplete order
+    - missing items in my order
+    - missing items
+    - product quality is poor
+    - poor quality
+    - delivery was late
+    - late delivery
+    - merchant didn't respond
+    - bad service
+    - terrible service
+    - I received the wrong product
+    - item is defective
+    - defective item
+    - order arrived broken
+    - this is broken
+    - not what i ordered
+    - wrong size
+    - wrong color
+    - i'm not happy
+    - unhappy with purchase
+    - disappointed
+    - this doesn't work
+    - Ma oda dɔn brɔk
+    - Ma oda don brok
+    - Dɛn dilibɛ rɔng tin
+    - Den dilibe rong tin
+    - A gɛt prɔblɛm wit ma oda
+    - A get problem wit ma oda
+    - Kɔmplɛnt bɔt oda
+    - Komplent bot oda
+    - Di prɔdak dɔn brɔk
+    - Di prodak don brok
+    - A nɔ satisfy wit di dilibri
+    - A no satisfy wit di dilibri
+    - Di oda nɔ kɔmplit
+    - Di oda no komplit
+    - Sɔm tin dɛn mising na ma oda
+    - Som tin den mising na ma oda
+    - Di prɔdak kwality nɔ gud
+    - Di prodak kwality no gud
+    - Di dilibri bin let
+    - Di mɛchant nɔ ansa
+    - Di merchant no ansa
+    - Bad savis
+    - Di tin we dɛn bring nɔ fayn
+    - Di tin we den bring no fayn
+    - A nɔ lɛk am
+    - A no lek am
+    - Dɛn gi mi rɔng prɔdak
+    - Di tin dɔn pwɛl
+    - Di oda kam brɔk
+    - di tin no gud
+
+# ============================================================
+# TALK TO HUMAN - English + Krio (40+ examples)
+# ============================================================
+- intent: talk_to_human
+  examples: |
+    - speak to a person
+    - talk to a person
+    - human please
+    - I want human help
+    - connect me to support
+    - talk to merchant
+    - human agent please
+    - customer service
+    - speak to someone
+    - live chat
+    - I need human assistance
+    - transfer to human
+    - real person please
+    - contact support
+    - get me a human
+    - I want to talk to a real person
+    - can I speak with someone
+    - agent please
+    - representative
+    - talk to rep
+    - support please
+    - help from a person
+    - i need a real person
+    - connect me to agent
+    - can i talk to someone
+    - A want tɔk wit pɔsin
+    - A want tok wit posin
+    - Tɔk to mɛchant
+    - Tok to merchant
+    - Kɔnɛkt mi to sɔpɔt
+    - Konekt mi to sopot
+    - A nid pɔsin fɔ ɛp
+    - A nid posin fo ep
+    - Kɔstɔma savis
+    - Kostoma savis
+    - Tɔk to sɔmbɔdi
+    - Tok to sombodi
+    - A want tɔk to rial pɔsin
+    - A want tok to rial posin
+    - Transfɛ mi to pɔsin
+    - Transfe mi to posin
+    - Kɔntakt sɔpɔt
+    - Kontak sopot
+    - A want yuman ɛp
+    - A want yuman ep
+    - Gi mi pɔsin we a go tɔk wit
+    - Gi mi posin we a go tok wit
+    - Lɛ mi tɔk to sɔmbɔdi
+    - Le mi tok to sombodi
+    - A want tɔk to pɔsin
+    - Duya gi mi pɔsin
+    - duya gi mi posin
+
+# ============================================================
+# ASK ABOUT MERCHANT - English + Krio (30+ examples)
+# ============================================================
+- intent: ask_about_merchant
+  examples: |
+    - who is the merchant
+    - merchant information
+    - tell me about the seller
+    - merchant contact
+    - how to contact merchant
+    - merchant details for [John's Store](merchant_name)
+    - who sells this product
+    - merchant location
+    - about this merchant
+    - seller info
+    - where is the seller
+    - seller details
+    - who is selling this
+    - seller contact
+    - merchant phone
+    - contact the seller
+    - Usai na di mɛchant
+    - Usai na di mɛchant?
+    - Mɛchant infɔmɛshɔn
+    - Tɛl mi bɔt di sɛla
+    - Mɛchant kɔntakt
+    - Aw fɔ kɔntakt mɛchant
+    - Aw fɔ kɔntakt mɛchant?
+    - Mɛchant ditels fɔ [John's Store](merchant_name)
+    - Usai de sɛl dis prɔdak
+    - Usai de sɛl dis prɔdak?
+    - Usai di mɛchant de
+    - Usai di mɛchant de?
+    - Bɔt dis mɛchant
+    - Sɛla infɔ
+    - Na usai dɛn de sɛl am
+    - Na usai dɛn de sɛl am?
+    - Udat de sɛl dis
+    - Udat de sɛl dis?
+    - Usai di shap de
+    - Usai di shap de?
+
+# ============================================================
+# AFFIRM - English + Krio (40+ examples)
+# ============================================================
+- intent: affirm
+  examples: |
+    - yes
+    - yeah
+    - yep
+    - yup
+    - sure
+    - of course
+    - that's right
+    - correct
+    - exactly
+    - affirmative
+    - absolutely
+    - definitely
+    - ok
+    - okay
+    - OK
+    - oo
+    - alright
+    - sounds good
+    - yes please
+    - that's correct
+    - indeed
+    - right
+    - uh huh
+    - mhm
+    - yea
+    - ya
+    - sure thing
+    - you got it
+    - that works
+    - perfect
+    - great
+    - fine
+    - Yɛs
+    - Yes
+    - Ya
+    - Tru
+    - Na tru
+    - na tru
+    - Kɔrɛkt
+    - Korekt
+    - Ɔl rayt
+    - Ol rayt
+    - Da rayt
+    - Ɛgzakli
+    - Egzakli
+    - Dɛfinit
+    - Definit
+    - A gri
+    - Na so
+    - Ok
+    - I fayn
+    - A wan am
+    - Duya
+    - Na da wan
+    - na so
+    - a gri
+
+# ============================================================
+# DENY - English + Krio (40+ examples)
+# ============================================================
+- intent: deny
+  examples: |
+    - no
+    - nope
+    - nah
+    - not really
+    - no thanks
+    - no thank you
+    - I don't think so
+    - negative
+    - don't want that
+    - that's not right
+    - incorrect
+    - no way
+    - not at all
+    - never
+    - definitely not
+    - absolutely not
+    - wrong
+    - that's wrong
+    - i disagree
+    - no please
+    - don't
+    - not interested
+    - pass
+    - skip
+    - cancel
+    - stop
+    - Nɔ
+    - No
+    - Nɔp
+    - Nop
+    - Nɔto
+    - Noto
+    - Nɔ tɛnki
+    - No tenki
+    - A nɔ tink so
+    - A no tink so
+    - Nɛgativ
+    - Negativ
+    - A nɔ want da
+    - A no want da
+    - Da nɔ rayt
+    - Da no rayt
+    - Nɔ kɔrɛkt
+    - No korekt
+    - Nɔ we
+    - No we
+    - Lɛf am
+    - Lef am
+    - A nɔ want
+    - A no want
+    - Nɔto so
+    - A nɔ gri
+    - A no gri
+
+# ============================================================
+# BOT CHALLENGE - English + Krio (30+ examples)
+# ============================================================
+- intent: bot_challenge
+  examples: |
+    - are you a bot
+    - are you human
+    - am I talking to a bot
+    - are you real
+    - who are you
+    - what are you
+    - are you a robot
+    - is this a bot
+    - are you AI
+    - am i talking to a machine
+    - are you a computer
+    - is this automated
+    - real or bot
+    - human or machine
+    - bot or human
+    - are you artificial
+    - Yu na bot
+    - Yu na bot?
+    - Yu na yuman
+    - Yu na yuman?
+    - A de tɔk to bot
+    - A de tɔk to bot?
+    - A de tok to bot?
+    - Yu rial
+    - Yu rial?
+    - Usai yu bi
+    - Usai yu bi?
+    - Wetin yu bi
+    - Wetin yu bi?
+    - Yu na robot
+    - Yu na robot?
+    - Na pɔsin ɔ mashin
+    - Na pɔsin ɔ mashin?
+    - Na posin o mashin?
+    - Yu na AI
+    - Yu na AI?
+    - na bot dis?
+
+# ============================================================
+# ASK HOW TO ORDER - English + Krio (30+ examples)
+# ============================================================
+- intent: ask_how_to_order
+  examples: |
+    - how do I order
+    - how can I place an order
+    - how do I buy something
+    - what is the process to order
+    - can you help me order
+    - how to make a purchase
+    - ordering process
+    - how does ordering work
+    - steps to order
+    - how to order
+    - how to buy
+    - i want to order but how
+    - ordering instructions
+    - help me order
+    - guide me to order
+    - how do i purchase
+    - aw fɔ ɔda
+    - aw fɔ ɔda?
+    - aw fo oda?
+    - aw a go du fɔ ɔda
+    - aw a go du fɔ ɔda?
+    - wetin a fɔ du if a want bay
+    - wetin a fɔ du if a want bay?
+    - ɛp mi fɔ ɔda
+    - ep mi fo oda
+    - aw di ɔda prɔsɛs de go
+    - aw di ɔda prɔsɛs de go?
+    - aw fɔ bay tin
+    - aw fɔ bay tin?
+    - wetin na di stɛp dɛn fɔ ɔda
+    - wetin na di stɛp dɛn fɔ ɔda?
+    - aw di ɔda de wok
+    - aw di ɔda de wok?
+    - aw fɔ mek pɔchɛs
+    - aw fɔ mek pɔchɛs?
+
+# ============================================================
+# ORDER PRODUCT - English + Krio (40+ examples)
+# This intent is for BUYING/ADDING to cart. Use 'product_search' for FINDING.
+# ============================================================
+- intent: order_product
+  examples: |
+    - I want to order [water](product_name)
+    - order [water](product_name)
+    - Please order [rice](product_name) for me
+    - Can I get [juice](product_name)
+    - I'd like to buy [bread](product_name)
+    - I want to buy [water](product_name)
+    - I want to buy [fish](product_name)
+    - Add [cooking oil](product_name) to my cart
+    - order [laptop](product_category) for me
+    - I want to purchase [headphones](product_name)
+    - buy [Jollof Rice](product_name)
+    - place order for [phone](product_category)
+    - get me [water](product_name)
+    - i want to order
+    - place an order
+    - i want to buy
+    - add to cart
+    - buy this
+    - order this
+    - i'll take it
+    - i want this
+    - purchase this
+    - get this for me
+    - A want ɔda [wata](product_name)
+    - A want oda [wata](product_name)
+    - a wan bay [wata](product_name)
+    - a wan bay [fish](product_name)
+    - Duya ɔda [rais](product_name) fɔ mi
+    - Duya oda [rais](product_name) fo mi
+    - A go gɛt [jus](product_name)
+    - A go gɛt [jus](product_name)?
+    - A want bay [bred](product_name)
+    - Put [kukin ɔyl](product_name) insay mi kat
+    - aw fɔ ɔda [wata](product_name)
+    - aw fɔ ɔda [wata](product_name)?
+    - Ɔda [lɛptɔp](product_category) fɔ mi
+    - Oda [leptop](product_category) fo mi
+    - A want pɔchɛs [hɛdfon](product_name)
+    - Bay [Jollof Rice](product_name)
+    - Ples ɔda fɔ [fon](product_category)
+    - Ples oda fo [fon](product_category)
+    - Gɛt [wata](product_name) fɔ mi
+    - Get [wata](product_name) fo mi
+    - A want bay dis
+    - Put am na mi kat
+    - a want oda dis
+    - a wan oda [chicken](product_name)
+    - a wan bay [tea](product_name)
+    - a wan bay [coffee](product_name)
+    - a want bay [chicken](product_name)
+    - a want oda [tea](product_name)
+    - put am na kat
+    - put am na mi cart
+    - put [tea](product_name) na mi kat
+    - put [chicken](product_name) na kat
+    - gi mi [tea](product_name)
+    - gi mi [chicken](product_name)
+    - a de oda [chicken](product_name)
+    - a de bay [tea](product_name)
+    - i want bay [chicken](product_name)
+    - i want oda [tea](product_name)
+    - r wan bay [wata](product_name)
+    - r want bay [wata](product_name)
+    - r wan oda [chicken](product_name)
+    - r want order [tea](product_name)
+    - ar wan bay [rice](product_name)
+    - ar want oda [bread](product_name)
+    - I want to order [Gari](product_name)
+    - I want to buy [Gari bag](product_name)
+    - order [Gari bag 25kg](product_name)
+    - a wan bay [Gari](product_name)
+    - ar want order [Gari bag](product_name)
+    - I want to order [Palm Oil](product_name)
+    - buy [Groundnut 1kg](product_name)
+    - order [Pure Water](product_name)
+    - I want [Mineral Water](product_name)
+
+# ============================================================
+# COMPARE PRODUCTS - English + Krio (25+ examples)
+# ============================================================
+- intent: compare_products
+  examples: |
+    - compare [iPhone](product_name) and [Samsung](product_name)
+    - which is better [rice](product_name) or [bread](product_name)
+    - difference between [laptop](product_category) options
+    - compare prices
+    - which one should I buy
+    - what's the difference
+    - compare [water](product_name) brands
+    - which is cheaper
+    - better option between these
+    - compare these products
+    - which one is better
+    - compare options
+    - what's the best one
+    - Kɔmpia [iPhone](product_name) ɛn [Samsung](product_name)
+    - Kompia [iPhone](product_name) en [Samsung](product_name)
+    - Wetin bɛtɛ [rais](product_name) ɔ [bred](product_name)
+    - Wetin bɛtɛ [rais](product_name) ɔ [bred](product_name)?
+    - Difrɛns bitwi [lɛptɔp](product_category) ɔpshɔn dɛn
+    - Kɔmpia prais dɛn
+    - Kompia prais den
+    - Wetin wan a fɔ bay
+    - Wetin wan a fɔ bay?
+    - Wetin na di difrɛns
+    - Wetin na di difrɛns?
+    - Kɔmpia [wata](product_name) brand dɛn
+    - Wetin wan mɔ chip
+    - Wetin wan mɔ chip?
+    - Bɛtɛ ɔpshɔn bitwi dɛn ya
+
+# ============================================================
+# ASK RECOMMENDATIONS - English + Krio (25+ examples)
+# ============================================================
+- intent: ask_recommendations
+  examples: |
+    - what do you recommend
+    - suggest something for me
+    - best [laptops](product_category) you have
+    - popular [food](product_category) items
+    - what's good
+    - recommend a [phone](product_category)
+    - top selling products
+    - what should I buy
+    - any suggestions
+    - best sellers
+    - what's popular
+    - recommend something
+    - suggest a product
+    - Wetin yu rikɔmɛnd
+    - Wetin yu rikɔmɛnd?
+    - Wetin yu rikomend?
+    - Sɔjɛst sɔmtin fɔ mi
+    - Sojest somtin fo mi
+    - Bɛst [lɛptɔp](product_category) we una gɛt
+    - Best [leptop](product_category) we una get
+    - Popula [fud](product_category) tin dɛn
+    - Wetin gud
+    - Wetin gud?
+    - Rikɔmɛnd [fon](product_category)
+    - Rikomend [fon](product_category)
+    - Tɔp sɛl prɔdak dɛn
+    - Top sel prodak den
+    - Wetin a fɔ bay
+    - Wetin a fɔ bay?
+    - Ɛni sɔjɛshɔn
+    - Ɛni sɔjɛshɔn?
+    - Bɛst sɛla dɛn
+    - Wetin bɛtɛ
+    - Wetin bɛtɛ?
+    - Wetin pɔpula
+    - Wetin pɔpula?
+
+# ============================================================
+# BUDGET SEARCH - English + Krio (25+ examples)
+# ============================================================
+- intent: ask_budget_products
+  examples: |
+    - what can I buy with Le 100
+    - what can I buy with Le 500
+    - what can I buy with Le 1000
+    - what can I buy with 100 Le
+    - what can I buy with 500 Le
+    - what can I buy with 1000 Le
+    - what can I get for 100 Le
+    - what can I get for 500 leones
+    - what can I get with 100 Le
+    - what can I get with Le 100
+    - products under 1000
+    - products under Le 500
+    - products under 100 Le
+    - show me products under Le 200
+    - show me products under 500 Le
+    - items under 300 Le
+    - items under Le 300
+    - what's available for Le 100
+    - what's available for 100 Le
+    - affordable products under 500
+    - cheap items under Le 200
+    - cheap items under 200 Le
+    - wetin a kin bay wit Le 100
+    - wetin a kin bay wit 500
+    - wetin a kin bay wit 100 Le
+    - wetin a kin gɛt fɔ Le 1000
+    - wetin a kin gɛt fɔ 1000 Le
+    - prɔdak ɔnda Le 500
+    - prɔdak ɔnda 500 Le
+    - chip tin ɔnda 200
+    - chip tin ɔnda Le 200
+    - sho mi prɔdak ɔnda Le 300
+    - sho mi prɔdak ɔnda 300 Le
+    - I have Le 100 what can I buy
+    - I have 100 Le what can I buy
+    - I have 500 leones to spend
+    - what's the cheapest item
+    - show me cheap products
+    - budget shopping Le 100
+    - budget shopping 100 Le
+    - affordable items
+    - wetin chip
+    - show me items for Le 100
+    - show me items for 100 Le
+    - things I can buy with 200
+    - stuff under 500
+
+# ============================================================
+# BOT NAME - English + Krio (25+ examples)
+# ============================================================
+- intent: ask_bot_name
+  examples: |
+    - what is your name
+    - what's your name
+    - who are you
+    - tell me your name
+    - what do I call you
+    - what should I call you
+    - may I know your name
+    - do you have a name
+    - what is your name bot
+    - hi what's your name
+    - your name
+    - name please
+    - introduce yourself
+    - wetin na yu nem
+    - wetin na yu nem?
+    - udat yu bi
+    - tɛl mi yu nem
+    - wetin dɛn kɔl yu
+    - wetin a fɔ kɔl yu
+    - yu gɛt nem
+    - yu gɛt nem?
+    - na wetin na yu nem
+    - yu nem na wetin
+
+# ============================================================
+# BOT CAPABILITIES - English + Krio (30+ examples)
+# ============================================================
+- intent: ask_bot_capabilities
+  examples: |
+    - what can you do
+    - what are your capabilities
+    - what do you do
+    - how can you help me
+    - tell me about yourself
+    - what are you capable of
+    - what services do you offer
+    - what can you help me with
+    - what are your features
+    - help me understand what you do
+    - show me what you can do
+    - list your features
+    - what functions do you have
+    - explain what you do
+    - what's your purpose
+    - why are you here
+    - how do you work
+    - what kind of help do you provide
+    - wetin yu kin du
+    - wetin yu kin du?
+    - wetin na yu wok
+    - aw yu kin ɛp mi
+    - tɛl mi bɔt yusɛf
+    - wetin yu de du ya
+    - sho mi wetin yu kin du
+    - wetin yu sabi du
+    - wetin na yu jɔb
+    - aw yu de wok
+
+# ============================================================
+# LANGUAGE SUPPORT - English + Krio (30+ examples)
+# ============================================================
+- intent: ask_language_support
+  examples: |
+    - can you speak Limba
+    - do you speak Temne
+    - can you speak Temne
+    - do you speak Limba
+    - can you speak Mende
+    - do you speak Mende
+    - can you speak Fullah
+    - do you speak Fullah
+    - what languages do you speak
+    - which languages can you understand
+    - do you understand Limba
+    - can you understand Temne
+    - speak to me in Limba
+    - talk to me in Temne
+    - respond in Mende
+    - answer in Fullah
+    - do you know other languages
+    - what languages do you know
+    - can you speak any other language
+    - yu sabi tɔk Limba
+    - yu sabi tɔk Limba?
+    - yu sabi tɔk Temne
+    - yu sabi tɔk Temne?
+    - yu sabi tɔk Mende
+    - yu sabi tɔk Fullah
+    - wetin langwej yu sabi
+    - wetin langwej yu kin tɔk
+    - yu ɔndastand Limba
+    - tɔk to mi na Temne
+    - ansa mi na Mende
+
+# ============================================================
+# EXPRESS FRUSTRATION - English + Krio (35+ examples)
+# ============================================================
+- intent: express_frustration
+  examples: |
+    - this is frustrating
+    - I'm frustrated
+    - this is annoying
+    - I'm so annoyed
+    - nothing is working
+    - this doesn't work
+    - I'm angry
+    - this is useless
+    - you're not helping
+    - this is terrible
+    - I hate this
+    - so frustrating
+    - ugh
+    - why isn't this working
+    - stop wasting my time
+    - this is ridiculous
+    - I'm fed up
+    - I've had enough
+    - this is hopeless
+    - you don't understand
+    - I give up
+    - what's wrong with you
+    - this is broken
+    - fix this
+    - can't you do anything right
+    - dis tin de vɛks mi
+    - a vɛks
+    - a tayad
+    - dis nɔ de wok
+    - yu nɔ de ɛp
+    - dis bad
+    - a dɔn tayad
+    - wetin de apin
+    - dis na wahala
+    - a nɔ ɛpi
+
+# ============================================================
+# OUT OF SCOPE - English + Krio (30+ examples)
+# ============================================================
+- intent: out_of_scope
+  examples: |
+    - I want pizza
+    - order pizza
+    - book a flight
+    - flight booking
+    - what's the weather
+    - weather today
+    - tell me a joke
+    - joke please
+    - play music
+    - play a song
+    - who is the president
+    - what time is it
+    - random text here
+    - asdfghjkl
+    - blah blah
+    - I don't know
+    - something else
+    - sing a song
+    - tell me my account balance
+    - check my bank balance
+    - transfer money
+    - send money to
+    - what's my password
+    - dance
+    - love you
+    - marry me
+    - A want piza
+    - Buk flayt
+    - Wetin na di wɛda
+    - Wetin na di wɛda?
+    - Tɛl mi jok
+    - Tel mi jok
+    - Ple myuzik
+    - A nɔ no
+    - A no no
+    - Sɔmtin ɛls
+    - Somtin els
+    - random
+    - what is life
+    - meaning of life
+
+# ============================================================
+# SYNONYMS FOR ENTITIES
+# ============================================================
+- synonym: rice
+  examples: |
+    - rais
+    - rays
+    - rais bag
+    - bag of rice
+
+- synonym: water
+  examples: |
+    - wata
+    - wota
+    - bottled water
+    - drinking water
+
+- synonym: bread
+  examples: |
+    - bred
+    - loaf
+    - bread loaf
+
+- synonym: phone
+  examples: |
+    - fon
+    - fone
+    - mobile
+    - mobile phone
+    - cell phone
+    - smartphone
+
+- synonym: laptop
+  examples: |
+    - lɛptɔp
+    - leptop
+    - computer
+    - notebook
+    - pc
+
+- synonym: food
+  examples: |
+    - fud
+    - it
+    - eating
+    - meals
+
+- synonym: electronics
+  examples: |
+    - ilɛktrɔnik
+    - elektronik
+    - gadgets
+    - devices
+
+# ============================================================
+# LOOKUP TABLES
+# ============================================================
+- lookup: product_category
+  examples: |
+    - laptops
+    - phones
+    - electronics
+    - food
+    - groceries
+    - snacks
+    - drinks
+    - clothes
+    - shoes
+    - bags
+    - textbooks
+    - stationary
+    - accessories
+    - chargers
+    - headphones
+    - lɛptɔp
+    - fon
+    - ilɛktrɔnik
+    - fud
+    - kakra
+    - snak
+    - drink
+    - klɔt
+    - sus
+    - bag
+    - buk
+
+- lookup: product_name
+  examples: |
+    - rice
+    - water
+    - bread
+    - cooking oil
+    - Jollof Rice
+    - juice
+    - soap
+    - batteries
+    - milk
+    - sugar
+    - salt
+    - eggs
+    - fish
+    - chicken
+    - tea
+    - coffee
+    - rais
+    - wata
+    - bred
+    - kukin ɔyl
+    - jus
+    - sop
+    - batri
+    - mɔlk
+    - shuga
+    - sɔlt
+    - eg
+
+- lookup: location
+  examples: |
+    - Quad 1
+    - Quad 2
+    - Quad 3
+    - Quad 4
+    - Fourah Bay College
+    - Njala Campus
+    - Freetown
+    - Kissy
+    - Bo
+    - Kenema
+    - Makeni
+    - Waterloo
+    - Lungi
+
+# ============================================================
+# REGEX PATTERNS
+# ============================================================
+- regex: order_id
+  examples: |
+    - WG[A-Z0-9]+

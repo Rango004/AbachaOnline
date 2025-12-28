@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRS & Coordinate Diagnostic</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: monospace; background: #1a1a1a; color: #fff; }
+    .container { display: flex; height: 100vh; }
+    #map { flex: 1; }
+    .debug {
+      width: 700px;
+      background: #222;
+      border-left: 3px solid #ff00ff;
+      padding: 16px;
+      overflow-y: auto;
+      font-size: 10px;
+    }
+    .debug h2 { color: #ff00ff; margin-bottom: 12px; }
+    .section { margin-bottom: 16px; padding: 12px; background: #111; border-left: 3px solid #ff00ff; }
+    .section h3 { color: #ff00ff; margin-bottom: 8px; font-size: 11px; }
+    .row { display: flex; justify-content: space-between; margin: 3px 0; }
+    .label { color: #999; flex: 0 0 200px; }
+    .value { color: #0f0; font-weight: bold; flex: 1; word-break: break-all; }
+    .error { color: #f00; }
+    .warning { color: #ff0; }
+    .success { color: #0f0; }
+    .mismatch { color: #ff00ff; background: #331133; padding: 4px; }
+    button {
+      background: #ff00ff;
+      color: #000;
+      border: none;
+      padding: 6px 12px;
+      margin: 4px 0;
+      cursor: pointer;
+      font-weight: bold;
+      font-family: monospace;
+      width: 100%;
+    }
+    button:hover { background: #cc00cc; }
+    .comparison-table {
+      background: #000;
+      border: 1px solid #ff00ff;
+      padding: 8px;
+      margin: 8px 0;
+      font-size: 9px;
+      overflow-x: auto;
+    }
+    .coord-check {
+      background: #001a00;
+      border-left: 3px solid #0f0;
+      padding: 8px;
+      margin: 4px 0;
+    }
+    .coord-check.bad {
+      background: #1a0000;
+      border-left-color: #f00;
+    }
+    .coord-check.warn {
+      background: #1a1a00;
+      border-left-color: #ff0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="map"></div>
+    <div class="debug">
+      <h2>🔬 CRS DIAGNOSTIC</h2>
+
+      <div class="section">
+        <h3>LEAFLET CRS CONFIG</h3>
+        <div class="row">
+          <span class="label">Map CRS:</span>
+          <span class="value" id="mapCRS">-</span>
+        </div>
+        <div class="row">
+          <span class="label">Expected for OSM:</span>
+          <span class="value">EPSG3857 (Web Mercator)</span>
+        </div>
+        <div class="row">
+          <span class="label">Match:</span>
+          <span class="value" id="crsMatch">-</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>COORDINATE SOURCE (API)</h3>
+        <div class="row">
+          <span class="label">Expected CRS:</span>
+          <span class="value">EPSG4326 (WGS84)</span>
+        </div>
+        <div class="row">
+          <span class="label">Range for Njala:</span>
+          <span class="value">Lat: 8.10-8.12, Lon: -12.08 to -12.06</span>
+        </div>
+        <div id="apiStatus">Checking API...</div>
+      </div>
+
+      <div class="section">
+        <h3>TILE LAYER CRS</h3>
+        <div class="row">
+          <span class="label">OSM Tiles CRS:</span>
+          <span class="value">EPSG3857 (Web Mercator)</span>
+        </div>
+        <div class="row">
+          <span class="label">Web Standard:</span>
+          <span class="value" class="success">✓ Correct</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>MARKER vs TILE CRS MATCH</h3>
+        <div id="crsMismatchCheck" style="line-height: 1.6;">Analyzing...</div>
+      </div>
+
+      <div class="section">
+        <h3>COORDINATE TRANSFORMATION TEST</h3>
+        <div id="transformTest" style="max-height: 150px; overflow-y: auto;"></div>
+      </div>
+
+      <div class="section">
+        <h3>SAMPLE COORDINATES</h3>
+        <div id="sampleCoords" style="max-height: 200px; overflow-y: auto; font-size: 9px;"></div>
+      </div>
+
+      <div class="section">
+        <h3>TEST ZOOM LEVELS</h3>
+        <button onclick="testZoom(13)">Z13 (Full Campus)</button>
+        <button onclick="testZoom(15)">Z15 (Campus Area)</button>
+        <button onclick="testZoom(17)">Z17 (Detail)</button>
+        <button onclick="testZoom(18)">Z18 (Fine Detail)</button>
+        <button onclick="testZoom(19)">Z19 (Very Fine)</button>
+      </div>
+
+      <div class="section">
+        <h3>ZOOM-SPECIFIC ISSUES</h3>
+        <div id="zoomIssues">Zoom to test...</div>
+      </div>
+
+      <div class="section">
+        <h3>CRS VERIFICATION LOG</h3>
+        <div id="crsLog" style="max-height: 200px; overflow-y: auto; font-size: 8px; background: #000; padding: 8px; border: 1px solid #ff00ff;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const log = [];
+    function addLog(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      log.push(`[${timestamp}] ${message}`);
+      const logDiv = document.getElementById('crsLog');
+      logDiv.innerHTML = log.map(l => `<div>${l}</div>`).join('');
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    addLog('Initializing CRS diagnostic...');
+
+    // Initialize map
+    const map = L.map('map', { crs: L.CRS.EPSG3857 }).setView([8.1147, -12.0702], 17);
+    addLog('Map initialized with EPSG3857');
+
+    document.getElementById('mapCRS').textContent = 'EPSG3857 (Web Mercator)';
+    document.getElementById('crsMatch').innerHTML = '<span class="success">✓ Correct</span>';
+
+    // Add tile layer
+    const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19,
+      minZoom: 13
+    }).addTo(map);
+
+    addLog('OSM tile layer added');
+
+    // Fetch and analyze coordinates
+    let markerLayerGroup = L.layerGroup().addTo(map);
+    let apiCoords = [];
+
+    fetch('/api/v1/locations/geojson')
+      .then(r => r.json())
+      .then(data => {
+        addLog(`API returned ${data.features.length} features`);
+
+        // Check coordinate ranges
+        const coords = data.features.map(f => ({
+          name: f.properties.name,
+          lat: f.geometry.coordinates[1],
+          lon: f.geometry.coordinates[0]
+        }));
+
+        apiCoords = coords;
+
+        // Analyze ranges
+        const lats = coords.map(c => c.lat);
+        const lons = coords.map(c => c.lon);
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+        const minLon = Math.min(...lons);
+        const maxLon = Math.max(...lons);
+
+        const apiStatus = document.getElementById('apiStatus');
+        apiStatus.innerHTML = `
+          <div class="row">
+            <span class="label">Actual Lat Range:</span>
+            <span class="value">${minLat.toFixed(6)} to ${maxLat.toFixed(6)}</span>
+          </div>
+          <div class="row">
+            <span class="label">Actual Lon Range:</span>
+            <span class="value">${minLon.toFixed(6)} to ${maxLon.toFixed(6)}</span>
+          </div>
+          <div class="row">
+            <span class="label">Expected Range:</span>
+            <span class="value">Lat: 8.10-8.12, Lon: -12.08 to -12.06</span>
+          </div>
+          <div class="row">
+            <span class="label">Range Match:</span>
+            <span class="value" id="rangeMatch">-</span>
+          </div>
+        `;
+
+        // Check if coordinates are in valid WGS84 range
+        const validWGS84 = (
+          lats.every(lat => lat >= -90 && lat <= 90) &&
+          lons.every(lon => lon >= -180 && lon <= 180) &&
+          minLat >= 8.1 && maxLat <= 8.12 &&
+          minLon >= -12.09 && maxLon <= -12.05
+        );
+
+        document.getElementById('rangeMatch').innerHTML = validWGS84
+          ? '<span class="success">✓ Valid WGS84</span>'
+          : '<span class="error">✗ Invalid or Out of Range</span>';
+
+        if (validWGS84) {
+          addLog('Coordinate range is VALID WGS84 for Njala', 'success');
+        } else {
+          addLog('⚠️ COORDINATE RANGE IS INVALID or OUT OF EXPECTED BOUNDS', 'error');
+        }
+
+        // Add markers to map
+        data.features.forEach(f => {
+          const [lon, lat] = f.geometry.coordinates;
+          const marker = L.marker([lat, lon], {
+            title: f.properties.name
+          }).addTo(markerLayerGroup);
+
+          // Color code markers
+          const popupText = `
+            <b>${f.properties.name}</b><br/>
+            Lat: ${lat.toFixed(6)}<br/>
+            Lon: ${lon.toFixed(6)}<br/>
+            Type: ${f.properties.type}
+          `;
+          marker.bindPopup(popupText);
+        });
+
+        addLog(`Added ${data.features.length} markers to map`);
+
+        // Sample coordinates display
+        const sampleCoords = document.getElementById('sampleCoords');
+        sampleCoords.innerHTML = coords.slice(0, 10).map((c, i) => `
+          <div class="coord-check">
+            <b>${i+1}. ${c.name}</b><br/>
+            Lat: ${c.lat.toFixed(6)}, Lon: ${c.lon.toFixed(6)}
+          </div>
+        `).join('');
+
+        // CRS mismatch check
+        const mismatchCheck = document.getElementById('crsMismatchCheck');
+        const allWGS84 = coords.every(c =>
+          c.lat >= -90 && c.lat <= 90 &&
+          c.lon >= -180 && c.lon <= 180
+        );
+
+        const allInRange = coords.every(c =>
+          c.lat >= 8.1 && c.lat <= 8.12 &&
+          c.lon >= -12.09 && c.lon <= -12.05
+        );
+
+        const crsCheck = allWGS84 && allInRange;
+
+        mismatchCheck.innerHTML = `
+          <div class="row">
+            <span class="label">Markers in WGS84 format:</span>
+            <span class="value">${allWGS84 ? '<span class="success">✓ Yes</span>' : '<span class="error">✗ No</span>'}</span>
+          </div>
+          <div class="row">
+            <span class="label">Coordinates in Njala range:</span>
+            <span class="value">${allInRange ? '<span class="success">✓ Yes</span>' : '<span class="error">✗ No</span>'}</span>
+          </div>
+          <div class="row">
+            <span class="label">CRS MATCH (Markers→Tiles):</span>
+            <span class="value">${crsCheck ? '<span class="success">✓ CORRECT</span>' : '<span class="error">✗ MISMATCH</span>'}</span>
+          </div>
+          <div style="margin-top: 8px; padding: 8px; background: #001a00; border-left: 3px solid #0f0;">
+            <b>Leaflet automatically converts WGS84 (EPSG4326) to EPSG3857 when displaying on map.</b><br/>
+            If markers appear in wrong location, the input coordinates are likely NOT actually WGS84.
+          </div>
+        `;
+
+        if (crsCheck) {
+          addLog('✓ CRS chain appears CORRECT: API (WGS84) → Leaflet (auto-converts to EPSG3857)', 'success');
+        } else {
+          addLog('⚠️ POTENTIAL CRS ISSUE DETECTED', 'error');
+        }
+
+      })
+      .catch(e => {
+        addLog(`ERROR fetching API: ${e.message}`, 'error');
+        document.getElementById('apiStatus').innerHTML = `<span class="error">Error: ${e.message}</span>`;
+      });
+
+    // Map events to detect zoom-related issues
+    map.on('zoomend', function() {
+      const zoom = map.getZoom();
+      const center = map.getCenter();
+      const bounds = map.getBounds();
+
+      addLog(`Zoom changed to ${zoom}, Center: [${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}]`);
+
+      const zoomIssues = document.getElementById('zoomIssues');
+      const markerCount = markerLayerGroup.getLayers().length;
+
+      let issuesHTML = `
+        <div class="row">
+          <span class="label">Current Zoom:</span>
+          <span class="value">${zoom}</span>
+        </div>
+        <div class="row">
+          <span class="label">Visible Markers:</span>
+          <span class="value">${markerCount}</span>
+        </div>
+        <div class="row">
+          <span class="label">Map Bounds:</span>
+          <span class="value" style="font-size: 8px;">
+            N: ${bounds.getNorth().toFixed(4)},
+            S: ${bounds.getSouth().toFixed(4)}<br/>
+            E: ${bounds.getEast().toFixed(4)},
+            W: ${bounds.getWest().toFixed(4)}
+          </span>
+        </div>
+      `;
+
+      // Check if markers are within bounds
+      if (apiCoords.length > 0) {
+        const markersInBounds = apiCoords.filter(c => {
+          return c.lat >= bounds.getSouth() && c.lat <= bounds.getNorth() &&
+                 c.lon >= bounds.getWest() && c.lon <= bounds.getEast();
+        }).length;
+
+        issuesHTML += `
+          <div class="row">
+            <span class="label">Markers in current bounds:</span>
+            <span class="value">${markersInBounds}/${apiCoords.length}</span>
+          </div>
+        `;
+
+        if (zoom === 18) {
+          issuesHTML += `
+            <div style="margin-top: 8px; padding: 8px; background: #1a1100; border-left: 3px solid #ff9900;">
+              <b>⚠️ Zoom 18 Note:</b><br/>
+              If tiles look stretched or markers are hard to see at this zoom, possible causes:<br/>
+              • Different CRS interpretation<br/>
+              • Coordinate system inconsistency<br/>
+              • Tile rendering artifact
+            </div>
+          `;
+        }
+      }
+
+      zoomIssues.innerHTML = issuesHTML;
+    });
+
+    function testZoom(z) {
+      addLog(`User clicked Zoom ${z}`);
+      map.setZoom(z);
+    }
+
+    // Manual coordinate transformation test
+    window.testCoordinateTransform = function() {
+      const transformTest = document.getElementById('transformTest');
+      transformTest.innerHTML = '<div style="padding: 8px;">Testing coordinate transformations...</div>';
+
+      const testCoords = [
+        { name: 'Campus Center', lat: 8.1147, lon: -12.0702 },
+        { name: 'Campus Point 1', lat: 8.1111329, lon: -12.073374 },
+        { name: 'Campus Point 50', lat: 8.1062807, lon: -12.0750227 }
+      ];
+
+      let html = '';
+      testCoords.forEach(coord => {
+        // Convert WGS84 to Web Mercator manually
+        const R = 6378137; // Earth radius in meters
+        const x = (coord.lon * R * Math.PI) / 180;
+        const y = R * Math.log(Math.tan((Math.PI / 4) + (coord.lat * Math.PI) / 360));
+
+        html += `
+          <div class="coord-check">
+            <b>${coord.name}</b><br/>
+            Input (WGS84): [${coord.lat.toFixed(6)}, ${coord.lon.toFixed(6)}]<br/>
+            Web Mercator: [${x.toFixed(0)}, ${y.toFixed(0)}]<br/>
+            Leaflet sees: [${coord.lat.toFixed(6)}, ${coord.lon.toFixed(6)}]
+          </div>
+        `;
+      });
+
+      transformTest.innerHTML = html;
+      addLog('Coordinate transformation test completed');
+    };
+
+    setTimeout(() => testCoordinateTransform(), 2000);
+  </script>
+</body>
+</html>

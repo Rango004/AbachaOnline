@@ -1,0 +1,27 @@
+services:
+  osrm:
+    image: osrm/osrm-backend:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount directory containing Sierra Leone OSM data
+      - ./osrm-data:/data
+    # Preprocess data and run OSRM server
+    stdin_open: true
+    tty: true
+    working_dir: /data
+    command: sh -c "echo 'Preprocessing OSRM data...' && osrm-extract -p /opt/car.lua sierra-leone-latest.osm.pbf && osrm-partition sierra-leone-latest.osrm && osrm-customize sierra-leone-latest.osrm && echo 'Starting OSRM server...' && osrm-routed --algorithm mld sierra-leone-latest.osrm --port 5000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/route/v1/driving/-12.071,8.112;-12.072,8.113?overview=false || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    environment:
+      - OSRM_DATA_PATH=/data
+    networks:
+      - wego-network
+
+networks:
+  wego-network:
+    driver: bridge

@@ -1,0 +1,231 @@
+/* MapLibre GL Styles - Clean & Minimal */
+
+.maplibre-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #f5f5f5;
+}
+
+.maplibre-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* MapLibre GL default styles override */
+.maplibre-container .maplibregl-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.maplibre-container .maplibregl-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Loading & Error States */
+.map-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 24px 40px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  color: #666;
+  font-weight: 500;
+  font-size: 1em;
+}
+
+.map-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  background: #fee;
+  padding: 20px 40px;
+  border-radius: 8px;
+  border-left: 4px solid #f44;
+  color: #d32f2f;
+  font-weight: 500;
+  max-width: 300px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* MapLibre Controls */
+.maplibregl-ctrl-group {
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.maplibregl-ctrl button {
+  width: 48px;
+  height: 48px;
+  padding: 12px;
+  background: white;
+  border: 1px solid #ddd;
+  color: #2196F3;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.maplibregl-ctrl button:hover {
+  background: #f0f0f0;
+  color: #1976D2;
+}
+
+.maplibregl-ctrl button:first-child {
+  border-radius: 4px 4px 0 0;
+}
+
+.maplibregl-ctrl button:last-child {
+  border-radius: 0 0 4px 4px;
+}
+
+/* Attribution */
+.maplibregl-ctrl-attrib {
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: #2196F3;
+  text-decoration: none;
+}
+
+.maplibregl-ctrl-attrib a:hover {
+  text-decoration: underline;
+}
+
+/* Popups */
+.maplibregl-popup {
+  max-width: 350px;
+  z-index: 1000;
+}
+
+.maplibregl-popup-content {
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.maplibregl-popup-content b {
+  color: #333;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* Enhanced Popup Styling */
+.maplibregl-popup-content a {
+  color: #2196F3;
+  text-decoration: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.maplibregl-popup-content a:hover {
+  text-decoration: underline;
+}
+
+/* ETA Label Styling */
+.stop-eta-label {
+  background: rgba(51, 51, 51, 0.85);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  display: inline-block;
+  margin-top: -4px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Distance Label Styling */
+.distance-label {
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  display: inline-block;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Stop Marker Hover Effects */
+.stop-marker-hover {
+  filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6));
+  transform: scale(1.1);
+}
+
+/* Status-based Marker Styling */
+.stop-marker-delivered {
+  opacity: 0.7;
+}
+
+.stop-marker-in-delivery {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.maplibregl-popup-close-button {
+  font-size: 20px;
+  padding: 0 8px;
+}
+
+.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+  border-bottom-color: white;
+}
+
+/* Marker cursor feedback */
+.maplibregl-canvas {
+  cursor: grab;
+}
+
+.maplibregl-canvas.maplibregl-interactive:active {
+  cursor: grabbing;
+}
+
+/* Ensure proper sizing in all contexts */
+@supports (aspect-ratio: 1) {
+  .maplibre-wrapper {
+    aspect-ratio: auto;
+  }
+}
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  .maplibregl-ctrl button {
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+  }
+
+  .maplibregl-ctrl-attrib {
+    font-size: 10px;
+  }
+}

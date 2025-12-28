@@ -1,0 +1,26 @@
+{
+  "name": "abachaonline-frontend",
+  "version": "1.0.0",
+  "description": "AbachaOnline - Offline-first Campus Delivery PWA",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "idb": "^8.0.0",
+    "leaflet": "^1.9.4",
+    "maplibre-gl": "^5.14.0",
+    "preact": "^10.19.3",
+    "preact-router": "^4.1.2",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.8.1",
+    "vite": "^7.2.7",
+    "vite-plugin-pwa": "^1.2.0",
+    "workbox-window": "^7.0.0"
+  }
+}

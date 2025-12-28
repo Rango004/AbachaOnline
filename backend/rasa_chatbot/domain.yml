@@ -1,0 +1,358 @@
+# RASA Domain for AbachaOnline Bilingual Chatbot (English + Krio)
+# Defines intents, entities, slots, responses, actions, and forms
+# Updated with product enquiry intents and bilingual responses
+
+version: "3.1"
+
+intents:
+  - greet
+  - goodbye
+  - thank_you
+  - check_order_status
+  - inform_order_id
+  - request_refund
+  - product_search
+  - ask_product_price
+  - ask_product_availability
+  - ask_product_details
+  - ask_delivery_time
+  - ask_payment_methods
+  - complaint
+  - talk_to_human
+  - ask_about_merchant
+  - affirm
+  - deny
+  - bot_challenge
+  - ask_how_to_order
+  - order_product
+  - compare_products
+  - ask_recommendations
+  - ask_budget_products
+  - ask_bot_name
+  - ask_bot_capabilities
+  - ask_language_support
+  - express_frustration
+  - out_of_scope
+  - nlu_fallback
+
+entities:
+  - order_id
+  - product_name
+  - product_category
+  - location
+  - price
+  - merchant_name
+
+slots:
+  order_id:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: order_id
+
+  product_query:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_text
+        conditions:
+          - active_loop: null
+            requested_slot: null
+
+  product_name:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: product_name
+
+  product_category:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: product_category
+
+  customer_id:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  merchant_id:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  location:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: location
+
+  order_found:
+    type: bool
+    influence_conversation: true
+    mappings:
+      - type: custom
+
+  refund_status:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: custom
+
+  escalation_status:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: custom
+
+  price:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: price
+
+  merchant_name:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: merchant_name
+
+  order_placed:
+    type: bool
+    influence_conversation: true
+    mappings:
+      - type: custom
+
+responses:
+  # ============================================================
+  # GREETINGS (English + Krio)
+  # ============================================================
+  utter_greet:
+    - text: "Hello! Welcome to AbachaOnline. How can I help you today? You can search for products, check your order, or ask about delivery."
+    - text: "Hi there! I'm here to assist you with orders, products, and deliveries. What can I do for you?"
+    - text: "Welcome to AbachaOnline! Looking for something specific? Try saying 'find rice' or 'show me phones'."
+    - text: "Kushɛ! Wɛlkɔm to AbachaOnline. Wetin a go ɛp yu wit tide? Yu kin sach fɔ prɔdak, chɛk yu oda, ɔ aks bɔt dilibri."
+    - text: "Aw di bɔdi! A de ya fɔ ɛp yu wit oda, prɔdak, ɛn dilibri. Wetin yu nid?"
+    - text: "Wɛlkɔm to AbachaOnline! Yu de luk fɔ sɔmtin? Trai se 'fɛn rais' ɔ 'sho mi fon dɛn'."
+
+  # ============================================================
+  # GOODBYE (English + Krio)
+  # ============================================================
+  utter_goodbye:
+    - text: "Goodbye! Have a great day! Come back anytime you need help."
+    - text: "Thank you for using AbachaOnline. See you soon!"
+    - text: "Take care! Happy shopping!"
+    - text: "Gud bay! Mek yu de fayn! Kam bak ɛni taym yu nid ɛp."
+    - text: "Tɛnki fɔ yuz AbachaOnline. Wi go si bak!"
+    - text: "Tek kia! Api shɔpin!"
+
+  # ============================================================
+  # THANK YOU (English + Krio)
+  # ============================================================
+  utter_thank_you:
+    - text: "You're welcome! Is there anything else I can help with?"
+    - text: "Happy to help! Let me know if you need anything else."
+    - text: "No problem! Feel free to ask more questions."
+    - text: "Yu wɛlkɔm! Ɛni ɔda tin we a go ɛp yu wit?"
+    - text: "A gladi fɔ ɛp! Tɛl mi if yu nid ɛnitin ɛls."
+    - text: "Nɔ prɔblɛm! Fil fri fɔ aks mɔ kwɛshɔn."
+
+  # ============================================================
+  # ORDER TRACKING (English + Krio)
+  # ============================================================
+  utter_ask_order_id:
+    - text: "Please provide your order tracking number (e.g., WG123456). You can find this in your order confirmation email or SMS."
+    - text: "What's your order number? It starts with 'WG' followed by 6 digits."
+    - text: "Duya gi mi yu oda traking nɔmba (lɛk WG123456). Yu kin fɛn am na yu oda kɔnfamɛshɔn imel ɔ SMS."
+    - text: "Wetin na yu oda nɔmba? I stat wit 'WG' ɛn 6 nɔmba dɛn de fala."
+
+  utter_no_order_found:
+    - text: "I couldn't find that order. Please check the order number and try again. If you need help, type 'talk to human'."
+    - text: "Sorry, no order found with that ID. Double-check the number or contact support."
+    - text: "A nɔ bin ebul fɔ fɛn da oda. Duya chɛk di oda nɔmba ɛn tray bak. If yu nid ɛp, tayp 'tɔk to pɔsin'."
+    - text: "Sɔri, nɔ oda de wit da ID. Chɛk di nɔmba gud-gud ɔ kɔntakt sɔpɔt."
+
+  # ============================================================
+  # DELIVERY TIME (English + Krio)
+  # ============================================================
+  utter_delivery_time_general:
+    - text: "Delivery times vary by location:\n• On-campus (Njala): 30-60 minutes\n• Off-campus: 2-3 hours\n• Freetown: Same day or next day\n\nYou'll receive updates via SMS."
+    - text: "We deliver fast! Campus deliveries usually take under an hour. Off-campus takes 2-3 hours depending on your location."
+    - text: "Dilibri taym difrɛnt pan usai yu de:\n• Insay kampus (Njala): 30-60 minit\n• Awtsay kampus: 2-3 awa\n• Freetown: Sem de ɔ nɛks de\n\nYu go gɛt SMS fɔ no wetin de apin."
+    - text: "Wi de dilibɛ kwik! Kampus dilibri kin tek les dan wan awa. Awtsay kampus tek 2-3 awa dipɛndin pan usai yu de."
+
+  # ============================================================
+  # PAYMENT METHODS (English + Krio)
+  # ============================================================
+  utter_payment_methods:
+    - text: "We accept the following payment methods:\n• Mobile Money (Orange Money, Africell Money)\n• Cash on Delivery\n• Bank Transfer\n\nMobile money is fastest!"
+    - text: "You can pay with:\n1. Orange Money\n2. Africell Money\n3. Cash when you receive your order\n4. Bank transfer"
+    - text: "Wi de tek dɛn ya we fɔ pe:\n• Mobayl Mɔni (Orange Money, Africell Money)\n• Kash pan Dilibri\n• Bank Transfer\n\nMobayl mɔni na di fas wan!"
+    - text: "Yu kin pe wit:\n1. Orange Money\n2. Africell Money\n3. Kash we yu gɛt yu oda\n4. Bank transfer"
+
+  # ============================================================
+  # REFUND (English + Krio)
+  # ============================================================
+  utter_refund_initiated:
+    - text: "I've initiated your refund request. You should receive confirmation within 24 hours. Refunds are processed within 3-5 business days.\n\n📧 Check your email for confirmation\n🔗 [Track status](/orders)"
+    - text: "Refund request submitted! Check your email for confirmation.\n\n🔗 [View your orders](/orders)"
+    - text: "A dɔn stat yu rifɔnd rikwɛst. Yu go gɛt kɔnfamɛshɔn insay 24 awa. Rifɔnd dɛn de prosɛs insay 3-5 biznɛs de.\n\n📧 Chɛk yu imel fɔ kɔnfamɛshɔn\n🔗 [Chɛk status](/orders)"
+    - text: "Rifɔnd rikwɛst dɔn sɛnd! Chɛk yu imel fɔ kɔnfamɛshɔn.\n\n🔗 [Luk yu oda dɛn](/orders)"
+
+  utter_refund_failed:
+    - text: "This order has been delivered and cannot be refunded through chat.\n\n🔗 [Submit a refund request here](/refunds/request)\n📋 [View order details](/orders)\n💬 Or type 'talk to human' for support"
+    - text: "Dis oda dɔn dilibɛ ɛn yu nɔ kin gɛt rifɔnd tru chat.\n\n🔗 [Sɛnd rifɔnd rikwɛst ya](/refunds/request)\n📋 [Luk oda ditels](/orders)\n💬 Ɔ tayp 'tɔk to pɔsin' fɔ sɔpɔt"
+
+  # ============================================================
+  # COMPLAINTS (English + Krio)
+  # ============================================================
+  utter_complaint_received:
+    - text: "I'm sorry to hear that. I've logged your complaint and our support team will contact you shortly. Would you like to speak with a human agent now?"
+    - text: "Sorry for the inconvenience. Your complaint has been recorded. Type 'talk to human' if you need immediate assistance."
+    - text: "A sɔri fɔ yɛ da. A dɔn rayt yu kɔmplɛnt ɛn wi sɔpɔt tim go kɔntakt yu kwik-kwik. Yu want tɔk to pɔsin naw?"
+    - text: "Sɔri fɔ di wɔri. Wi dɔn rekɔd yu kɔmplɛnt. Tayp 'tɔk to pɔsin' if yu nid ɛp naw naw."
+
+  # ============================================================
+  # HUMAN ESCALATION (English + Krio)
+  # ============================================================
+  utter_escalate_to_human:
+    - text: "I'm connecting you with a customer support representative. They'll be with you shortly. Please wait..."
+    - text: "Transferring you to human support. A representative will join the chat soon."
+    - text: "A de kɔnɛkt yu wit kɔstɔma sɔpɔt pɔsin. Dɛn go de wit yu naw naw. Duya wet smɔl..."
+    - text: "A de transfɛ yu to yuman sɔpɔt. Wan pɔsin go jɔyn di chat suntɛm."
+
+  # ============================================================
+  # PRODUCT SEARCH RESPONSES (English + Krio)
+  # ============================================================
+  utter_product_not_found:
+    - text: "I couldn't find any products matching your search. Try different keywords or browse our categories."
+    - text: "No products found. Try searching for something else like 'food', 'electronics', or specific items like 'rice'."
+    - text: "A nɔ bin fɛn ɛni prɔdak we mach yu sach. Tray difrɛnt wɔd ɔ braws wi kategɔri dɛn."
+    - text: "Nɔ prɔdak fɔn. Trai sach fɔ sɔmtin ɛls lɛk 'fud', 'ilɛktrɔnik', ɔ spɛsifik tin lɛk 'rais'."
+
+  utter_product_price_info:
+    - text: "Here's the price information for your requested product. Prices are in Sierra Leonean Leones (SLL)."
+    - text: "Na ya di prais infɔmɛshɔn fɔ di prɔdak we yu aks. Prais dɛn na Sierra Leone Leones (SLL)."
+
+  utter_product_availability:
+    - text: "Let me check the availability for you..."
+    - text: "A de chɛk di avɛlebiliti fɔ yu..."
+
+  utter_product_details:
+    - text: "Here are the details for the product you asked about:"
+    - text: "Na ya di ditels fɔ di prɔdak we yu aks bɔt:"
+
+  # ============================================================
+  # ORDER CONFIRMATION (English + Krio)
+  # ============================================================
+  utter_order_confirmation:
+    - text: "Just to confirm, you want to order {product_name}? Reply 'yes' to confirm or 'no' to cancel."
+    - text: "Ready to order {product_name}? Say 'yes' to proceed or 'no' to cancel."
+    - text: "Fɔ kɔnfam, yu want fɔ ɔda {product_name}? Ansa 'yɛs' fɔ kɔnfam ɔ 'nɔ' fɔ kansɛl."
+    - text: "Rɛdi fɔ ɔda {product_name}? Se 'yɛs' fɔ go ɔn ɔ 'nɔ' fɔ kansɛl."
+
+  utter_order_cancelled:
+    - text: "Order cancelled. Let me know if you'd like to search for something else."
+    - text: "No problem, order cancelled. What else can I help you with?"
+    - text: "Oda dɔn kansɛl. Tɛl mi if yu want sach fɔ sɔmtin ɛls."
+    - text: "Nɔ prɔblɛm, oda kansɛl. Wetin ɛls a kin ɛp yu wit?"
+
+  utter_order_placed:
+    - text: "Your order has been placed! You'll receive a confirmation SMS with your order number. Thank you for shopping with AbachaOnline!"
+    - text: "Yu oda dɔn ples! Yu go gɛt kɔnfamɛshɔn SMS wit yu oda nɔmba. Tɛnki fɔ shɔp wit AbachaOnline!"
+
+  # ============================================================
+  # HOW TO ORDER (English + Krio)
+  # ============================================================
+  utter_how_to_order:
+    - text: "Ordering is easy!\n1. Search for a product (e.g., 'find rice' or 'show me phones')\n2. Ask about price or availability\n3. Say 'I want to order [product]'\n4. Confirm your order\n5. Choose payment method\n\nTry it now: What would you like to find?"
+    - text: "Ɔda na izi tin!\n1. Sach fɔ prɔdak (lɛk 'fɛn rais' ɔ 'sho mi fon dɛn')\n2. Aks bɔt prais ɔ if i de\n3. Se 'A want ɔda [prɔdak]'\n4. Kɔnfam yu oda\n5. Pik aw fɔ pe\n\nTrai am naw: Wetin yu want fɛn?"
+
+  # ============================================================
+  # BOT IDENTITY (English + Krio)
+  # ============================================================
+  utter_iamabot:
+    - text: "I'm the AbachaOnline assistant, an AI chatbot powered by RASA. I can help with product searches, order tracking, deliveries, and more! For complex issues, I can connect you to a human."
+    - text: "Yes, I'm a bot! But I'm pretty smart. I understand both English and Krio. How can I help you today?"
+    - text: "A na AbachaOnline assistant, AI chatbot we RASA de rayn am. A kin ɛp wit prɔdak sach, oda trakin, dilibri, ɛn mɔ! Fɔ at prɔblɛm, a kin kɔnɛkt yu to pɔsin."
+    - text: "Ya, a na bot! Bɔt a sabi bɔku tin. A ɔndastand English ɛn Krio. Aw a kin ɛp yu tide?"
+
+  # ============================================================
+  # BOT IDENTITY - Name and Capabilities
+  # ============================================================
+  utter_bot_name:
+    - text: "My name is **Al-Ameen**! 🤖 I'm your friendly AbachaOnline shopping assistant. I'm here to help you find products, track orders, check prices, and more. What can I help you with today?"
+    - text: "I'm **Al-Ameen**, the AbachaOnline assistant! I can help you with:\n• 🔍 Finding products\n• 📦 Tracking orders\n• 💰 Checking prices\n• 🚚 Delivery info\n\nHow can I assist you?"
+    - text: "Mi nem na **Al-Ameen**! 🤖 A na yu frɛnd AbachaOnline shɔpin asistan. A de ya fɔ ɛp yu fɛn prɔdak, trak oda, chɛk prais, ɛn mɔ. Wetin a kin ɛp yu wit tide?"
+
+  utter_bot_capabilities:
+    - text: "I'm **Al-Ameen**, your AbachaOnline shopping assistant! 🛒 Here's what I can do:\n\n🔍 **Search Products**: 'find rice', 'show me phones'\n📦 **Track Orders**: 'where is my order WG123...'\n💰 **Check Prices**: 'how much is water?'\n💵 **Budget Search**: 'what can I buy with Le 500?'\n🚚 **Delivery Info**: 'how long is delivery?'\n💳 **Payment Methods**: 'how do I pay?'\n🔄 **Refunds**: 'I want a refund'\n💬 **Human Support**: 'talk to human'\n\nJust ask me anything about shopping on AbachaOnline!"
+    - text: "A na **Al-Ameen**, yu AbachaOnline asistan! 🛒 Wetin a kin du:\n\n🔍 **Fɛn Prɔdak**: 'fɛn rais', 'sho mi fon'\n📦 **Trak Oda**: 'usai mi oda de'\n💰 **Chɛk Prais**: 'ɔmɔs fɔ wata?'\n🚚 **Dilibri Info**: 'ɔlɔng fɔ dilibri?'\n💬 **Pɔsin Ɛp**: 'tɔk to pɔsin'\n\nAks mi ɛnitin bɔt shɔpin pan AbachaOnline!"
+
+  utter_language_support:
+    - text: "For now, I'm trained to respond in **English** and **Krio** 🇸🇱. I don't speak Limba, Temne, Mende, or Fullah yet - but we're working on it! Very soon, I'll be able to chat with you in more Sierra Leonean languages. 🙏\n\nIn the meantime, feel free to talk to me in English or Krio!"
+    - text: "Fɔ naw, a de tɔk **English** ɛn **Krio** 🇸🇱. A nɔ sabi Limba, Temne, Mende, ɔ Fullah yet - bɔt wi de wok pan am! Smɔl tem, a go sabi tɔk mɔ Salone langwej. 🙏\n\nFɔ naw, tɔk to mi na English ɔ Krio!"
+
+  utter_empathy_frustrated:
+    - text: "I'm really sorry you're frustrated 😔. I understand how annoying technical issues can be. Let me try to help you right away.\n\nCan you tell me:\n• What were you trying to do?\n• What went wrong?\n\nOr if you prefer, type 'talk to human' and I'll connect you with a real person who can help faster."
+    - text: "A sɔri tru tru 😔. A ɔndastand se dis tin de vɛks yu. Mek a trai ɛp yu naw naw.\n\nTɛl mi:\n• Wetin yu bin de trai du?\n• Wetin bin gɔ rɔng?\n\nƆ if yu want, tayp 'tɔk to pɔsin' ɛn a go kɔnɛkt yu wit pɔsin we go ɛp yu kwik."
+    - text: "I hear you, and I'm sorry for the trouble 💙. Your frustration is completely valid. Let's fix this together.\n\n🔄 Would you like me to:\n• Help you with your order?\n• Connect you to human support?\n• Try searching for something specific?\n\nI'm here for you!"
+
+  # ============================================================
+  # RECOMMENDATIONS (English + Krio)
+  # ============================================================
+  utter_recommendations:
+    - text: "Here are some popular products our customers love! You can ask for more details about any of them."
+    - text: "Na ya sɔm popula prɔdak we wi kɔstɔma dɛn lɛk! Yu kin aks fɔ mɔ ditels bɔt ɛni wan."
+
+  # ============================================================
+  # COMPARISON (English + Krio)
+  # ============================================================
+  utter_compare:
+    - text: "Let me compare those products for you. I'll show you the prices and key differences."
+    - text: "Lɛ a kɔmpia dɛn prɔdak fɔ yu. A go sho yu di prais dɛn ɛn di difrɛns."
+
+  # ============================================================
+  # OUT OF SCOPE (English + Krio)
+  # ============================================================
+  utter_out_of_scope:
+    - text: "I'm sorry, I can't help with that. I'm specialized in AbachaOnline shopping assistance - products, orders, and deliveries. Is there something related to shopping I can help with?"
+    - text: "That's outside what I can do. Try asking about products, orders, or deliveries!"
+    - text: "A sɔri, a nɔ ebul ɛp wit da. A spɛshalaiz na AbachaOnline shɔpin ɛp - prɔdak, oda, ɛn dilibri. Ɛni shɔpin tin we a kin ɛp wit?"
+    - text: "Da wan awtsay wetin a kin du. Trai aks bɔt prɔdak, oda, ɔ dilibri!"
+
+  # ============================================================
+  # DEFAULT FALLBACK (English + Krio)
+  # ============================================================
+  utter_default:
+    - text: "I'm sorry, I didn't understand that. You can:\n• Search products: 'find rice'\n• Check orders: 'where is my order'\n• Get help: 'talk to human'\n\nWhat would you like to do?"
+    - text: "A sɔri, a nɔ ɔndastand da. Yu kin:\n• Sach prɔdak: 'fɛn rais'\n• Chɛk oda: 'usai mi oda de'\n• Gɛt ɛp: 'tɔk to pɔsin'\n\nWetin yu want du?"
+
+actions:
+  - action_greet
+  - action_check_order_status
+  - action_search_products
+  - action_request_refund
+  - action_escalate_to_human
+  - action_get_merchant_info
+  - action_default_fallback
+  - action_confirm_order
+  - action_order_product
+  - action_get_product_price
+  - action_check_product_availability
+  - action_get_product_details
+  - action_compare_products
+  - action_get_recommendations
+  - action_search_by_budget
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

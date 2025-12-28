@@ -1,0 +1,146 @@
+# ===========================================
+# AbachaOnline .gitignore
+# ===========================================
+
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Environment files (NEVER commit secrets!)
+.env
+.env.local
+.env.production
+*.env
+
+# Build outputs
+dist/
+build/
+*.build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===========================================
+# RASA Chatbot
+# ===========================================
+backend/rasa_chatbot/.rasa/
+backend/rasa_chatbot/models/
+backend/rasa_chatbot/.cache/
+backend/rasa_chatbot/__pycache__/
+backend/rasa_chatbot/*.pyc
+backend/rasa_chatbot/venv/
+backend/rasa_chatbot/.venv/
+
+# RASA temp and cache
+.rasa/
+models/*.tar.gz
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+
+# ===========================================
+# Python
+# ===========================================
+venv/
+.venv/
+ENV/
+env/
+*.egg-info/
+.eggs/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ===========================================
+# Backend specific
+# ===========================================
+backend/nul
+backend/rasa_chatbot/nul
+backend/rasa_chatbot/cleanup_temp.bat
+backend/rasa_chatbot/clear_temp.bat
+backend/rasa_chatbot/fix_rasa_permissions.py
+backend/CHATBOT_API_FIX.md
+
+# Test files and scripts (not needed for production)
+backend/test*.js
+backend/test*.py
+backend/test*.json
+backend/*-test.js
+backend/*-test.html
+backend/.env.test
+backend/tests/
+backend/scripts/test*.js
+backend/scripts/test*.py
+backend/rasa_chatbot/test*.py
+*.osm.pbf
+
+# Development scripts folder (not needed for production)
+backend/scripts/
+
+# Misc files
+*.txt
+*.ps1
+Receipt*.pdf
+
+# ===========================================
+# Frontend specific
+# ===========================================
+frontend/dist/
+frontend/.cache/
+
+# ===========================================
+# Documentation (keep only essential README)
+# ===========================================
+*.md
+!README.md
+docs/
+
+# ===========================================
+# Scripts (Windows/Linux batch files)
+# ===========================================
+*.bat
+*.sh
+!backend/scripts/*.sh
+
+# ===========================================
+# Misc
+# ===========================================
+*.pdf
+*.docx
+*.doc
+coverage/
+.nyc_output/
+tmp/
+temp/
+*.tmp
+*.temp
+
+# OSRM data (large map files)
+backend/osrm-data/
+
+# Test files
+*.test.js.snap
+
+# Package locks (optional - some prefer to commit these)
+# package-lock.json
+# yarn.lock
+*.osm

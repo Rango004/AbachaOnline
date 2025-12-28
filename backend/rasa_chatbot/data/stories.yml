@@ -1,0 +1,279 @@
+# RASA Stories for AbachaOnline Bilingual Chatbot (English + Krio)
+# Defines conversation flows and dialogue management
+# Stories handle complex, conditional flows
+
+version: "3.1"
+
+stories:
+# ============================================================
+# GREETING FLOWS
+# ============================================================
+- story: greeting then product search
+  steps:
+  - intent: greet
+  - action: action_greet
+  - intent: product_search
+  - action: action_search_products
+
+- story: greeting then check order
+  steps:
+  - intent: greet
+  - action: action_greet
+  - intent: check_order_status
+  - action: action_check_order_status
+
+# ============================================================
+# ORDER TRACKING FLOWS
+# ============================================================
+- story: check order with ID success
+  steps:
+  - intent: check_order_status
+  - action: action_check_order_status
+
+- story: check order then delivery
+  steps:
+  - intent: check_order_status
+  - action: action_check_order_status
+  - intent: ask_delivery_time
+  - action: utter_delivery_time_general
+
+# ============================================================
+# PRODUCT SEARCH FLOWS
+# ============================================================
+- story: simple product search
+  steps:
+  - intent: product_search
+  - action: action_search_products
+
+- story: product search then ask price
+  steps:
+  - intent: product_search
+  - action: action_search_products
+  - intent: ask_product_price
+  - action: action_get_product_price
+
+- story: product search then ask availability
+  steps:
+  - intent: product_search
+  - action: action_search_products
+  - intent: ask_product_availability
+  - action: action_check_product_availability
+
+- story: product search then ask details
+  steps:
+  - intent: product_search
+  - action: action_search_products
+  - intent: ask_product_details
+  - action: action_get_product_details
+
+- story: product search then order confirm
+  steps:
+  - intent: product_search
+  - action: action_search_products
+  - intent: order_product
+  - action: action_confirm_order
+  - intent: affirm
+  - action: action_order_product
+
+- story: product search then order cancel
+  steps:
+  - intent: product_search
+  - action: action_search_products
+  - intent: order_product
+  - action: action_confirm_order
+  - intent: deny
+  - action: utter_order_cancelled
+
+- story: product search then merchant info
+  steps:
+  - intent: product_search
+  - action: action_search_products
+  - intent: ask_about_merchant
+  - action: action_get_merchant_info
+
+# ============================================================
+# PRODUCT ENQUIRY FLOWS
+# ============================================================
+- story: direct price enquiry
+  steps:
+  - intent: ask_product_price
+  - action: action_get_product_price
+
+- story: direct availability check
+  steps:
+  - intent: ask_product_availability
+  - action: action_check_product_availability
+
+- story: direct product details
+  steps:
+  - intent: ask_product_details
+  - action: action_get_product_details
+
+- story: price enquiry then order
+  steps:
+  - intent: ask_product_price
+  - action: action_get_product_price
+  - intent: order_product
+  - action: action_confirm_order
+  - intent: affirm
+  - action: action_order_product
+
+- story: product comparison
+  steps:
+  - intent: compare_products
+  - action: action_compare_products
+
+- story: ask for recommendations
+  steps:
+  - intent: ask_recommendations
+  - action: action_get_recommendations
+
+- story: recommendations then order
+  steps:
+  - intent: ask_recommendations
+  - action: action_get_recommendations
+  - intent: order_product
+  - action: action_confirm_order
+  - intent: affirm
+  - action: action_order_product
+
+# ============================================================
+# ORDERING FLOWS
+# ============================================================
+- story: direct order confirm
+  steps:
+  - intent: order_product
+  - action: action_confirm_order
+  - intent: affirm
+  - action: action_order_product
+
+- story: direct order cancel
+  steps:
+  - intent: order_product
+  - action: action_confirm_order
+  - intent: deny
+  - action: utter_order_cancelled
+
+- story: greet then how to order
+  steps:
+  - intent: greet
+  - action: action_greet
+  - intent: ask_how_to_order
+  - action: utter_how_to_order
+
+- story: how to order then search
+  steps:
+  - intent: ask_how_to_order
+  - action: utter_how_to_order
+  - intent: product_search
+  - action: action_search_products
+
+# ============================================================
+# REFUND FLOWS
+# ============================================================
+- story: request refund
+  steps:
+  - intent: request_refund
+  - action: action_request_refund
+
+# ============================================================
+# COMPLAINT AND SUPPORT FLOWS
+# ============================================================
+- story: complaint only
+  steps:
+  - intent: complaint
+  - action: utter_complaint_received
+
+- story: complaint then human
+  steps:
+  - intent: complaint
+  - action: utter_complaint_received
+  - intent: talk_to_human
+  - action: action_escalate_to_human
+
+- story: direct human request
+  steps:
+  - intent: talk_to_human
+  - action: action_escalate_to_human
+
+# ============================================================
+# MERCHANT INFO FLOWS
+# ============================================================
+- story: ask merchant info
+  steps:
+  - intent: ask_about_merchant
+  - action: action_get_merchant_info
+
+# ============================================================
+# THANK YOU AND GOODBYE FLOWS
+# ============================================================
+- story: product search then thank
+  steps:
+  - intent: product_search
+  - action: action_search_products
+  - intent: thank_you
+  - action: utter_thank_you
+
+- story: order complete then thank and bye
+  steps:
+  - intent: order_product
+  - action: action_confirm_order
+  - intent: affirm
+  - action: action_order_product
+  - intent: thank_you
+  - action: utter_thank_you
+  - intent: goodbye
+  - action: utter_goodbye
+
+# ============================================================
+# COMPLEX MULTI-TURN FLOWS
+# ============================================================
+- story: full shopping journey
+  steps:
+  - intent: greet
+  - action: action_greet
+  - intent: product_search
+  - action: action_search_products
+  - intent: ask_product_price
+  - action: action_get_product_price
+  - intent: order_product
+  - action: action_confirm_order
+  - intent: affirm
+  - action: action_order_product
+  - intent: ask_payment_methods
+  - action: utter_payment_methods
+  - intent: thank_you
+  - action: utter_thank_you
+
+- story: browse compare and order
+  steps:
+  - intent: ask_recommendations
+  - action: action_get_recommendations
+  - intent: compare_products
+  - action: action_compare_products
+  - intent: order_product
+  - action: action_confirm_order
+  - intent: affirm
+  - action: action_order_product
+
+- story: price availability order
+  steps:
+  - intent: ask_product_price
+  - action: action_get_product_price
+  - intent: ask_product_availability
+  - action: action_check_product_availability
+  - intent: order_product
+  - action: action_confirm_order
+  - intent: affirm
+  - action: action_order_product
+
+- story: order then payment then delivery
+  steps:
+  - intent: order_product
+  - action: action_confirm_order
+  - intent: affirm
+  - action: action_order_product
+  - intent: ask_payment_methods
+  - action: utter_payment_methods
+  - intent: ask_delivery_time
+  - action: utter_delivery_time_general

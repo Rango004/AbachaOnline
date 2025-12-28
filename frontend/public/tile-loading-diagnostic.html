@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tile Loading Diagnostic</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      height: 100vh;
+    }
+
+    #map {
+      flex: 1;
+      position: relative;
+    }
+
+    .diagnostic-panel {
+      width: 400px;
+      background: white;
+      border-left: 1px solid #ddd;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .diagnostic-panel h2 {
+      color: #333;
+      font-size: 16px;
+      margin: 0;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #667eea;
+    }
+
+    .diagnostic-section {
+      background: #f9f9f9;
+      padding: 12px;
+      border-radius: 4px;
+      border-left: 3px solid #667eea;
+    }
+
+    .diagnostic-section h3 {
+      font-size: 13px;
+      color: #333;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .diagnostic-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      font-size: 12px;
+      gap: 8px;
+    }
+
+    .diagnostic-row label {
+      color: #666;
+      flex: 1;
+    }
+
+    .diagnostic-row value {
+      background: #fff;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: bold;
+      color: #333;
+      border: 1px solid #ddd;
+      font-family: monospace;
+      flex-shrink: 0;
+    }
+
+    .tile-stat {
+      background: white;
+      padding: 8px;
+      border-radius: 3px;
+      border: 1px solid #ddd;
+      margin: 4px 0;
+      font-size: 12px;
+      font-family: monospace;
+    }
+
+    .tile-stat.success {
+      border-left: 3px solid #4caf50;
+      background: #f1f8f5;
+    }
+
+    .tile-stat.error {
+      border-left: 3px solid #d32f2f;
+      background: #fde8e8;
+    }
+
+    .tile-stat.loading {
+      border-left: 3px solid #ff9800;
+      background: #fff3e0;
+    }
+
+    .control-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      flex: 1;
+      padding: 8px 12px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      transition: all 0.2s;
+      min-width: 120px;
+    }
+
+    button:hover {
+      background: #764ba2;
+      transform: translateY(-1px);
+    }
+
+    button.secondary {
+      background: #999;
+    }
+
+    button.secondary:hover {
+      background: #666;
+    }
+
+    .tile-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: white;
+    }
+
+    .tile-item {
+      padding: 6px 8px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 11px;
+      font-family: monospace;
+      color: #333;
+    }
+
+    .tile-item:last-child {
+      border-bottom: none;
+    }
+
+    .tile-item.error-tile {
+      background: #ffebee;
+      color: #d32f2f;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+
+    .status-indicator.success {
+      background: #4caf50;
+    }
+
+    .status-indicator.error {
+      background: #d32f2f;
+    }
+
+    .status-indicator.loading {
+      background: #ff9800;
+    }
+
+    .status-indicator.idle {
+      background: #999;
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .alert {
+      padding: 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      border-left: 4px solid;
+    }
+
+    .alert.warning {
+      background: #fff3e0;
+      border-color: #ff9800;
+      color: #e65100;
+    }
+
+    .alert.success {
+      background: #e8f5e9;
+      border-color: #4caf50;
+      color: #2e7d32;
+    }
+
+    .alert.error {
+      background: #ffebee;
+      border-color: #d32f2f;
+      color: #c62828;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+
+      .diagnostic-panel {
+        width: 100%;
+        height: 200px;
+        border-left: none;
+        border-top: 1px solid #ddd;
+      }
+
+      #map {
+        height: calc(100vh - 200px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="diagnostic-panel">
+    <h2>🔧 Tile Loading Diagnostic</h2>
+
+    <!-- Current Status -->
+    <div class="diagnostic-section">
+      <h3>Current Status</h3>
+      <div class="diagnostic-row">
+        <label>Map Status:</label>
+        <value id="mapStatus">Initializing...</value>
+      </div>
+      <div class="diagnostic-row">
+        <label>Zoom Level:</label>
+        <value id="zoomLevel">-</value>
+      </div>
+      <div class="diagnostic-row">
+        <label>Center:</label>
+        <value id="centerCoords">-</value>
+      </div>
+    </div>
+
+    <!-- Tile Statistics -->
+    <div class="diagnostic-section">
+      <h3>Tile Statistics</h3>
+      <div class="diagnostic-row">
+        <label>Tiles Loaded:</label>
+        <value id="tilesLoaded">0</value>
+      </div>
+      <div class="diagnostic-row">
+        <label>Tiles Errors:</label>
+        <value id="tilesError">0</value>
+      </div>
+      <div class="diagnostic-row">
+        <label>Tiles Loading:</label>
+        <value id="tilesLoading">0</value>
+      </div>
+      <div class="diagnostic-row">
+        <label>Success Rate:</label>
+        <value id="successRate">-</value>
+      </div>
+    </div>
+
+    <!-- Health Check -->
+    <div class="diagnostic-section" id="healthSection">
+      <h3>Health Check</h3>
+      <div id="healthStatus"></div>
+    </div>
+
+    <!-- Recent Tiles -->
+    <div class="diagnostic-section">
+      <h3>Recent Loaded Tiles</h3>
+      <div class="tile-list" id="tileList">
+        <div class="tile-item">No tiles loaded yet</div>
+      </div>
+    </div>
+
+    <!-- Recent Errors -->
+    <div class="diagnostic-section" id="errorSection" style="display: none;">
+      <h3>Recent Errors</h3>
+      <div class="tile-list" id="errorList"></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="diagnostic-section">
+      <h3>Test Controls</h3>
+      <div class="control-buttons">
+        <button onclick="testZoom(15)">Zoom 15</button>
+        <button onclick="testZoom(17)">Zoom 17</button>
+        <button onclick="testZoom(19)">Zoom 19</button>
+      </div>
+      <div class="control-buttons">
+        <button class="secondary" onclick="resetDiagnostics()">Reset Stats</button>
+        <button class="secondary" onclick="exportDiagnostics()">Export</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Fix Leaflet default icon
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+    });
+
+    // Initialize map
+    const map = L.map('map', {
+      crs: L.CRS.EPSG3857
+    }).setView([8.1147, -12.0702], 15);
+
+    // Diagnostic state
+    const diagnostics = {
+      tilesLoaded: 0,
+      tilesError: 0,
+      tilesLoading: new Set(),
+      recentTiles: [],
+      recentErrors: [],
+      startTime: Date.now()
+    };
+
+    // Add tile layer with enhanced monitoring
+    const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+      minZoom: 13,
+      keepBuffer: 4,
+      updateWhenZooming: true,
+      updateWhenIdle: true,
+      maxNativeZoom: 18,
+      minNativeZoom: 13,
+      zIndex: 1,
+      opacity: 1,
+      tms: false,
+      crossOrigin: 'anonymous',
+      headers: {
+        'Connection': 'keep-alive',
+        'Accept': 'image/webp,image/apng,image/*,*/*'
+      },
+      errorTileUrl: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="256" height="256"%3E%3Crect fill="%23f0f0f0" width="256" height="256"/%3E%3C/svg%3E',
+      fadeAnimation: false,
+      markerZoomAnimation: true,
+      detectRetina: true
+    }).addTo(map);
+
+    // Monitoring events
+    tileLayer.on('tileload', (e) => {
+      diagnostics.tilesLoaded++;
+      diagnostics.tilesLoading.delete(`${e.coords.z}/${e.coords.x}/${e.coords.y}`);
+      const tileId = `Z${e.coords.z} X${e.coords.x} Y${e.coords.y}`;
+      diagnostics.recentTiles.unshift(tileId);
+      if (diagnostics.recentTiles.length > 20) diagnostics.recentTiles.pop();
+      updateUI();
+    });
+
+    tileLayer.on('tileloadstart', (e) => {
+      diagnostics.tilesLoading.add(`${e.coords.z}/${e.coords.x}/${e.coords.y}`);
+      updateUI();
+    });
+
+    tileLayer.on('tileerror', (e) => {
+      diagnostics.tilesError++;
+      diagnostics.tilesLoading.delete(`${e.coords.z}/${e.coords.x}/${e.coords.y}`);
+      const errorId = `Z${e.coords.z} X${e.coords.x} Y${e.coords.y}`;
+      diagnostics.recentErrors.unshift(errorId);
+      if (diagnostics.recentErrors.length > 10) diagnostics.recentErrors.pop();
+      updateUI();
+    });
+
+    tileLayer.on('load', () => {
+      console.log(`[Tiles] ✓ Complete: ${diagnostics.tilesLoaded} loaded, ${diagnostics.tilesError} errors`);
+      updateUI();
+    });
+
+    // Update on map events
+    map.on('moveend', updateUI);
+    map.on('zoomend', updateUI);
+
+    function updateUI() {
+      // Update status
+      document.getElementById('mapStatus').textContent = '✓ Ready';
+      document.getElementById('zoomLevel').textContent = map.getZoom();
+      const center = map.getCenter();
+      document.getElementById('centerCoords').textContent = `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`;
+
+      // Update tile stats
+      document.getElementById('tilesLoaded').textContent = diagnostics.tilesLoaded;
+      document.getElementById('tilesError').textContent = diagnostics.tilesError;
+      document.getElementById('tilesLoading').textContent = diagnostics.tilesLoading.size;
+
+      const total = diagnostics.tilesLoaded + diagnostics.tilesError;
+      const rate = total > 0 ? ((diagnostics.tilesLoaded / total) * 100).toFixed(1) : '-';
+      document.getElementById('successRate').textContent = total > 0 ? rate + '%' : '-';
+
+      // Update health check
+      updateHealthCheck();
+
+      // Update tile list
+      const tileList = document.getElementById('tileList');
+      if (diagnostics.recentTiles.length > 0) {
+        tileList.innerHTML = diagnostics.recentTiles
+          .map(t => `<div class="tile-item tile-stat success">✓ ${t}</div>`)
+          .join('');
+      } else {
+        tileList.innerHTML = '<div class="tile-item">No tiles loaded yet</div>';
+      }
+
+      // Update error list
+      const errorSection = document.getElementById('errorSection');
+      const errorList = document.getElementById('errorList');
+      if (diagnostics.recentErrors.length > 0) {
+        errorSection.style.display = 'block';
+        errorList.innerHTML = diagnostics.recentErrors
+          .map(e => `<div class="tile-item error-tile">✗ ${e}</div>`)
+          .join('');
+      } else {
+        errorSection.style.display = 'none';
+      }
+    }
+
+    function updateHealthCheck() {
+      const total = diagnostics.tilesLoaded + diagnostics.tilesError;
+      const errorRate = total > 0 ? (diagnostics.tilesError / total) * 100 : 0;
+      let status = '';
+      let statusClass = '';
+
+      if (total === 0) {
+        status = '<span class="status-indicator idle"></span> Waiting for tiles...';
+        statusClass = '';
+      } else if (errorRate === 0) {
+        status = '<span class="status-indicator success"></span> ✓ All tiles loading successfully';
+        statusClass = 'alert success';
+      } else if (errorRate < 10) {
+        status = '<span class="status-indicator loading"></span> ⚠ Minor tile load issues (' + errorRate.toFixed(1) + '% errors)';
+        statusClass = 'alert warning';
+      } else {
+        status = '<span class="status-indicator error"></span> ✗ High tile load failure rate (' + errorRate.toFixed(1) + '% errors)';
+        statusClass = 'alert error';
+      }
+
+      const healthSection = document.getElementById('healthSection');
+      const healthStatus = document.getElementById('healthStatus');
+      healthStatus.innerHTML = status;
+      healthStatus.className = statusClass ? 'alert ' + statusClass : '';
+    }
+
+    function testZoom(zoom) {
+      map.setZoom(zoom);
+      console.log(`[Diagnostic] Testing zoom ${zoom}`);
+    }
+
+    function resetDiagnostics() {
+      diagnostics.tilesLoaded = 0;
+      diagnostics.tilesError = 0;
+      diagnostics.tilesLoading.clear();
+      diagnostics.recentTiles = [];
+      diagnostics.recentErrors = [];
+      diagnostics.startTime = Date.now();
+      updateUI();
+      console.log('[Diagnostic] Statistics reset');
+    }
+
+    function exportDiagnostics() {
+      const data = {
+        timestamp: new Date().toISOString(),
+        duration: (Date.now() - diagnostics.startTime) / 1000,
+        mapCenter: map.getCenter(),
+        mapZoom: map.getZoom(),
+        statistics: {
+          tilesLoaded: diagnostics.tilesLoaded,
+          tilesError: diagnostics.tilesError,
+          successRate: diagnostics.tilesLoaded + diagnostics.tilesError > 0
+            ? ((diagnostics.tilesLoaded / (diagnostics.tilesLoaded + diagnostics.tilesError)) * 100).toFixed(1)
+            : 'N/A'
+        }
+      };
+
+      const json = JSON.stringify(data, null, 2);
+      console.log('[Diagnostic] Export:', json);
+      alert('Diagnostic data exported to console. Check F12 console tab.');
+    }
+
+    // Initial update
+    updateUI();
+
+    console.log('%c[Diagnostic] Tile Loading Diagnostic Initialized', 'color: #667eea; font-weight: bold; font-size: 14px');
+    console.log('%cMonitoring:', 'font-weight: bold');
+    console.log('- Tiles loaded/failed');
+    console.log('- Zoom level changes');
+    console.log('- Map center coordinates');
+    console.log('- Tile loading events');
+    console.log('\nConfiguration:');
+    console.log('- CRS: Web Mercator (EPSG:3857)');
+    console.log('- keepBuffer: 4');
+    console.log('- updateWhenZooming: true');
+    console.log('- updateWhenIdle: true');
+    console.log('- minZoom: 13');
+    console.log('- maxNativeZoom: 18');
+  </script>
+</body>
+</html>

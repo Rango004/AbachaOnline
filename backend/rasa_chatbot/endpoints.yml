@@ -1,0 +1,26 @@
+# RASA Endpoints Configuration
+# Defines where RASA should send requests for custom actions and tracking
+
+# Custom Actions Server
+action_endpoint:
+  url: "http://localhost:5055/webhook"
+
+# Tracker Store (optional - uses in-memory by default)
+# tracker_store:
+#   type: sql
+#   dialect: "postgresql"
+#   url: "localhost"
+#   port: 5432
+#   username: "wego_user"
+#   password: "your_password"
+#   db: "wego_db"
+
+# Event Broker (optional - for async processing)
+# event_broker:
+#   type: sql
+#   dialect: "postgresql"
+#   url: "localhost"
+#   port: 5432
+#   username: "wego_user"
+#   password: "your_password"
+#   db: "wego_db"

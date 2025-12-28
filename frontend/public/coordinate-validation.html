@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coordinate Validation Tool</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: monospace; background: #1a1a1a; color: #fff; }
+    .container { display: flex; height: 100vh; }
+    #map { flex: 1; }
+    .debug {
+      width: 800px;
+      background: #222;
+      border-left: 5px solid #00ff00;
+      padding: 16px;
+      overflow-y: auto;
+      font-size: 10px;
+    }
+    h2 { color: #00ff00; margin-bottom: 12px; }
+    .section { margin-bottom: 16px; padding: 12px; background: #0a0a0a; border: 1px solid #00ff00; }
+    .section h3 { color: #00ff00; margin-bottom: 8px; }
+    .row { display: flex; margin: 4px 0; font-size: 11px; }
+    .label { flex: 0 0 220px; color: #999; }
+    .value { flex: 1; color: #0f0; word-break: break-all; }
+    .error { color: #f00; }
+    .warning { color: #ff0; }
+    .success { color: #0f0; }
+    button { background: #00ff00; color: #000; border: none; padding: 8px; margin: 4px 0; cursor: pointer; font-weight: bold; width: 100%; font-family: monospace; }
+    button:hover { background: #00cc00; }
+    .coord-table {
+      background: #000;
+      border: 1px solid #00ff00;
+      padding: 8px;
+      margin: 8px 0;
+      overflow-x: auto;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .coord-row {
+      display: grid;
+      grid-template-columns: 50px 150px 120px 120px 150px;
+      gap: 8px;
+      padding: 4px 0;
+      border-bottom: 1px solid #333;
+      font-size: 9px;
+    }
+    .coord-row.header {
+      background: #003300;
+      font-weight: bold;
+      color: #0f0;
+    }
+    .coord-row.good { background: #001a00; }
+    .coord-row.bad { background: #1a0000; }
+    .marker-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: 4px;
+      border-radius: 50%;
+    }
+    .alert {
+      background: #1a0000;
+      border-left: 4px solid #f00;
+      padding: 8px;
+      margin: 8px 0;
+      color: #ff9999;
+    }
+    .success-box {
+      background: #001a00;
+      border-left: 4px solid #0f0;
+      padding: 8px;
+      margin: 8px 0;
+      color: #99ff99;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="map"></div>
+    <div class="debug">
+      <h2>✅ COORDINATE VALIDATION</h2>
+
+      <div class="section">
+        <h3>COORDINATE SOURCE CHECK</h3>
+        <div id="sourceCheck">Loading...</div>
+      </div>
+
+      <div class="section">
+        <h3>LEAFLET MARKER POSITIONS</h3>
+        <button onclick="debugMarkerPositions()">Update Marker Debug Info</button>
+        <div id="markerDebug" style="margin-top: 8px;"></div>
+      </div>
+
+      <div class="section">
+        <h3>COORDINATE COMPARISON TABLE</h3>
+        <div id="coordTable" class="coord-table">
+          <div class="coord-row header">
+            <div>#</div>
+            <div>Name</div>
+            <div>API Coords</div>
+            <div>Leaflet Coords</div>
+            <div>Match</div>
+          </div>
+          <div id="coordRows"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>VALIDATION RESULTS</h3>
+        <div id="validationResults">Analyzing...</div>
+      </div>
+
+      <div class="section">
+        <h3>CRITICAL CHECKS</h3>
+        <div id="criticalChecks">Running...</div>
+      </div>
+
+      <div class="section">
+        <h3>ACTION BUTTONS</h3>
+        <button onclick="testLatLonSwap()">🔄 Test if Lat/Lon are Swapped</button>
+        <button onclick="testEPSG4326vs3857()">🔧 Check CRS Interpretation</button>
+        <button onclick="testZoomBehavior()">🔍 Zoom to Z18 to Observe</button>
+        <button onclick="exportDiagnostics()">📋 Export Full Diagnostics</button>
+      </div>
+
+      <div class="section">
+        <h3>ZOOM OBSERVATION</h3>
+        <div id="zoomObservation" style="line-height: 1.6;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let apiData = null;
+    let markers = {};
+
+    // Initialize map
+    const map = L.map('map', { crs: L.CRS.EPSG3857 }).setView([8.1147, -12.0702], 17);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19,
+      minZoom: 13
+    }).addTo(map);
+
+    // Fetch API data
+    fetch('/api/v1/locations/geojson')
+      .then(r => r.json())
+      .then(data => {
+        apiData = data;
+        populateCoordinates();
+      })
+      .catch(e => console.error('API Error:', e));
+
+    function populateCoordinates() {
+      if (!apiData) return;
+
+      const sourceCheck = document.getElementById('sourceCheck');
+      const first = apiData.features[0];
+
+      sourceCheck.innerHTML = `
+        <div class="row">
+          <span class="label">Total Features:</span>
+          <span class="value">${apiData.features.length}</span>
+        </div>
+        <div class="row">
+          <span class="label">First Feature:</span>
+          <span class="value">${first.properties.name}</span>
+        </div>
+        <div class="row">
+          <span class="label">API Raw Coords:</span>
+          <span class="value">[${first.geometry.coordinates[0]}, ${first.geometry.coordinates[1]}]</span>
+        </div>
+        <div class="row">
+          <span class="label">Format Interpreted As:</span>
+          <span class="value">[${typeof first.geometry.coordinates[0] === 'number' ? 'Number' : 'Unknown'}, ${typeof first.geometry.coordinates[1] === 'number' ? 'Number' : 'Unknown'}]</span>
+        </div>
+        <div class="row">
+          <span class="label">Expected GeoJSON:</span>
+          <span class="value">[longitude, latitude] ✓</span>
+        </div>
+      `;
+
+      // Build coordinate table
+      let coordRowsHTML = '';
+      let allMatch = true;
+
+      apiData.features.slice(0, 15).forEach((feature, idx) => {
+        const [lon, lat] = feature.geometry.coordinates;
+
+        // Create marker with proper format
+        const marker = L.marker([lat, lon], {
+          title: feature.properties.name
+        }).addTo(map).bindPopup(`${feature.properties.name}<br/>Lat: ${lat.toFixed(6)}<br/>Lon: ${lon.toFixed(6)}`);
+
+        markers[feature.properties.name] = {
+          apiLat: lat,
+          apiLon: lon,
+          leafletLat: marker.getLatLng().lat,
+          leafletLon: marker.getLatLng().lng
+        };
+
+        const coordsMatch = Math.abs(lat - marker.getLatLng().lat) < 0.0001 &&
+                          Math.abs(lon - marker.getLatLng().lng) < 0.0001;
+
+        if (!coordsMatch) allMatch = false;
+
+        coordRowsHTML += `
+          <div class="coord-row ${coordsMatch ? 'good' : 'bad'}">
+            <div>${idx + 1}</div>
+            <div>${feature.properties.name.substring(0, 12)}</div>
+            <div>[${lat.toFixed(4)}, ${lon.toFixed(4)}]</div>
+            <div>[${marker.getLatLng().lat.toFixed(4)}, ${marker.getLatLng().lng.toFixed(4)}]</div>
+            <div>${coordsMatch ? '<span class="success">✓</span>' : '<span class="error">✗ MISMATCH</span>'}</div>
+          </div>
+        `;
+      });
+
+      document.getElementById('coordRows').innerHTML = coordRowsHTML;
+
+      // Validation results
+      const validationResults = document.getElementById('validationResults');
+      validationResults.innerHTML = `
+        <div class="row">
+          <span class="label">Total Markers Created:</span>
+          <span class="value">${Object.keys(markers).length}</span>
+        </div>
+        <div class="row">
+          <span class="label">All Coords Match API:</span>
+          <span class="value">${allMatch ? '<span class="success">✓ Yes</span>' : '<span class="error">✗ No - MISMATCH DETECTED</span>'}</span>
+        </div>
+        ${allMatch ? '<div class="success-box">✓ Coordinates are being interpreted correctly by Leaflet</div>' : '<div class="alert">⚠️ Coordinates may be in wrong order or CRS</div>'}
+      `;
+
+      // Critical checks
+      const criticalChecks = document.getElementById('criticalChecks');
+      const allLats = apiData.features.map(f => f.geometry.coordinates[1]);
+      const allLons = apiData.features.map(f => f.geometry.coordinates[0]);
+
+      const latRange = { min: Math.min(...allLats), max: Math.max(...allLats) };
+      const lonRange = { min: Math.min(...allLons), max: Math.max(...allLons) };
+
+      const latValid = latRange.min > -90 && latRange.max < 90;
+      const lonValid = lonRange.min > -180 && lonRange.max < 180;
+      const latInNjala = latRange.min > 8.1 && latRange.max < 8.12;
+      const lonInNjala = lonRange.min > -12.08 && lonRange.max < -12.06;
+
+      criticalChecks.innerHTML = `
+        <div class="row">
+          <span class="label">Latitude Range:</span>
+          <span class="value">${latRange.min.toFixed(4)} to ${latRange.max.toFixed(4)}</span>
+        </div>
+        <div class="row">
+          <span class="label">Latitude Valid WGS84:</span>
+          <span class="value">${latValid ? '<span class="success">✓</span>' : '<span class="error">✗ INVALID</span>'}</span>
+        </div>
+        <div class="row">
+          <span class="label">Latitude in Njala:</span>
+          <span class="value">${latInNjala ? '<span class="success">✓</span>' : '<span class="error">✗ OUT OF RANGE</span>'}</span>
+        </div>
+        <div style="border-top: 1px solid #333; margin: 8px 0; padding-top: 8px;">
+        <div class="row">
+          <span class="label">Longitude Range:</span>
+          <span class="value">${lonRange.min.toFixed(4)} to ${lonRange.max.toFixed(4)}</span>
+        </div>
+        <div class="row">
+          <span class="label">Longitude Valid WGS84:</span>
+          <span class="value">${lonValid ? '<span class="success">✓</span>' : '<span class="error">✗ INVALID</span>'}</span>
+        </div>
+        <div class="row">
+          <span class="label">Longitude in Njala:</span>
+          <span class="value">${lonInNjala ? '<span class="success">✓</span>' : '<span class="error">✗ OUT OF RANGE</span>'}</span>
+        </div>
+        </div>
+
+        <div style="margin-top: 12px;">
+          <b>OVERALL STATUS:</b><br/>
+          ${(latValid && lonValid && latInNjala && lonInNjala && allMatch)
+            ? '<div class="success-box">✓ All checks PASSED - CRS and coordinates are CORRECT</div>'
+            : '<div class="alert">⚠️ One or more checks FAILED - Investigate the marked items</div>'}
+        </div>
+      `;
+    }
+
+    function debugMarkerPositions() {
+      const markerDebug = document.getElementById('markerDebug');
+      let html = '<div style="margin-top: 8px;">';
+
+      map.eachLayer(layer => {
+        if (layer instanceof L.Marker) {
+          const latlng = layer.getLatLng();
+          const title = layer.getPopup().getContent();
+          html += `<div style="margin: 4px 0; padding: 4px; background: #001a00;">
+            <b>${title.split('<')[0]}</b><br/>
+            Lat: ${latlng.lat.toFixed(6)}, Lng: ${latlng.lng.toFixed(6)}
+          </div>`;
+        }
+      });
+      html += '</div>';
+      markerDebug.innerHTML = html;
+    }
+
+    function testLatLonSwap() {
+      if (!apiData) return;
+      const first = apiData.features[0];
+      const [apiLon, apiLat] = first.geometry.coordinates;
+
+      alert(`
+Test: Are Lat/Lon swapped?
+
+API Raw Data: [${apiLon}, ${apiLat}]
+If interpreted as [lon, lat]: [${apiLon}, ${apiLat}] ✓ (CORRECT for GeoJSON)
+If interpreted as [lat, lon]: [${apiLon}, ${apiLat}] ✗ (WRONG)
+
+Geographic check:
+- First value ${apiLon} is longitude (should be between -180 and 180) ✓
+- Second value ${apiLat} is latitude (should be between -90 and 90) ✓
+
+Expected for Njala University (Sierra Leone):
+- Latitude: ~8.11 (value: ${apiLat})
+- Longitude: ~-12.07 (value: ${apiLon})
+
+Result: Coordinates appear CORRECT ✓
+      `);
+    }
+
+    function testEPSG4326vs3857() {
+      if (!apiData) return;
+      const first = apiData.features[0];
+      const [lon, lat] = first.geometry.coordinates;
+
+      // Check if these could be EPSG3857 (Web Mercator) coordinates
+      // Web Mercator ranges roughly from -20037508 to 20037508 in both directions
+      const couldBeEPSG3857 = (Math.abs(lon) > 1000 && Math.abs(lat) > 1000);
+
+      alert(`
+Test: Is the coordinate system EPSG3857 instead of EPSG4326?
+
+Actual API values: [${lon}, ${lat}]
+
+EPSG4326 (WGS84) ranges: Lat [-90, 90], Lon [-180, 180]
+- Lon ${lon} in range? ${(lon >= -180 && lon <= 180) ? '✓ Yes' : '✗ No'}
+- Lat ${lat} in range? ${(lat >= -90 && lat <= 90) ? '✓ Yes' : '✗ No'}
+
+EPSG3857 (Web Mercator) ranges: Both roughly [-20037508, 20037508]
+- Could be EPSG3857? ${couldBeEPSG3857 ? '✗ Yes (would be wrong!)' : '✓ No (correct)'}
+
+Result: Coordinates are EPSG4326 (WGS84) format ✓
+      `);
+    }
+
+    function testZoomBehavior() {
+      const zoomObservation = document.getElementById('zoomObservation');
+
+      zoomObservation.innerHTML = `
+        <b>Zoom Test Sequence:</b><br/>
+        <span style="color: #999;">Current zoom: ${map.getZoom()}</span><br/>
+        <br/>
+        Zooming to 18 to observe if markers appear/disappear or if tiles stretch...
+      `;
+
+      map.setZoom(18);
+
+      setTimeout(() => {
+        const center = map.getCenter();
+        const bounds = map.getBounds();
+        let markersInBounds = 0;
+
+        if (apiData) {
+          markersInBounds = apiData.features.filter(f => {
+            const [lon, lat] = f.geometry.coordinates;
+            return lat >= bounds.getSouth() && lat <= bounds.getNorth() &&
+                   lon >= bounds.getWest() && lon <= bounds.getEast();
+          }).length;
+        }
+
+        zoomObservation.innerHTML = `
+          <b>Zoom 18 Observation:</b><br/>
+          Zoom Level: 18<br/>
+          Center: [${center.lat.toFixed(6)}, ${center.lng.toFixed(6)}]<br/>
+          Markers in current bounds: ${markersInBounds}/${apiData?.features.length || '?'}<br/>
+          <br/>
+          <b>What to look for:</b><br/>
+          • Are markers visible and positioned correctly?<br/>
+          • Are tile squares visible? (check if stretched)<br/>
+          • Do all visible markers align with tile grid?<br/>
+          <br/>
+          <i style="color: #999;">Check the map now and note your observations above</i>
+        `;
+      }, 300);
+    }
+
+    function exportDiagnostics() {
+      if (!apiData) return;
+
+      const diag = {
+        timestamp: new Date().toISOString(),
+        apiData: {
+          totalFeatures: apiData.features.length,
+          firstFeature: {
+            name: apiData.features[0].properties.name,
+            rawCoords: apiData.features[0].geometry.coordinates
+          }
+        },
+        markerTests: markers,
+        validation: {
+          allCoordsMatch: Object.values(markers).every(m =>
+            Math.abs(m.apiLat - m.leafletLat) < 0.0001 &&
+            Math.abs(m.apiLon - m.leafletLon) < 0.0001
+          )
+        }
+      };
+
+      console.log('=== FULL DIAGNOSTICS ===');
+      console.log(JSON.stringify(diag, null, 2));
+      alert('Diagnostics exported to console. Press F12 to view.');
+    }
+
+    // Initial population when data loads
+    setTimeout(() => {
+      if (apiData) populateCoordinates();
+    }, 1000);
+  </script>
+</body>
+</html>

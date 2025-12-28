@@ -1,0 +1,434 @@
+[
+  {
+    "osm_id": "6323155",
+    "name": "Carteen",
+    "type": "building",
+    "latitude": 8.1126204,
+    "longitude": -12.0763981,
+    "source": "node"
+  },
+  {
+    "osm_id": "5712470",
+    "name": "Dinning Hall",
+    "type": "building",
+    "latitude": 8.1146368,
+    "longitude": -12.0687758,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Heavens 1",
+    "type": "building",
+    "latitude": 8.1174974,
+    "longitude": -12.0674132,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Heavens 2",
+    "type": "building",
+    "latitude": 8.1169224,
+    "longitude": -12.067421,
+    "source": "node"
+  },
+  {
+    "osm_id": "186592",
+    "name": "I Duplet SSQ",
+    "type": "building",
+    "latitude": 8.110627,
+    "longitude": -12.0788349,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "ICT Facility",
+    "type": "building",
+    "latitude": 8.1178388,
+    "longitude": -12.0691426,
+    "source": "node"
+  },
+  {
+    "osm_id": "6867593",
+    "name": "Internet Cafe",
+    "type": "building",
+    "latitude": 8.1087212,
+    "longitude": -12.0790218,
+    "source": "node"
+  },
+  {
+    "osm_id": "6323155",
+    "name": "Jacky Body Press-Pump",
+    "type": "building",
+    "latitude": 8.1141349,
+    "longitude": -12.0763609,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "John  Kamara (faculty) bulding",
+    "type": "building",
+    "latitude": 8.1171742,
+    "longitude": -12.0689332,
+    "source": "node"
+  },
+  {
+    "osm_id": "6866977",
+    "name": "LR 1 &amp; Staff Office",
+    "type": "building",
+    "latitude": 8.1203011,
+    "longitude": -12.0650272,
+    "source": "node"
+  },
+  {
+    "osm_id": "5712470",
+    "name": "LR 2 &amp; 3",
+    "type": "building",
+    "latitude": 8.1134509,
+    "longitude": -12.0705932,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Matturi Block A",
+    "type": "building",
+    "latitude": 8.118805,
+    "longitude": -12.0699399,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Matturi Block B",
+    "type": "building",
+    "latitude": 8.118337,
+    "longitude": -12.0699996,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Matturi Block C",
+    "type": "building",
+    "latitude": 8.1183434,
+    "longitude": -12.069343,
+    "source": "node"
+  },
+  {
+    "osm_id": "5712470",
+    "name": "MATTURI BLOCK D",
+    "type": "building",
+    "latitude": 8.1183699,
+    "longitude": -12.0706575,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Matturi Block E",
+    "type": "building",
+    "latitude": 8.118813,
+    "longitude": -12.0706562,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Matturi Block F",
+    "type": "building",
+    "latitude": 8.1192762,
+    "longitude": -12.0693139,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Matturi Block G",
+    "type": "building",
+    "latitude": 8.1192746,
+    "longitude": -12.0700077,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Matturi Block H",
+    "type": "building",
+    "latitude": 8.1188194,
+    "longitude": -12.0692962,
+    "source": "node"
+  },
+  {
+    "osm_id": "71862",
+    "name": "Matturi Mosque",
+    "type": "building",
+    "latitude": 8.1185973,
+    "longitude": -12.0706029,
+    "source": "node"
+  },
+  {
+    "osm_id": "691257",
+    "name": "Njala",
+    "type": "building",
+    "latitude": 8.107903,
+    "longitude": -12.061228,
+    "source": "node"
+  },
+  {
+    "osm_id": "5712470",
+    "name": "Police Post",
+    "type": "building",
+    "latitude": 8.1124812,
+    "longitude": -12.0719858,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Postgrad &amp; Medicine",
+    "type": "building",
+    "latitude": 8.1164181,
+    "longitude": -12.0674767,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Quadrangle 1",
+    "type": "building",
+    "latitude": 8.1138658,
+    "longitude": -12.0708755,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Quadrangle 2",
+    "type": "building",
+    "latitude": 8.1139857,
+    "longitude": -12.0704704,
+    "source": "node"
+  },
+  {
+    "osm_id": "6866977",
+    "name": "Road to Mr. Sowyeer Farmlad",
+    "type": "building",
+    "latitude": 8.1175795,
+    "longitude": -12.0715387,
+    "source": "node"
+  },
+  {
+    "osm_id": "5712470",
+    "name": "School of Natural Resources Management",
+    "type": "building",
+    "latitude": 8.1145083,
+    "longitude": -12.0694617,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Sierra Leone Commercial Bank",
+    "type": "building",
+    "latitude": 8.1138118,
+    "longitude": -12.0679272,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "TK. Africa",
+    "type": "building",
+    "latitude": 8.1140332,
+    "longitude": -12.0693395,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "TK. America",
+    "type": "building",
+    "latitude": 8.1141447,
+    "longitude": -12.0686472,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "TK. Asia",
+    "type": "building",
+    "latitude": 8.1142495,
+    "longitude": -12.0693038,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "TK. Europe",
+    "type": "building",
+    "latitude": 8.1143499,
+    "longitude": -12.0686082,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "TK. Jamaica",
+    "type": "building",
+    "latitude": 8.1138974,
+    "longitude": -12.068286,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "TK. Mosque",
+    "type": "building",
+    "latitude": 8.1141524,
+    "longitude": -12.0683574,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Tourist",
+    "type": "building",
+    "latitude": 8.1141939,
+    "longitude": -12.0701773,
+    "source": "node"
+  },
+  {
+    "osm_id": "5712470",
+    "name": "UMC Primary School, Mokondeh",
+    "type": "building",
+    "latitude": 8.1070842,
+    "longitude": -12.0713518,
+    "source": "node"
+  },
+  {
+    "osm_id": "6866977",
+    "name": "Union Trust Bank",
+    "type": "building",
+    "latitude": 8.1138384,
+    "longitude": -12.0682395,
+    "source": "node"
+  },
+  {
+    "osm_id": "6867156",
+    "name": "University International School",
+    "type": "building",
+    "latitude": 8.1101445,
+    "longitude": -12.0793361,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Winters Extension",
+    "type": "building",
+    "latitude": 8.1144437,
+    "longitude": -12.0715245,
+    "source": "node"
+  },
+  {
+    "osm_id": "6866977",
+    "name": "Wisdon Tree",
+    "type": "building",
+    "latitude": 8.1185084,
+    "longitude": -12.069687,
+    "source": "node"
+  },
+  {
+    "osm_id": "6867066",
+    "name": "NJALA UNIVERSITY LIBRARY",
+    "type": "library",
+    "latitude": 8.113481,
+    "longitude": -12.0704797,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "ESC Printing",
+    "type": "merchant",
+    "latitude": 8.1140873,
+    "longitude": -12.0689503,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "KABA Ataya Base",
+    "type": "merchant",
+    "latitude": 8.1163059,
+    "longitude": -12.068019,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Med-Vic Ent.",
+    "type": "merchant",
+    "latitude": 8.1126437,
+    "longitude": -12.0716443,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Mobile Money",
+    "type": "merchant",
+    "latitude": 8.112654,
+    "longitude": -12.0714822,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Muana Ent.",
+    "type": "merchant",
+    "latitude": 8.112659,
+    "longitude": -12.0714301,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Sandy Ent.",
+    "type": "merchant",
+    "latitude": 8.1126563,
+    "longitude": -12.0714756,
+    "source": "node"
+  },
+  {
+    "osm_id": "11754744",
+    "name": "Tamaraneh Enterprise",
+    "type": "merchant",
+    "latitude": 8.1100974,
+    "longitude": -12.0730193,
+    "source": "node"
+  },
+  {
+    "osm_id": "71862",
+    "name": "DEPARTMENT OF ANIMAL SCIENCE",
+    "type": "office",
+    "latitude": 8.1135491,
+    "longitude": -12.0713914,
+    "source": "node"
+  },
+  {
+    "osm_id": "10967743",
+    "name": "fisheries department",
+    "type": "office",
+    "latitude": 8.1122717,
+    "longitude": -12.0711803,
+    "source": "node"
+  },
+  {
+    "osm_id": "71862",
+    "name": "INSTITUTE OF GEOGRAPHY AND DEVELOPMENT STUDIES",
+    "type": "office",
+    "latitude": 8.1134783,
+    "longitude": -12.0706654,
+    "source": "node"
+  },
+  {
+    "osm_id": "71862",
+    "name": "SCHOOL OF SOCIAL SCIENCES,DEPARTMENT OF AGRIC-ECONOMIC",
+    "type": "office",
+    "latitude": 8.1135642,
+    "longitude": -12.071184,
+    "source": "node"
+  },
+  {
+    "osm_id": "6867088",
+    "name": "SCHOOL OF TECHNOLOGY",
+    "type": "office",
+    "latitude": 8.1133169,
+    "longitude": -12.0711516,
+    "source": "node"
+  },
+  {
+    "osm_id": "9320747",
+    "name": "Geodev",
+    "type": "university",
+    "latitude": 8.1730377,
+    "longitude": -12.0864791,
+    "source": "node"
+  }
+]

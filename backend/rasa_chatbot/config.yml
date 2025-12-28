@@ -1,0 +1,99 @@
+# RASA Configuration for AbachaOnline Bilingual Chatbot (English + Krio)
+# Optimized for high accuracy (target: 97%+)
+
+recipe: default.v1
+language: en
+
+pipeline:
+  # Spacy NLP for English base
+  - name: SpacyNLP
+    model: "en_core_web_md"
+    case_sensitive: false
+
+  # Tokenization
+  - name: SpacyTokenizer
+    intent_tokenization_flag: false
+    intent_split_symbol: "_"
+
+  # Feature extraction - multiple featurizers for better coverage
+  - name: SpacyFeaturizer
+    pooling: mean
+
+  - name: RegexFeaturizer
+    case_sensitive: false
+
+  - name: LexicalSyntacticFeaturizer
+
+  # Character-level features (critical for Krio variations)
+  - name: CountVectorsFeaturizer
+    analyzer: char_wb
+    min_ngram: 1
+    max_ngram: 5
+    OOV_token: "__oov__"
+
+  # Word-level features
+  - name: CountVectorsFeaturizer
+    analyzer: word
+    min_ngram: 1
+    max_ngram: 3
+    OOV_token: "__oov__"
+
+  # DIET Classifier - Main intent/entity classifier
+  - name: DIETClassifier
+    epochs: 200
+    constrain_similarities: true
+    entity_recognition: true
+    use_masked_language_model: true
+    transformer_size: 256
+    number_of_transformer_layers: 2
+    embedding_dimension: 20
+    dense_dimension:
+      text: 128
+      label: 20
+    batch_size: [64, 256]
+    batch_strategy: balanced
+    learning_rate: 0.001
+    drop_rate: 0.2
+    weight_sparsity: 0.7
+    evaluate_on_number_of_examples: 0
+    evaluate_every_number_of_epochs: 20
+    tensorboard_log_directory: "./tensorboard"
+    tensorboard_log_level: "epoch"
+
+  # Entity synonym mapping
+  - name: EntitySynonymMapper
+
+  # Response selector
+  - name: ResponseSelector
+    epochs: 150
+    constrain_similarities: true
+
+  # Fallback - lower threshold to be more sensitive
+  - name: FallbackClassifier
+    threshold: 0.65
+    ambiguity_threshold: 0.1
+
+policies:
+  # Memoization for learned patterns
+  - name: MemoizationPolicy
+    max_history: 8
+
+  # Rule-based policy
+  - name: RulePolicy
+    core_fallback_threshold: 0.3
+    core_fallback_action_name: "action_default_fallback"
+    enable_fallback_prediction: true
+
+  # TED Policy for dialogue
+  - name: TEDPolicy
+    max_history: 8
+    epochs: 150
+    constrain_similarities: true
+    split_entities_by_comma: true
+
+  # Unexpected Intent Policy
+  - name: UnexpecTEDIntentPolicy
+    max_history: 8
+    epochs: 150
+
+assistant_id: abachaonline_bilingual_chatbot_v2

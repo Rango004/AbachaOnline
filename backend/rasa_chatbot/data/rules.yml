@@ -1,0 +1,104 @@
+# RASA Rules for AbachaOnline Bilingual Chatbot (English + Krio)
+# Rules define SIMPLE, UNCONDITIONAL behaviors only
+# Complex flows with conditions are handled by stories
+
+version: "3.1"
+
+rules:
+# ============================================================
+# SIMPLE GREETING RULES (Always same response)
+# ============================================================
+- rule: Greet user when they greet
+  steps:
+  - intent: greet
+  - action: action_greet
+
+- rule: Say goodbye anytime the user says goodbye
+  steps:
+  - intent: goodbye
+  - action: utter_goodbye
+
+- rule: Thank user when they thank you
+  steps:
+  - intent: thank_you
+  - action: utter_thank_you
+
+# ============================================================
+# BOT IDENTITY (Always same response)
+# ============================================================
+- rule: Say you're a bot anytime user asks
+  steps:
+  - intent: bot_challenge
+  - action: utter_iamabot
+
+- rule: Tell user bot name when asked
+  steps:
+  - intent: ask_bot_name
+  - action: utter_bot_name
+
+- rule: Tell user bot capabilities when asked
+  steps:
+  - intent: ask_bot_capabilities
+  - action: utter_bot_capabilities
+
+- rule: Respond to language support questions
+  steps:
+  - intent: ask_language_support
+  - action: utter_language_support
+
+- rule: Respond with empathy to frustrated users
+  steps:
+  - intent: express_frustration
+  - action: utter_empathy_frustrated
+
+# ============================================================
+# SIMPLE INFO REQUESTS (Always same response)
+# ============================================================
+- rule: Handle delivery time questions
+  steps:
+  - intent: ask_delivery_time
+  - action: utter_delivery_time_general
+
+- rule: Handle payment method questions
+  steps:
+  - intent: ask_payment_methods
+  - action: utter_payment_methods
+
+- rule: Handle how to order question
+  steps:
+  - intent: ask_how_to_order
+  - action: utter_how_to_order
+
+# ============================================================
+# OUT OF SCOPE / FALLBACK
+# ============================================================
+- rule: Handle budget product search
+  steps:
+  - intent: ask_budget_products
+  - action: action_search_by_budget
+
+- rule: Handle out of scope requests
+  steps:
+  - intent: out_of_scope
+  - action: utter_out_of_scope
+
+- rule: Handle nlu_fallback
+  steps:
+  - intent: nlu_fallback
+  - action: action_default_fallback
+
+# ============================================================
+# COMPLAINT HANDLING
+# ============================================================
+- rule: Acknowledge complaints
+  steps:
+  - intent: complaint
+  - action: utter_complaint_received
+
+# ============================================================
+# HUMAN ESCALATION
+# ============================================================
+- rule: Escalate to human agent
+  steps:
+  - intent: talk_to_human
+  - action: action_escalate_to_human
