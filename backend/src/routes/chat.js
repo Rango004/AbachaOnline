@@ -23,7 +23,7 @@ const messageRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: getRateLimitKey,
-  validate: { xForwardedForHeader: false, keyGenerator: false }
+  validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false }
 });
 
 // Rate limiter for conversation creation (10 per 15 minutes)
@@ -34,7 +34,7 @@ const conversationRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: getRateLimitKey,
-  validate: { xForwardedForHeader: false, keyGenerator: false }
+  validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false }
 });
 
 // General rate limiter for chat endpoints (100 requests per minute)
@@ -45,7 +45,7 @@ const generalChatLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: getRateLimitKey,
-  validate: { xForwardedForHeader: false, keyGenerator: false }
+  validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false }
 });
 
 // =====================================================

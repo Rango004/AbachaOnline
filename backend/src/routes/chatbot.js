@@ -28,7 +28,7 @@ const chatbotMessageLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: getRateLimitKey,
-  validate: { xForwardedForHeader: false, keyGenerator: false }
+  validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false }
 });
 
 // Rate limiter for session creation (5 per 15 minutes)
@@ -39,7 +39,7 @@ const sessionLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: getRateLimitKey,
-  validate: { xForwardedForHeader: false, keyGenerator: false }
+  validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false }
 });
 
 // Rate limiter for webhook (100 per minute from RASA server)
