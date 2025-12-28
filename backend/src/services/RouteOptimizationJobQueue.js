@@ -28,13 +28,15 @@ class RouteOptimizationJobQueue {
 
       this.io = io;
 
-      // Create Bull queue connected to Redis
-      this.queue = new Queue('route-optimization', {
-        redis: {
-          host: process.env.REDIS_HOST || 'localhost',
-          port: process.env.REDIS_PORT || 6379
-        }
-      });
+      // Check if Redis is configured (required for job queues)
+      const redisUrl = process.env.REDIS_URL;
+      if (!redisUrl) {
+        console.log('[RouteOptimizationQueue] REDIS_URL not configured - queue disabled. Add Redis service in Railway to enable job queues.');
+        return;
+      }
+
+      // Create Bull queue connected to Redis using REDIS_URL
+      this.queue = new Queue('route-optimization', redisUrl);
 
       // Process auto-optimization jobs
       this.queue.process('auto-optimize-routes', async (job) => {

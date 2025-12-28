@@ -24,13 +24,15 @@ class ForecastJobQueue {
         return;
       }
 
-      // Create Bull queue connected to Redis
-      this.queue = new Queue('merchant-forecasts', {
-        redis: {
-          host: process.env.REDIS_HOST || 'localhost',
-          port: process.env.REDIS_PORT || 6379
-        }
-      });
+      // Check if Redis is configured (required for job queues)
+      const redisUrl = process.env.REDIS_URL;
+      if (!redisUrl) {
+        console.log('[ForecastQueue] REDIS_URL not configured - queue disabled. Add Redis service in Railway to enable job queues.');
+        return;
+      }
+
+      // Create Bull queue connected to Redis using REDIS_URL
+      this.queue = new Queue('merchant-forecasts', redisUrl);
 
       // Process jobs
       this.queue.process('merchant-forecast', async (job) => {
