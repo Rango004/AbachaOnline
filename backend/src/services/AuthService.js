@@ -49,9 +49,8 @@ class AuthService {
       let userId;
       const otp = this.generateOTP();
 
-      if (role === 'student' && !locationId) {
-        throw new Error('Location is required for student registration');
-      }
+      // Location can be added later in user profile settings
+      // Students can register without location and add it when ready
 
       if (existingUser.rows.length > 0) {
         const user = existingUser.rows[0];
