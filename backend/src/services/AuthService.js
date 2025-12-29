@@ -94,10 +94,8 @@ class AuthService {
         user_id: userId,
         message: otpResult.message || 'Verification code sent. Please check your messages.',
         carrier: carrierInfo.carrier,
-        method: otpResult.method,
-        // Include OTP if fallback was used (user needs to see it on screen)
-        ...(otpResult.otp && { otp: otpResult.otp }),
-        ...(otpResult.showOtpFallback && { showOtpFallback: true })
+        method: otpResult.method
+        // OTP is never sent to frontend for security - check Railway logs if needed for testing
       };
     } catch (error) {
       await client.query('ROLLBACK');
@@ -304,9 +302,7 @@ class AuthService {
 
       return {
         message: otpResult.message || 'OTP resent. Please check your messages.',
-        method: otpResult.method,
-        ...(otpResult.otp && { otp: otpResult.otp }),
-        ...(otpResult.showOtpFallback && { showOtpFallback: true })
+        method: otpResult.method
       };
     } catch (error) {
       throw error;
@@ -349,9 +345,8 @@ class AuthService {
       return {
         message: otpResult.message || 'Login OTP sent. Please check your messages.',
         user_id: user.id,
-        method: otpResult.method,
-        ...(otpResult.otp && { otp: otpResult.otp }),
-        ...(otpResult.showOtpFallback && { showOtpFallback: true })
+        method: otpResult.method
+        // OTP is never sent to frontend for security - check Railway logs if needed for testing
       };
     } catch (error) {
       throw error;

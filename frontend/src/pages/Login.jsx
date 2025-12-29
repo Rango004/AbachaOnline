@@ -9,9 +9,9 @@ export default function Login() {
   const [code, setCode] = useState('');
   const [step, setStep] = useState('phone'); // 'phone' or 'otp'
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [otp, setOtp] = useState('');
   const [otpMethod, setOtpMethod] = useState('');
 
   const handleRequestOTP = async (e) => {
@@ -19,25 +19,31 @@ export default function Login() {
     setLoading(true);
     setError('');
     setMessage('');
-    setOtp('');
 
     try {
       const data = await api.login(phone);
-      setMessage(data.message || 'OTP sent successfully!');
-
-      // Store OTP if returned (fallback mode)
-      if (data.otp) {
-        setOtp(data.otp);
-      }
-
-      // Store delivery method
+      setMessage(data.message || 'Verification code sent!');
       setOtpMethod(data.method || 'sms');
-
       setStep('otp');
     } catch (err) {
       setError(err.message || 'Failed to send OTP');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setResending(true);
+    setError('');
+
+    try {
+      const data = await api.login(phone);
+      setMessage('New verification code sent! Please check your phone.');
+      setOtpMethod(data.method || 'sms');
+    } catch (err) {
+      setError(err.message || 'Failed to resend OTP');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -100,28 +106,20 @@ export default function Login() {
             </form>
           ) : (
             <form onSubmit={handleLogin}>
-              <p class="info-text">{message}</p>
-
-              {/* Show OTP prominently if returned (fallback mode) */}
-              {otp && (
-                <div style="background: #e8f5e9; border: 2px solid #4CAF50; border-radius: 12px; padding: 20px; text-align: center; margin: 16px 0;">
-                  <p style="margin: 0 0 8px 0; color: #2e7d32; font-weight: 500;">
-                    Your Verification Code:
-                  </p>
-                  <p style="margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1b5e20;">
-                    {otp}
-                  </p>
-                  <p style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
-                    {otpMethod === 'sms' ? 'Also sent via SMS (may take a moment)' :
-                     otpMethod === 'whatsapp' ? 'Sent via WhatsApp' :
-                     otpMethod === 'flashcall' ? 'Check incoming call for code' :
-                     'Use this code to login'}
-                  </p>
-                </div>
-              )}
+              {/* Success message */}
+              <div style="background: #e3f2fd; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                <p style="margin: 0; color: #1565c0; font-weight: 500;">
+                  {otpMethod === 'whatsapp' ? '📱 Check WhatsApp' :
+                   otpMethod === 'flashcall' ? '📞 Incoming call' :
+                   '💬 Check SMS'}
+                </p>
+                <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">
+                  {message}
+                </p>
+              </div>
 
               <div class="form-group">
-                <label>Enter Verification Code</label>
+                <label>Enter 6-Digit Code</label>
                 <input
                   type="text"
                   placeholder="000000"
@@ -136,6 +134,24 @@ export default function Login() {
               <button type="submit" class="btn-primary" disabled={loading}>
                 {loading ? 'Verifying...' : 'Verify & Login'}
               </button>
+
+              {/* Didn't receive code section */}
+              <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #eee;">
+                <p style="color: #666; font-size: 14px; margin-bottom: 12px;">
+                  Didn't receive the code?
+                </p>
+                <button
+                  type="button"
+                  onClick={handleResendOTP}
+                  disabled={resending}
+                  style="background: #f5f5f5; color: #333; border: 1px solid #ddd; padding: 10px 16px; border-radius: 8px; cursor: pointer; width: 100%;"
+                >
+                  {resending ? 'Sending...' : 'Resend Code'}
+                </button>
+                <p style="color: #999; font-size: 12px; margin-top: 8px;">
+                  SMS may take 1-2 minutes. Check if your number is correct.
+                </p>
+              </div>
 
               <button
                 type="button"

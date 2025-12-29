@@ -157,26 +157,23 @@ class OTPNotificationService {
       const result = await this.sendSMS(phone, otp);
       attempts.push({ method: 'sms', ...result });
       if (result.success) {
-        // Note: SMS might show "success" but not deliver, so we still include OTP for user convenience
         return {
           ...result,
           method: 'sms',
-          otp: otp, // Include OTP because SMS delivery is unreliable
-          message: 'OTP sent via SMS. If not received, use the code shown below.',
-          showOtpFallback: true
+          message: 'OTP sent via SMS. Please wait 1-2 minutes. Use "Resend Code" if not received.'
         };
       }
     }
 
-    // Fallback: Return OTP in response (user sees it on screen)
+    // Fallback: All delivery methods failed, but OTP is stored in database
+    // User should use "Resend Code" to try again or contact support
     if (this.fallbackEnabled) {
-      console.log(`[OTP] Using fallback - showing OTP to user`);
+      console.log(`[OTP] All delivery methods failed. OTP stored in database: ${otp}`);
+      console.log(`[OTP] User should use Resend Code or check Railway logs for testing`);
       return {
         success: true,
         method: 'fallback',
-        otp: otp, // This will be shown to the user
-        message: 'Verification code generated. Please use the code shown below.',
-        showOtpFallback: true,
+        message: 'Verification code generated. Please check your phone for SMS/WhatsApp or use "Resend Code" to try again.',
         attempts: attempts
       };
     }
