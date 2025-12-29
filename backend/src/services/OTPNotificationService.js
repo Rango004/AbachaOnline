@@ -117,12 +117,16 @@ class OTPNotificationService {
    * @returns {Promise<Object>} Send result
    */
   async sendSMS(phone, otp) {
+    // Always log OTP for debugging (check Railway logs)
+    console.log(`[OTP] Generated OTP for ${phone}: ${otp}`);
+
     // Check if API key is configured
     if (!this.smsApiKey) {
-      console.log(`[OTP][DEV MODE] SMS OTP for ${phone}: ${otp}`);
+      console.log(`[OTP][DEV MODE] No API key - SMS OTP for ${phone}: ${otp}`);
       return {
         success: true,
         devMode: true,
+        otp: otp, // Return OTP in dev mode for testing
         message: 'SMS sent (development mode)'
       };
     }
@@ -130,6 +134,8 @@ class OTPNotificationService {
     try {
       const message = `Your AbachaOnline verification code is: ${otp}. Valid for 5 minutes. Do not share this code.`;
       const formattedPhone = this.formatPhoneForAPI(phone);
+
+      console.log(`[OTP] Sending SMS to ${formattedPhone} from ${this.smsSenderId}`);
 
       const response = await this.httpPost(
         this.smsApiUrl,
@@ -146,20 +152,35 @@ class OTPNotificationService {
         }
       );
 
-      console.log(`[OTP] SMS sent to ${phone} via EasySendSMS`);
+      // Log full API response for debugging
+      console.log(`[OTP] EasySendSMS API Response:`, JSON.stringify(response));
+
+      // Check if response indicates success
+      if (response.error || response.Error) {
+        console.error(`[OTP] EasySendSMS error:`, response.error || response.Error, response.description || response.Description);
+        return {
+          success: false,
+          error: response.description || response.Description || 'SMS delivery failed',
+          message: 'Failed to send SMS. Please check Railway logs for OTP.'
+        };
+      }
+
+      console.log(`[OTP] SMS sent successfully to ${phone} via EasySendSMS`);
 
       return {
         success: true,
         carrier: this.getCarrier(phone),
-        messageId: response.messageIds?.[0] || null,
+        messageId: response.messageIds?.[0] || response.messageId || null,
         message: 'OTP sent via SMS'
       };
     } catch (error) {
       console.error(`[OTP] SMS sending failed for ${phone}:`, error.message);
+      // Still log the OTP so user can verify via Railway logs
+      console.log(`[OTP] FALLBACK - Use this OTP from logs: ${otp}`);
       return {
         success: false,
         error: error.message,
-        message: 'Failed to send SMS. Please try again or use email verification.'
+        message: 'Failed to send SMS. Please check Railway logs for OTP.'
       };
     }
   }
