@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.PROD ? 'https://your-api.railway.app' : 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? window.location.origin : 'http://localhost:3000');
 
 class API {
   constructor() {
