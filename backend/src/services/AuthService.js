@@ -13,15 +13,13 @@ class AuthService {
   }
 
   /**
-   * Check if phone number is Africell (blocked carrier)
+   * Get carrier info for phone number
    * @param {string} phone - Phone number
-   * @returns {Object} Carrier info and blocked status
+   * @returns {Object} Carrier info
    */
   checkCarrier(phone) {
     return {
-      isBlocked: otpService.isAfricellNumber(phone),
-      carrier: otpService.getCarrier(phone),
-      isSupported: otpService.isSupportedCarrier(phone)
+      carrier: otpService.getCarrier(phone)
     };
   }
 
@@ -89,15 +87,17 @@ class AuthService {
 
       await client.query('COMMIT');
 
-      // Send OTP via SMS
-      const otpResult = await otpService.sendSMS(phone, otp);
+      // Send OTP via multi-channel service (WhatsApp, Flash Call, SMS, or Fallback)
+      const otpResult = await otpService.sendOTP(phone, otp, { userName: name });
 
       return {
         user_id: userId,
-        message: 'OTP sent to your phone. Please check your messages.',
+        message: otpResult.message || 'Verification code sent. Please check your messages.',
         carrier: carrierInfo.carrier,
-        // In development, include OTP for testing
-        ...(process.env.NODE_ENV === 'development' && { otp })
+        method: otpResult.method,
+        // Include OTP if fallback was used (user needs to see it on screen)
+        ...(otpResult.otp && { otp: otpResult.otp }),
+        ...(otpResult.showOtpFallback && { showOtpFallback: true })
       };
     } catch (error) {
       await client.query('ROLLBACK');
@@ -299,12 +299,14 @@ class AuthService {
         [otp, user.id]
       );
 
-      // Send OTP via SMS
-      await otpService.sendSMS(phone, otp);
+      // Send OTP via multi-channel service
+      const otpResult = await otpService.sendOTP(phone, otp, { userName: user.name });
 
       return {
-        message: 'OTP resent to your phone',
-        ...(process.env.NODE_ENV === 'development' && { otp })
+        message: otpResult.message || 'OTP resent. Please check your messages.',
+        method: otpResult.method,
+        ...(otpResult.otp && { otp: otpResult.otp }),
+        ...(otpResult.showOtpFallback && { showOtpFallback: true })
       };
     } catch (error) {
       throw error;
@@ -341,13 +343,15 @@ class AuthService {
         [otp, user.id]
       );
 
-      // Send OTP via SMS
-      await otpService.sendSMS(phone, otp);
+      // Send OTP via multi-channel service
+      const otpResult = await otpService.sendOTP(phone, otp, { userName: user.name });
 
       return {
-        message: 'Login OTP sent to your phone. Please check your messages.',
+        message: otpResult.message || 'Login OTP sent. Please check your messages.',
         user_id: user.id,
-        ...(process.env.NODE_ENV === 'development' && { otp })
+        method: otpResult.method,
+        ...(otpResult.otp && { otp: otpResult.otp }),
+        ...(otpResult.showOtpFallback && { showOtpFallback: true })
       };
     } catch (error) {
       throw error;

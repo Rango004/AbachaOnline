@@ -11,23 +11,27 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [devOTP, setDevOTP] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpMethod, setOtpMethod] = useState('');
 
   const handleRequestOTP = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setMessage('');
-    setDevOTP('');
+    setOtp('');
 
     try {
       const data = await api.login(phone);
       setMessage(data.message || 'OTP sent successfully!');
 
-      // Show OTP in development mode
+      // Store OTP if returned (fallback mode)
       if (data.otp) {
-        setDevOTP(data.otp);
+        setOtp(data.otp);
       }
+
+      // Store delivery method
+      setOtpMethod(data.method || 'sms');
 
       setStep('otp');
     } catch (err) {
@@ -85,6 +89,9 @@ export default function Login() {
                   onInput={(e) => setPhone(e.target.value)}
                   required
                 />
+                <small style="color: #666; display: block; margin-top: 4px;">
+                  Include country code (e.g., +232 for Sierra Leone)
+                </small>
               </div>
 
               <button type="submit" class="btn-primary" disabled={loading}>
@@ -93,8 +100,28 @@ export default function Login() {
             </form>
           ) : (
             <form onSubmit={handleLogin}>
+              <p class="info-text">{message}</p>
+
+              {/* Show OTP prominently if returned (fallback mode) */}
+              {otp && (
+                <div style="background: #e8f5e9; border: 2px solid #4CAF50; border-radius: 12px; padding: 20px; text-align: center; margin: 16px 0;">
+                  <p style="margin: 0 0 8px 0; color: #2e7d32; font-weight: 500;">
+                    Your Verification Code:
+                  </p>
+                  <p style="margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1b5e20;">
+                    {otp}
+                  </p>
+                  <p style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
+                    {otpMethod === 'sms' ? 'Also sent via SMS (may take a moment)' :
+                     otpMethod === 'whatsapp' ? 'Sent via WhatsApp' :
+                     otpMethod === 'flashcall' ? 'Check incoming call for code' :
+                     'Use this code to login'}
+                  </p>
+                </div>
+              )}
+
               <div class="form-group">
-                <label>Enter OTP Code</label>
+                <label>Enter Verification Code</label>
                 <input
                   type="text"
                   placeholder="000000"
@@ -102,6 +129,7 @@ export default function Login() {
                   onInput={(e) => setCode(e.target.value)}
                   maxLength="6"
                   required
+                  style="font-size: 24px; text-align: center; letter-spacing: 8px;"
                 />
               </div>
 
@@ -113,18 +141,13 @@ export default function Login() {
                 type="button"
                 class="btn-secondary"
                 onClick={() => setStep('phone')}
+                style="margin-top: 12px; width: 100%;"
               >
-                Change Phone
+                Change Phone Number
               </button>
             </form>
           )}
 
-          {message && <p class="message success">{message}</p>}
-          {devOTP && (
-            <div class="dev-otp-display">
-              <strong>Development OTP:</strong> {devOTP}
-            </div>
-          )}
           {error && <p class="message error">{error}</p>}
 
           <p class="auth-link">

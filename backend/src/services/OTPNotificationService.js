@@ -1,10 +1,16 @@
 /**
- * OTP Notification Service
- * Handles sending OTP codes via SMS (EasySendSMS) and Email (SendGrid)
+ * Multi-Channel OTP Notification Service
+ * Supports: WhatsApp, Flash Call, SMS, and Simple Fallback
+ *
+ * Priority Order:
+ * 1. WhatsApp OTP (if configured) - Most reliable in Africa
+ * 2. Flash Call / Missed Call (if configured) - Simple for users
+ * 3. SMS (if configured) - Traditional method
+ * 4. Simple Fallback - Always works (shows OTP in response)
  *
  * Sierra Leone Mobile Prefixes:
  * - Orange: +232 25, +232 76, +232 78
- * - Africell: +232 30, +232 33, +232 77, +232 88, +232 90, +232 99 (BLOCKED - expensive rates)
+ * - Africell: +232 30, +232 33, +232 77, +232 88, +232 90, +232 99
  * - Sierratel: +232 21, +232 22
  * - Qcell: +232 34
  */
@@ -13,92 +19,73 @@ const https = require('https');
 
 class OTPNotificationService {
   constructor() {
-    // EasySendSMS configuration
+    // ===========================================
+    // WhatsApp Configuration (Twilio)
+    // ===========================================
+    this.whatsappEnabled = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_WHATSAPP_NUMBER);
+    this.twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+    this.twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+    this.twilioWhatsappNumber = process.env.TWILIO_WHATSAPP_NUMBER; // e.g., 'whatsapp:+14155238886'
+
+    // ===========================================
+    // Flash Call Configuration (Twilio Verify or MSG91)
+    // ===========================================
+    this.flashCallEnabled = !!(process.env.TWILIO_VERIFY_SERVICE_SID || process.env.MSG91_AUTH_KEY);
+    this.twilioVerifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+    this.msg91AuthKey = process.env.MSG91_AUTH_KEY;
+
+    // ===========================================
+    // SMS Configuration (EasySendSMS)
+    // ===========================================
+    this.smsEnabled = !!process.env.EASYSENDSMS_API_KEY;
     this.smsApiKey = process.env.EASYSENDSMS_API_KEY;
     this.smsApiUrl = 'https://restapi.easysendsms.app/v1/rest/sms/send';
     this.smsSenderId = process.env.SMS_SENDER_ID || 'AbachaOL';
 
-    // SendGrid configuration
+    // ===========================================
+    // Simple Fallback (Always enabled)
+    // ===========================================
+    this.fallbackEnabled = process.env.OTP_FALLBACK_ENABLED !== 'false'; // Enabled by default
+
+    // ===========================================
+    // Email Configuration (SendGrid) - Optional backup
+    // ===========================================
+    this.emailEnabled = !!process.env.SENDGRID_API_KEY;
     this.sendGridApiKey = process.env.SENDGRID_API_KEY;
     this.sendGridFromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@abachaonline.com';
     this.sendGridFromName = process.env.SENDGRID_FROM_NAME || 'AbachaOnline';
 
-    // Africell prefixes to block (expensive rates)
-    this.blockedPrefixes = [
-      '+23230', '+23233', '+23277', '+23288', '+23290', '+23299',
-      '23230', '23233', '23277', '23288', '23290', '23299'
-    ];
-
-    // Supported Orange/Sierratel/Qcell prefixes
-    this.supportedPrefixes = [
-      '+23225', '+23276', '+23278', // Orange
-      '+23221', '+23222', // Sierratel
-      '+23234', // Qcell
-      '23225', '23276', '23278',
-      '23221', '23222',
-      '23234'
-    ];
-  }
-
-  /**
-   * Check if phone number is Africell (blocked)
-   * @param {string} phone - Phone number
-   * @returns {boolean} True if Africell number
-   */
-  isAfricellNumber(phone) {
-    const normalized = phone.replace(/[\s\-\(\)]/g, '');
-    return this.blockedPrefixes.some(prefix => normalized.startsWith(prefix));
-  }
-
-  /**
-   * Check if phone number is supported (Orange/Sierratel)
-   * @param {string} phone - Phone number
-   * @returns {boolean} True if supported carrier
-   */
-  isSupportedCarrier(phone) {
-    const normalized = phone.replace(/[\s\-\(\)]/g, '');
-    return this.supportedPrefixes.some(prefix => normalized.startsWith(prefix));
+    // Log available channels
+    console.log('[OTP Service] Available channels:');
+    console.log(`  - WhatsApp: ${this.whatsappEnabled ? '✅ Enabled' : '❌ Disabled'}`);
+    console.log(`  - Flash Call: ${this.flashCallEnabled ? '✅ Enabled' : '❌ Disabled'}`);
+    console.log(`  - SMS: ${this.smsEnabled ? '✅ Enabled' : '❌ Disabled'}`);
+    console.log(`  - Fallback: ${this.fallbackEnabled ? '✅ Enabled' : '❌ Disabled'}`);
   }
 
   /**
    * Get carrier name from phone number
-   * @param {string} phone - Phone number
-   * @returns {string} Carrier name
    */
   getCarrier(phone) {
     const normalized = phone.replace(/[\s\-\(\)]/g, '');
 
-    // Africell (blocked - expensive rates)
-    const africellPrefixes = ['+23230', '+23233', '+23277', '+23288', '+23290', '+23299', '23230', '23233', '23277', '23288', '23290', '23299'];
-    if (africellPrefixes.some(p => normalized.startsWith(p))) {
-      return 'Africell';
-    }
+    const carriers = {
+      'Africell': ['+23230', '+23233', '+23277', '+23288', '+23290', '+23299'],
+      'Orange': ['+23225', '+23276', '+23278'],
+      'Sierratel': ['+23221', '+23222'],
+      'Qcell': ['+23234']
+    };
 
-    // Orange
-    const orangePrefixes = ['+23225', '+23276', '+23278', '23225', '23276', '23278'];
-    if (orangePrefixes.some(p => normalized.startsWith(p))) {
-      return 'Orange';
+    for (const [carrier, prefixes] of Object.entries(carriers)) {
+      if (prefixes.some(p => normalized.startsWith(p) || normalized.startsWith(p.substring(1)))) {
+        return carrier;
+      }
     }
-
-    // Sierratel
-    const sierratelPrefixes = ['+23221', '+23222', '23221', '23222'];
-    if (sierratelPrefixes.some(p => normalized.startsWith(p))) {
-      return 'Sierratel';
-    }
-
-    // Qcell
-    const qcellPrefixes = ['+23234', '23234'];
-    if (qcellPrefixes.some(p => normalized.startsWith(p))) {
-      return 'Qcell';
-    }
-
     return 'Unknown';
   }
 
   /**
-   * Format phone number for EasySendSMS API (remove + or 00 prefix)
-   * @param {string} phone - Phone number
-   * @returns {string} Formatted phone number
+   * Format phone number (remove + or 00 prefix)
    */
   formatPhoneForAPI(phone) {
     let formatted = phone.replace(/[\s\-\(\)]/g, '');
@@ -111,24 +98,234 @@ class OTPNotificationService {
   }
 
   /**
-   * Send OTP via SMS using EasySendSMS
+   * Format phone for WhatsApp (needs + prefix)
+   */
+  formatPhoneForWhatsApp(phone) {
+    let formatted = phone.replace(/[\s\-\(\)]/g, '');
+    if (!formatted.startsWith('+')) {
+      formatted = '+' + formatted;
+    }
+    return `whatsapp:${formatted}`;
+  }
+
+  // ===========================================
+  // MAIN OTP SENDING METHOD
+  // ===========================================
+
+  /**
+   * Send OTP using available channels with automatic fallback
    * @param {string} phone - Phone number in international format
    * @param {string} otp - OTP code
-   * @returns {Promise<Object>} Send result
+   * @param {Object} options - Additional options
+   * @returns {Promise<Object>} Send result with OTP if fallback used
    */
-  async sendSMS(phone, otp) {
-    // Always log OTP for debugging (check Railway logs)
-    console.log(`[OTP] Generated OTP for ${phone}: ${otp}`);
+  async sendOTP(phone, otp, options = {}) {
+    const { preferredMethod, userName } = options;
 
-    // Check if API key is configured
-    if (!this.smsApiKey) {
-      console.log(`[OTP][DEV MODE] No API key - SMS OTP for ${phone}: ${otp}`);
+    console.log(`[OTP] ========================================`);
+    console.log(`[OTP] Sending OTP to ${phone}`);
+    console.log(`[OTP] Generated code: ${otp}`);
+    console.log(`[OTP] Carrier: ${this.getCarrier(phone)}`);
+    console.log(`[OTP] ========================================`);
+
+    // Track which methods we tried
+    const attempts = [];
+
+    // Try WhatsApp first (most reliable in Africa)
+    if (this.whatsappEnabled && preferredMethod !== 'skip_whatsapp') {
+      console.log(`[OTP] Trying WhatsApp...`);
+      const result = await this.sendWhatsApp(phone, otp);
+      attempts.push({ method: 'whatsapp', ...result });
+      if (result.success) {
+        return { ...result, method: 'whatsapp', otp: null }; // Don't expose OTP if sent successfully
+      }
+    }
+
+    // Try Flash Call (simple for users)
+    if (this.flashCallEnabled && preferredMethod !== 'skip_flashcall') {
+      console.log(`[OTP] Trying Flash Call...`);
+      const result = await this.sendFlashCall(phone, otp);
+      attempts.push({ method: 'flashcall', ...result });
+      if (result.success) {
+        return { ...result, method: 'flashcall', otp: null };
+      }
+    }
+
+    // Try SMS
+    if (this.smsEnabled && preferredMethod !== 'skip_sms') {
+      console.log(`[OTP] Trying SMS...`);
+      const result = await this.sendSMS(phone, otp);
+      attempts.push({ method: 'sms', ...result });
+      if (result.success) {
+        // Note: SMS might show "success" but not deliver, so we still include OTP for user convenience
+        return {
+          ...result,
+          method: 'sms',
+          otp: otp, // Include OTP because SMS delivery is unreliable
+          message: 'OTP sent via SMS. If not received, use the code shown below.',
+          showOtpFallback: true
+        };
+      }
+    }
+
+    // Fallback: Return OTP in response (user sees it on screen)
+    if (this.fallbackEnabled) {
+      console.log(`[OTP] Using fallback - showing OTP to user`);
       return {
         success: true,
-        devMode: true,
-        otp: otp, // Return OTP in dev mode for testing
-        message: 'SMS sent (development mode)'
+        method: 'fallback',
+        otp: otp, // This will be shown to the user
+        message: 'Verification code generated. Please use the code shown below.',
+        showOtpFallback: true,
+        attempts: attempts
       };
+    }
+
+    // All methods failed
+    console.error(`[OTP] All delivery methods failed!`);
+    return {
+      success: false,
+      method: 'none',
+      error: 'All OTP delivery methods failed',
+      message: 'Unable to send verification code. Please try again later.',
+      attempts: attempts
+    };
+  }
+
+  // ===========================================
+  // WHATSAPP OTP (via Twilio)
+  // ===========================================
+
+  async sendWhatsApp(phone, otp) {
+    if (!this.whatsappEnabled) {
+      return { success: false, error: 'WhatsApp not configured' };
+    }
+
+    try {
+      const toNumber = this.formatPhoneForWhatsApp(phone);
+      const message = `🔐 *AbachaOnline Verification*\n\nYour code is: *${otp}*\n\nValid for 5 minutes. Do not share this code.`;
+
+      const auth = Buffer.from(`${this.twilioAccountSid}:${this.twilioAuthToken}`).toString('base64');
+
+      const response = await this.httpPostForm(
+        `https://api.twilio.com/2010-04-01/Accounts/${this.twilioAccountSid}/Messages.json`,
+        {
+          From: this.twilioWhatsappNumber,
+          To: toNumber,
+          Body: message
+        },
+        {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      );
+
+      console.log(`[OTP] WhatsApp response:`, JSON.stringify(response));
+
+      if (response.sid) {
+        console.log(`[OTP] ✅ WhatsApp OTP sent successfully`);
+        return { success: true, messageId: response.sid, message: 'OTP sent via WhatsApp' };
+      } else {
+        return { success: false, error: response.message || 'WhatsApp send failed' };
+      }
+    } catch (error) {
+      console.error(`[OTP] WhatsApp error:`, error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ===========================================
+  // FLASH CALL OTP (via Twilio Verify or MSG91)
+  // ===========================================
+
+  async sendFlashCall(phone, otp) {
+    // Try Twilio Verify first
+    if (this.twilioVerifyServiceSid) {
+      return this.sendTwilioVerifyCall(phone);
+    }
+
+    // Try MSG91
+    if (this.msg91AuthKey) {
+      return this.sendMSG91FlashCall(phone, otp);
+    }
+
+    return { success: false, error: 'Flash call not configured' };
+  }
+
+  async sendTwilioVerifyCall(phone) {
+    try {
+      const auth = Buffer.from(`${this.twilioAccountSid}:${this.twilioAuthToken}`).toString('base64');
+      const formattedPhone = phone.startsWith('+') ? phone : '+' + phone;
+
+      const response = await this.httpPostForm(
+        `https://verify.twilio.com/v2/Services/${this.twilioVerifyServiceSid}/Verifications`,
+        {
+          To: formattedPhone,
+          Channel: 'call' // Voice call channel
+        },
+        {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      );
+
+      console.log(`[OTP] Twilio Verify response:`, JSON.stringify(response));
+
+      if (response.status === 'pending') {
+        console.log(`[OTP] ✅ Flash call initiated`);
+        return {
+          success: true,
+          sid: response.sid,
+          message: 'You will receive a call. The last 4 digits of the caller ID is your OTP.'
+        };
+      } else {
+        return { success: false, error: response.message || 'Flash call failed' };
+      }
+    } catch (error) {
+      console.error(`[OTP] Twilio Verify error:`, error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async sendMSG91FlashCall(phone, otp) {
+    try {
+      const formattedPhone = this.formatPhoneForAPI(phone);
+
+      const response = await this.httpPost(
+        'https://api.msg91.com/api/v5/otp',
+        {
+          mobile: formattedPhone,
+          otp: otp,
+          sender: 'ABACHA',
+          DLT_TE_ID: process.env.MSG91_DLT_TE_ID || ''
+        },
+        {
+          'authkey': this.msg91AuthKey,
+          'Content-Type': 'application/json'
+        }
+      );
+
+      console.log(`[OTP] MSG91 response:`, JSON.stringify(response));
+
+      if (response.type === 'success') {
+        console.log(`[OTP] ✅ MSG91 OTP sent`);
+        return { success: true, message: 'OTP sent via MSG91' };
+      } else {
+        return { success: false, error: response.message || 'MSG91 failed' };
+      }
+    } catch (error) {
+      console.error(`[OTP] MSG91 error:`, error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ===========================================
+  // SMS OTP (via EasySendSMS)
+  // ===========================================
+
+  async sendSMS(phone, otp) {
+    if (!this.smsEnabled) {
+      return { success: false, error: 'SMS not configured' };
     }
 
     try {
@@ -143,7 +340,7 @@ class OTPNotificationService {
           from: this.smsSenderId,
           to: formattedPhone,
           text: message,
-          type: '0' // Plain text (GSM 3.38)
+          type: '0'
         },
         {
           'apikey': this.smsApiKey,
@@ -152,187 +349,29 @@ class OTPNotificationService {
         }
       );
 
-      // Log full API response for debugging
-      console.log(`[OTP] EasySendSMS API Response:`, JSON.stringify(response));
+      console.log(`[OTP] EasySendSMS response:`, JSON.stringify(response));
 
-      // Check if response indicates success
-      if (response.error || response.Error) {
-        console.error(`[OTP] EasySendSMS error:`, response.error || response.Error, response.description || response.Description);
+      if (response.status === 'OK' || response.messageIds) {
+        console.log(`[OTP] ✅ SMS sent (delivery not guaranteed)`);
         return {
-          success: false,
-          error: response.description || response.Description || 'SMS delivery failed',
-          message: 'Failed to send SMS. Please check Railway logs for OTP.'
+          success: true,
+          messageId: response.messageIds?.[0],
+          carrier: this.getCarrier(phone),
+          message: 'OTP sent via SMS'
         };
+      } else {
+        return { success: false, error: response.description || 'SMS send failed' };
       }
-
-      console.log(`[OTP] SMS sent successfully to ${phone} via EasySendSMS`);
-
-      return {
-        success: true,
-        carrier: this.getCarrier(phone),
-        messageId: response.messageIds?.[0] || response.messageId || null,
-        message: 'OTP sent via SMS'
-      };
     } catch (error) {
-      console.error(`[OTP] SMS sending failed for ${phone}:`, error.message);
-      // Still log the OTP so user can verify via Railway logs
-      console.log(`[OTP] FALLBACK - Use this OTP from logs: ${otp}`);
-      return {
-        success: false,
-        error: error.message,
-        message: 'Failed to send SMS. Please check Railway logs for OTP.'
-      };
+      console.error(`[OTP] SMS error:`, error.message);
+      return { success: false, error: error.message };
     }
   }
 
-  /**
-   * Send OTP via Email using SendGrid
-   * @param {string} email - Email address
-   * @param {string} otp - OTP code
-   * @param {string} userName - User's name for personalization
-   * @returns {Promise<Object>} Send result
-   */
-  async sendEmail(email, otp, userName = 'Customer') {
-    // Check if API key is configured
-    if (!this.sendGridApiKey) {
-      console.log(`📧 [DEV MODE] Email OTP for ${email}: ${otp}`);
-      return {
-        success: true,
-        devMode: true,
-        message: 'Email sent (development mode)'
-      };
-    }
+  // ===========================================
+  // HTTP HELPERS
+  // ===========================================
 
-    try {
-      const emailData = {
-        personalizations: [{
-          to: [{ email: email }],
-          subject: `Your AbachaOnline Verification Code: ${otp}`
-        }],
-        from: {
-          email: this.sendGridFromEmail,
-          name: this.sendGridFromName
-        },
-        content: [{
-          type: 'text/html',
-          value: this.getEmailTemplate(otp, userName)
-        }]
-      };
-
-      await this.httpPost('https://api.sendgrid.com/v3/mail/send', emailData, {
-        'Authorization': `Bearer ${this.sendGridApiKey}`,
-        'Content-Type': 'application/json'
-      });
-
-      console.log(`📧 Email sent to ${email} via SendGrid`);
-
-      return {
-        success: true,
-        message: 'OTP sent via email'
-      };
-    } catch (error) {
-      console.error(`❌ Email sending failed for ${email}:`, error.message);
-      return {
-        success: false,
-        error: error.message,
-        message: 'Failed to send email. Please try again.'
-      };
-    }
-  }
-
-  /**
-   * Send OTP - tries SMS first, falls back to email if available
-   * @param {string} phone - Phone number
-   * @param {string} otp - OTP code
-   * @param {string} email - Optional email for fallback
-   * @param {string} userName - User's name
-   * @returns {Promise<Object>} Send result
-   */
-  async sendOTP(phone, otp, email = null, userName = 'Customer') {
-    // Try SMS first
-    const smsResult = await this.sendSMS(phone, otp);
-
-    // If SMS was blocked (Africell) and email is available, use email
-    if (smsResult.blocked && email) {
-      console.log(`📧 Falling back to email for Africell user: ${email}`);
-      const emailResult = await this.sendEmail(email, otp, userName);
-      return {
-        ...emailResult,
-        method: 'email',
-        reason: 'Africell SMS temporarily unavailable'
-      };
-    }
-
-    // If SMS failed but not blocked, and email available, try email
-    if (!smsResult.success && !smsResult.blocked && email) {
-      console.log(`📧 SMS failed, falling back to email: ${email}`);
-      const emailResult = await this.sendEmail(email, otp, userName);
-      return {
-        ...emailResult,
-        method: 'email',
-        reason: 'SMS delivery failed'
-      };
-    }
-
-    return {
-      ...smsResult,
-      method: smsResult.blocked ? 'blocked' : 'sms'
-    };
-  }
-
-  /**
-   * Generate HTML email template for OTP
-   * @param {string} otp - OTP code
-   * @param {string} userName - User's name
-   * @returns {string} HTML email content
-   */
-  getEmailTemplate(otp, userName) {
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
-  <div style="max-width: 400px; margin: 0 auto; background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-    <div style="text-align: center; margin-bottom: 20px;">
-      <h1 style="color: #4CAF50; margin: 0; font-size: 24px;">AbachaOnline</h1>
-      <p style="color: #666; margin: 5px 0 0 0;">Campus Delivery Platform</p>
-    </div>
-
-    <p style="color: #333; font-size: 16px;">Hi ${userName},</p>
-
-    <p style="color: #666; font-size: 14px;">Your verification code is:</p>
-
-    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
-      <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #4CAF50;">${otp}</span>
-    </div>
-
-    <p style="color: #666; font-size: 14px;">This code expires in <strong>5 minutes</strong>.</p>
-
-    <p style="color: #999; font-size: 12px; margin-top: 30px;">
-      If you didn't request this code, please ignore this email.
-    </p>
-
-    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-
-    <p style="color: #999; font-size: 11px; text-align: center;">
-      &copy; ${new Date().getFullYear()} AbachaOnline. All rights reserved.
-    </p>
-  </div>
-</body>
-</html>
-    `.trim();
-  }
-
-  /**
-   * HTTP POST helper
-   * @param {string} url - API endpoint
-   * @param {Object} data - Request body
-   * @param {Object} headers - Additional headers
-   * @returns {Promise<Object>} Response data
-   */
   httpPost(url, data, headers = {}) {
     return new Promise((resolve, reject) => {
       const urlObj = new URL(url);
@@ -341,7 +380,7 @@ class OTPNotificationService {
       const options = {
         hostname: urlObj.hostname,
         port: 443,
-        path: urlObj.pathname,
+        path: urlObj.pathname + urlObj.search,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -354,14 +393,45 @@ class OTPNotificationService {
         let body = '';
         res.on('data', chunk => body += chunk);
         res.on('end', () => {
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            try {
-              resolve(body ? JSON.parse(body) : {});
-            } catch {
-              resolve({ raw: body });
-            }
-          } else {
-            reject(new Error(`HTTP ${res.statusCode}: ${body}`));
+          try {
+            resolve(body ? JSON.parse(body) : {});
+          } catch {
+            resolve({ raw: body });
+          }
+        });
+      });
+
+      req.on('error', reject);
+      req.write(postData);
+      req.end();
+    });
+  }
+
+  httpPostForm(url, data, headers = {}) {
+    return new Promise((resolve, reject) => {
+      const urlObj = new URL(url);
+      const postData = new URLSearchParams(data).toString();
+
+      const options = {
+        hostname: urlObj.hostname,
+        port: 443,
+        path: urlObj.pathname + urlObj.search,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': Buffer.byteLength(postData),
+          ...headers
+        }
+      };
+
+      const req = https.request(options, (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => {
+          try {
+            resolve(body ? JSON.parse(body) : {});
+          } catch {
+            resolve({ raw: body });
           }
         });
       });
