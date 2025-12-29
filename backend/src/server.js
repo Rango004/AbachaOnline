@@ -4,6 +4,7 @@ const http = require('http');
 const { Server: SocketIO } = require('socket.io');
 const WebSocketService = require('./services/WebSocketService');
 const ForecastJobQueue = require('./services/ForecastJobQueue');
+const { runMigrations } = require('./config/migrations');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3000;
@@ -45,6 +46,13 @@ RASAChatbotService.setWebSocketService(wsService);
 // Initialize ChatService with WebSocket service
 const ChatService = require('./services/ChatService');
 ChatService.setWebSocketService(wsService);
+
+// Run database migrations on startup
+runMigrations().then(() => {
+  console.log('[Server] Database migrations completed');
+}).catch(err => {
+  console.error('[Server] Migration error:', err.message);
+});
 
 // Initialize ForecastJobQueue
 ForecastJobQueue.initialize().catch(err => {
