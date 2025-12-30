@@ -90,10 +90,14 @@ class API {
     return { data }; // Wrap for axios compatibility
   }
 
-  async register(phone, name, pin, role = 'student') {
+  async register(phone, name, pin, email = null, role = 'student') {
+    const body = { phone, name, pin, role };
+    if (email) {
+      body.email = email;
+    }
     return this.request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ phone, name, pin, role }),
+      body: JSON.stringify(body),
     });
   }
 

@@ -45,19 +45,36 @@ class AuthService {
   }
 
   /**
+   * Validate email format
+   * @param {string} email - Email to validate
+   * @returns {boolean} True if valid
+   */
+  validateEmail(email) {
+    if (!email) return true; // Email is optional
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  /**
    * Register a new user
    * @param {string} phone - Phone number in international format
    * @param {string} name - User's full name
    * @param {string} pin - 6-digit PIN for authentication
    * @param {string} role - User role (student, merchant, rider, admin)
    * @param {number} locationId - Location/dormitory ID (required for students)
+   * @param {string} email - Optional email for account recovery
    * @returns {Promise<Object>} User ID and success message
    */
-  async register(phone, name, pin, role = 'student', locationId = null) {
+  async register(phone, name, pin, role = 'student', locationId = null, email = null) {
     // Validate PIN
     const pinValidation = this.validatePIN(pin);
     if (!pinValidation.valid) {
       throw new Error(pinValidation.message);
+    }
+
+    // Validate email if provided
+    if (email && !this.validateEmail(email)) {
+      throw new Error('Invalid email format');
     }
 
     const carrierInfo = this.checkCarrier(phone);
@@ -75,6 +92,17 @@ class AuthService {
         [phone]
       );
 
+      // Check if email is already used by another user
+      if (email) {
+        const emailCheck = await client.query(
+          'SELECT id FROM users WHERE email = $1 AND phone != $2',
+          [email, phone]
+        );
+        if (emailCheck.rows.length > 0) {
+          throw new Error('Email already registered to another account');
+        }
+      }
+
       let userId;
       const otp = this.generateOTP();
 
@@ -88,22 +116,22 @@ class AuthService {
           throw new Error('User already registered. Please login.');
         }
 
-        // Update unverified user with new OTP and PIN
+        // Update unverified user with new OTP, PIN, and email
         const result = await client.query(
           `UPDATE users
-           SET name = $1, role = $2, verification_code = $3, location_id = $4, password_hash = $5, updated_at = NOW()
-           WHERE phone = $6
+           SET name = $1, role = $2, verification_code = $3, location_id = $4, password_hash = $5, email = $6, updated_at = NOW()
+           WHERE phone = $7
            RETURNING id`,
-          [name, role, otp, locationId, pinHash, phone]
+          [name, role, otp, locationId, pinHash, email, phone]
         );
         userId = result.rows[0].id;
       } else {
-        // Insert new user with PIN
+        // Insert new user with PIN and email
         const result = await client.query(
-          `INSERT INTO users (phone, name, role, verification_code, is_verified, location_id, password_hash)
-           VALUES ($1, $2, $3, $4, false, $5, $6)
+          `INSERT INTO users (phone, name, role, verification_code, is_verified, location_id, password_hash, email)
+           VALUES ($1, $2, $3, $4, false, $5, $6, $7)
            RETURNING id`,
-          [phone, name, role, otp, locationId, pinHash]
+          [phone, name, role, otp, locationId, pinHash, email]
         );
         userId = result.rows[0].id;
 
@@ -118,8 +146,8 @@ class AuthService {
 
       await client.query('COMMIT');
 
-      // Send OTP via multi-channel service (WhatsApp, Flash Call, SMS, or Fallback)
-      const otpResult = await otpService.sendOTP(phone, otp, { userName: name });
+      // Send OTP via multi-channel service (WhatsApp, Flash Call, SMS, Email, or Fallback)
+      const otpResult = await otpService.sendOTP(phone, otp, { userName: name, email: email });
 
       return {
         user_id: userId,

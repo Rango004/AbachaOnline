@@ -11,7 +11,7 @@ const router = express.Router();
  */
 router.post('/register', async (req, res) => {
   try {
-    const { phone, name, pin, role, location_id } = req.body;
+    const { phone, name, pin, role, location_id, email } = req.body;
 
     // Validation
     if (!phone || !name || !pin) {
@@ -38,6 +38,17 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // Validate email format if provided (optional)
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          error: 'Invalid email',
+          message: 'Please enter a valid email address'
+        });
+      }
+    }
+
     // Validate role if provided
     const validRoles = ['student', 'merchant', 'rider', 'admin'];
     if (role && !validRoles.includes(role)) {
@@ -47,7 +58,7 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const result = await AuthService.register(phone, name, pin, role, location_id);
+    const result = await AuthService.register(phone, name, pin, role, location_id, email);
     res.status(201).json(result);
   } catch (error) {
     console.error('Registration error:', error);

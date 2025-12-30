@@ -7,6 +7,7 @@ export default function Register() {
   const { login } = useContext(AuthContext);
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [code, setCode] = useState('');
@@ -53,7 +54,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const data = await api.register(phone, name, pin, 'student');
+      const data = await api.register(phone, name, pin, email || null, 'student');
 
       // Store delivery method and message
       setOtpMethod(data.method || 'sms');
@@ -73,7 +74,7 @@ export default function Register() {
 
     try {
       // Try to resend by re-registering (will send new OTP)
-      const data = await api.register(phone, name, pin, 'student');
+      const data = await api.register(phone, name, pin, email || null, 'student');
       setMessage('New verification code sent! Please check your phone.');
       setOtpMethod(data.method || 'sms');
     } catch (err) {
@@ -134,6 +135,19 @@ export default function Register() {
               </div>
 
               <div class="form-group">
+                <label>Email (Optional)</label>
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onInput={(e) => setEmail(e.target.value)}
+                />
+                <small style="color: #666; display: block; margin-top: 4px;">
+                  For account recovery if OTP fails
+                </small>
+              </div>
+
+              <div class="form-group">
                 <label>Create 6-Digit PIN</label>
                 <input
                   type="password"
@@ -185,6 +199,7 @@ export default function Register() {
                 <p style="margin: 0; color: #1565c0; font-weight: 500;">
                   {otpMethod === 'whatsapp' ? '📱 Check WhatsApp' :
                    otpMethod === 'flashcall' ? '📞 Incoming call' :
+                   otpMethod === 'email' ? '📧 Check Email' :
                    '💬 Check SMS'}
                 </p>
                 <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">

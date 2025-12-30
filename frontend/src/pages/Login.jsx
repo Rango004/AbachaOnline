@@ -265,6 +265,7 @@ export default function Login() {
                 <p style="margin: 0; color: #1565c0; font-weight: 500;">
                   {otpMethod === 'whatsapp' ? '📱 Check WhatsApp' :
                    otpMethod === 'flashcall' ? '📞 Incoming call' :
+                   otpMethod === 'email' ? '📧 Check Email' :
                    '💬 Check SMS'}
                 </p>
                 <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">

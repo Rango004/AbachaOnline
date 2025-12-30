@@ -60,6 +60,7 @@ class OTPNotificationService {
     console.log(`  - WhatsApp: ${this.whatsappEnabled ? '✅ Enabled' : '❌ Disabled'}`);
     console.log(`  - Flash Call: ${this.flashCallEnabled ? '✅ Enabled' : '❌ Disabled'}`);
     console.log(`  - SMS: ${this.smsEnabled ? '✅ Enabled' : '❌ Disabled'}`);
+    console.log(`  - Email: ${this.emailEnabled ? '✅ Enabled' : '❌ Disabled'}`);
     console.log(`  - Fallback: ${this.fallbackEnabled ? '✅ Enabled' : '❌ Disabled'}`);
   }
 
@@ -116,14 +117,15 @@ class OTPNotificationService {
    * Send OTP using available channels with automatic fallback
    * @param {string} phone - Phone number in international format
    * @param {string} otp - OTP code
-   * @param {Object} options - Additional options
+   * @param {Object} options - Additional options (userName, email)
    * @returns {Promise<Object>} Send result with OTP if fallback used
    */
   async sendOTP(phone, otp, options = {}) {
-    const { preferredMethod, userName } = options;
+    const { preferredMethod, userName, email } = options;
 
     console.log(`[OTP] ========================================`);
     console.log(`[OTP] Sending OTP to ${phone}`);
+    console.log(`[OTP] Email: ${email || 'Not provided'}`);
     console.log(`[OTP] Generated code: ${otp}`);
     console.log(`[OTP] Carrier: ${this.getCarrier(phone)}`);
     console.log(`[OTP] ========================================`);
@@ -165,6 +167,20 @@ class OTPNotificationService {
       }
     }
 
+    // Try Email if provided (recovery option)
+    if (this.emailEnabled && email && preferredMethod !== 'skip_email') {
+      console.log(`[OTP] Trying Email to ${email}...`);
+      const result = await this.sendEmail(email, otp, userName);
+      attempts.push({ method: 'email', ...result });
+      if (result.success) {
+        return {
+          ...result,
+          method: 'email',
+          message: 'OTP sent to your email. Please check your inbox (and spam folder).'
+        };
+      }
+    }
+
     // Fallback: All delivery methods failed, but OTP is stored in database
     // User should use "Resend Code" to try again or contact support
     if (this.fallbackEnabled) {
@@ -173,7 +189,7 @@ class OTPNotificationService {
       return {
         success: true,
         method: 'fallback',
-        message: 'Verification code generated. Please check your phone for SMS/WhatsApp or use "Resend Code" to try again.',
+        message: 'Verification code generated. Please check your phone/email or use "Resend Code" to try again.',
         attempts: attempts
       };
     }
@@ -361,6 +377,76 @@ class OTPNotificationService {
       }
     } catch (error) {
       console.error(`[OTP] SMS error:`, error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ===========================================
+  // EMAIL OTP (via SendGrid)
+  // ===========================================
+
+  async sendEmail(email, otp, userName) {
+    if (!this.emailEnabled) {
+      return { success: false, error: 'Email not configured' };
+    }
+
+    try {
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: #4CAF50; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0;">AbachaOnline</h1>
+            <p style="margin: 5px 0 0 0; font-size: 14px;">Campus Delivery Platform</p>
+          </div>
+          <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
+            <p style="color: #333; font-size: 16px;">Hello${userName ? ` ${userName}` : ''},</p>
+            <p style="color: #666; font-size: 14px;">Your verification code is:</p>
+            <div style="background: #fff; border: 2px dashed #4CAF50; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px;">
+              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #333;">${otp}</span>
+            </div>
+            <p style="color: #666; font-size: 14px;">This code is valid for <strong>5 minutes</strong>.</p>
+            <p style="color: #999; font-size: 12px; margin-top: 20px;">If you didn't request this code, please ignore this email.</p>
+          </div>
+          <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
+            <p>AbachaOnline - Your Campus Delivery Partner</p>
+          </div>
+        </div>
+      `;
+
+      const textContent = `AbachaOnline Verification Code\n\nHello${userName ? ` ${userName}` : ''},\n\nYour verification code is: ${otp}\n\nThis code is valid for 5 minutes.\n\nIf you didn't request this code, please ignore this email.`;
+
+      const response = await this.httpPost(
+        'https://api.sendgrid.com/v3/mail/send',
+        {
+          personalizations: [{
+            to: [{ email: email }],
+            subject: `Your AbachaOnline verification code: ${otp}`
+          }],
+          from: {
+            email: this.sendGridFromEmail,
+            name: this.sendGridFromName
+          },
+          content: [
+            { type: 'text/plain', value: textContent },
+            { type: 'text/html', value: htmlContent }
+          ]
+        },
+        {
+          'Authorization': `Bearer ${this.sendGridApiKey}`,
+          'Content-Type': 'application/json'
+        }
+      );
+
+      console.log(`[OTP] SendGrid response:`, JSON.stringify(response));
+
+      // SendGrid returns empty response on success (202 Accepted)
+      if (!response.errors) {
+        console.log(`[OTP] ✅ Email OTP sent successfully to ${email}`);
+        return { success: true, message: 'OTP sent via email' };
+      } else {
+        return { success: false, error: response.errors?.[0]?.message || 'Email send failed' };
+      }
+    } catch (error) {
+      console.error(`[OTP] Email error:`, error.message);
       return { success: false, error: error.message };
     }
   }
