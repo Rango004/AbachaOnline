@@ -24,19 +24,50 @@ class AuthService {
   }
 
   /**
+   * Validate PIN format (6 digits, no sequential or repeated patterns)
+   * @param {string} pin - PIN to validate
+   * @returns {boolean} True if valid
+   */
+  validatePIN(pin) {
+    if (!/^\d{6}$/.test(pin)) {
+      return { valid: false, message: 'PIN must be exactly 6 digits' };
+    }
+    // Block sequential PINs
+    const sequential = ['123456', '234567', '345678', '456789', '567890', '654321', '543210', '432109', '321098', '210987'];
+    if (sequential.includes(pin)) {
+      return { valid: false, message: 'PIN cannot be a sequential number' };
+    }
+    // Block repeated digits
+    if (/^(\d)\1{5}$/.test(pin)) {
+      return { valid: false, message: 'PIN cannot be all the same digit' };
+    }
+    return { valid: true };
+  }
+
+  /**
    * Register a new user
    * @param {string} phone - Phone number in international format
    * @param {string} name - User's full name
+   * @param {string} pin - 6-digit PIN for authentication
    * @param {string} role - User role (student, merchant, rider, admin)
    * @param {number} locationId - Location/dormitory ID (required for students)
    * @returns {Promise<Object>} User ID and success message
    */
-  async register(phone, name, role = 'student', locationId = null) {
+  async register(phone, name, pin, role = 'student', locationId = null) {
+    // Validate PIN
+    const pinValidation = this.validatePIN(pin);
+    if (!pinValidation.valid) {
+      throw new Error(pinValidation.message);
+    }
+
     const carrierInfo = this.checkCarrier(phone);
     const client = await db.getClient();
 
     try {
       await client.query('BEGIN');
+
+      // Hash the PIN
+      const pinHash = await bcrypt.hash(pin, 10);
 
       // Check if user already exists
       const existingUser = await client.query(
@@ -57,22 +88,22 @@ class AuthService {
           throw new Error('User already registered. Please login.');
         }
 
-        // Update unverified user with new OTP
+        // Update unverified user with new OTP and PIN
         const result = await client.query(
           `UPDATE users
-           SET name = $1, role = $2, verification_code = $3, location_id = $4, updated_at = NOW()
-           WHERE phone = $5
+           SET name = $1, role = $2, verification_code = $3, location_id = $4, password_hash = $5, updated_at = NOW()
+           WHERE phone = $6
            RETURNING id`,
-          [name, role, otp, locationId, phone]
+          [name, role, otp, locationId, pinHash, phone]
         );
         userId = result.rows[0].id;
       } else {
-        // Insert new user
+        // Insert new user with PIN
         const result = await client.query(
-          `INSERT INTO users (phone, name, role, verification_code, is_verified, location_id)
-           VALUES ($1, $2, $3, $4, false, $5)
+          `INSERT INTO users (phone, name, role, verification_code, is_verified, location_id, password_hash)
+           VALUES ($1, $2, $3, $4, false, $5, $6)
            RETURNING id`,
-          [phone, name, role, otp, locationId]
+          [phone, name, role, otp, locationId, pinHash]
         );
         userId = result.rows[0].id;
 
@@ -403,6 +434,92 @@ class AuthService {
     }
   }
 
+  /**
+   * Login with phone and 6-digit PIN
+   * @param {string} phone - Phone number
+   * @param {string} pin - 6-digit PIN
+   * @returns {Promise<Object>} Tokens and user info
+   */
+  async loginWithPIN(phone, pin) {
+    try {
+      // Validate PIN format
+      if (!/^\d{6}$/.test(pin)) {
+        throw new Error('PIN must be exactly 6 digits');
+      }
+
+      const result = await db.query(
+        `SELECT id, phone, name, role, zone_id, password_hash, is_verified
+         FROM users
+         WHERE phone = $1`,
+        [phone]
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error('User not found');
+      }
+
+      const user = result.rows[0];
+
+      if (!user.is_verified) {
+        throw new Error('Please verify your account first');
+      }
+
+      if (!user.password_hash) {
+        throw new Error('PIN not set. Please use OTP login.');
+      }
+
+      const isValidPin = await bcrypt.compare(pin, user.password_hash);
+      if (!isValidPin) {
+        throw new Error('Invalid PIN');
+      }
+
+      const accessToken = this.generateAccessToken(user);
+      const refreshToken = this.generateRefreshToken(user);
+
+      return {
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          phone: user.phone,
+          name: user.name,
+          role: user.role,
+          zone_id: user.zone_id
+        }
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Check if user exists and has a PIN set
+   * @param {string} phone - Phone number
+   * @returns {Promise<Object>} User existence and PIN status
+   */
+  async checkHasPIN(phone) {
+    try {
+      const result = await db.query(
+        `SELECT id, is_verified, password_hash IS NOT NULL as has_pin
+         FROM users
+         WHERE phone = $1`,
+        [phone]
+      );
+
+      if (result.rows.length === 0) {
+        return { exists: false, isVerified: false, hasPIN: false };
+      }
+
+      const user = result.rows[0];
+      return {
+        exists: true,
+        isVerified: user.is_verified,
+        hasPIN: user.has_pin
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 
   /**
    * Admin creates merchant or rider account (no OTP required)

@@ -11,13 +11,21 @@ const router = express.Router();
  */
 router.post('/register', async (req, res) => {
   try {
-    const { phone, name, role, location_id } = req.body;
+    const { phone, name, pin, role, location_id } = req.body;
 
     // Validation
-    if (!phone || !name) {
+    if (!phone || !name || !pin) {
       return res.status(400).json({
         error: 'Validation failed',
-        message: 'Phone number and name are required'
+        message: 'Phone number, name, and PIN are required'
+      });
+    }
+
+    // Validate PIN format (6 digits)
+    if (!/^\d{6}$/.test(pin)) {
+      return res.status(400).json({
+        error: 'Invalid PIN',
+        message: 'PIN must be exactly 6 digits'
       });
     }
 
@@ -39,7 +47,7 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const result = await AuthService.register(phone, name, role, location_id);
+    const result = await AuthService.register(phone, name, pin, role, location_id);
     res.status(201).json(result);
   } catch (error) {
     console.error('Registration error:', error);
@@ -169,6 +177,68 @@ router.post('/verify-login', async (req, res) => {
     console.error('Login OTP verification error:', error);
     res.status(401).json({
       error: 'Verification failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * @route   POST /api/v1/auth/login-pin
+ * @desc    Login with phone and 6-digit PIN
+ * @access  Public
+ */
+router.post('/login-pin', async (req, res) => {
+  try {
+    const { phone, pin } = req.body;
+
+    if (!phone || !pin) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Phone number and PIN are required'
+      });
+    }
+
+    // Validate PIN is 6 digits
+    if (!/^\d{6}$/.test(pin)) {
+      return res.status(400).json({
+        error: 'Invalid PIN',
+        message: 'PIN must be a 6-digit number'
+      });
+    }
+
+    const result = await AuthService.loginWithPIN(phone, pin);
+    res.json(result);
+  } catch (error) {
+    console.error('PIN login error:', error);
+    res.status(401).json({
+      error: 'Login failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * @route   GET /api/v1/auth/check-user
+ * @desc    Check if user exists and has PIN set
+ * @access  Public
+ */
+router.get('/check-user', async (req, res) => {
+  try {
+    const { phone } = req.query;
+
+    if (!phone) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Phone number is required'
+      });
+    }
+
+    const result = await AuthService.checkHasPIN(phone);
+    res.json(result);
+  } catch (error) {
+    console.error('Check user error:', error);
+    res.status(500).json({
+      error: 'Check failed',
       message: error.message
     });
   }

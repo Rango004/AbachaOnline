@@ -90,10 +90,10 @@ class API {
     return { data }; // Wrap for axios compatibility
   }
 
-  async register(phone, name, role = 'student') {
+  async register(phone, name, pin, role = 'student') {
     return this.request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ phone, name, role }),
+      body: JSON.stringify({ phone, name, pin, role }),
     });
   }
 
@@ -124,6 +124,21 @@ class API {
       this.setToken(data.accessToken);
     }
     return data;
+  }
+
+  async loginWithPIN(phone, pin) {
+    const data = await this.request('/auth/login-pin', {
+      method: 'POST',
+      body: JSON.stringify({ phone, pin }),
+    });
+    if (data.accessToken) {
+      this.setToken(data.accessToken);
+    }
+    return data;
+  }
+
+  async checkUser(phone) {
+    return this.request(`/auth/check-user?phone=${encodeURIComponent(phone)}`);
   }
 
   async getProfile() {

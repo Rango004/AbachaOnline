@@ -7,6 +7,8 @@ export default function Register() {
   const { login } = useContext(AuthContext);
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
+  const [pin, setPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
   const [code, setCode] = useState('');
   const [step, setStep] = useState('register'); // 'register' or 'verify'
   const [loading, setLoading] = useState(false);
@@ -15,13 +17,43 @@ export default function Register() {
   const [message, setMessage] = useState('');
   const [otpMethod, setOtpMethod] = useState('');
 
+  const handlePinInput = (e, setter) => {
+    // Only allow digits, max 6
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setter(value);
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
+    // Validate PIN
+    if (pin.length !== 6) {
+      setError('PIN must be exactly 6 digits');
+      return;
+    }
+
+    if (pin !== confirmPin) {
+      setError('PINs do not match');
+      return;
+    }
+
+    // Check for weak PINs
+    const sequential = ['123456', '234567', '345678', '456789', '567890', '654321', '543210'];
+    if (sequential.includes(pin)) {
+      setError('PIN cannot be a sequential number');
+      return;
+    }
+
+    if (/^(\d)\1{5}$/.test(pin)) {
+      setError('PIN cannot be all the same digit');
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const data = await api.register(phone, name, 'student');
+      const data = await api.register(phone, name, pin, 'student');
 
       // Store delivery method and message
       setOtpMethod(data.method || 'sms');
@@ -41,7 +73,7 @@ export default function Register() {
 
     try {
       // Try to resend by re-registering (will send new OTP)
-      const data = await api.register(phone, name, 'student');
+      const data = await api.register(phone, name, pin, 'student');
       setMessage('New verification code sent! Please check your phone.');
       setOtpMethod(data.method || 'sms');
     } catch (err) {
@@ -65,6 +97,8 @@ export default function Register() {
       setLoading(false);
     }
   };
+
+  const isPinValid = pin.length === 6 && pin === confirmPin;
 
   return (
     <div class="page register-page">
@@ -99,7 +133,48 @@ export default function Register() {
                 </small>
               </div>
 
-              <button type="submit" class="btn-primary" disabled={loading}>
+              <div class="form-group">
+                <label>Create 6-Digit PIN</label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  placeholder="Enter PIN"
+                  value={pin}
+                  onInput={(e) => handlePinInput(e, setPin)}
+                  maxLength="6"
+                  required
+                  style="font-size: 24px; text-align: center; letter-spacing: 8px;"
+                />
+                <small style="color: #666; display: block; margin-top: 4px;">
+                  {pin.length}/6 digits - Use this PIN for quick login
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label>Confirm PIN</label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  placeholder="Confirm PIN"
+                  value={confirmPin}
+                  onInput={(e) => handlePinInput(e, setConfirmPin)}
+                  maxLength="6"
+                  required
+                  style="font-size: 24px; text-align: center; letter-spacing: 8px;"
+                />
+                {confirmPin && pin !== confirmPin && (
+                  <small style="color: #d32f2f; display: block; margin-top: 4px;">
+                    PINs do not match
+                  </small>
+                )}
+                {confirmPin && pin === confirmPin && pin.length === 6 && (
+                  <small style="color: #2e7d32; display: block; margin-top: 4px;">
+                    PINs match
+                  </small>
+                )}
+              </div>
+
+              <button type="submit" class="btn-primary" disabled={loading || !isPinValid}>
                 {loading ? 'Creating Account...' : 'Register'}
               </button>
             </form>
