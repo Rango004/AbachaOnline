@@ -23,6 +23,10 @@ export default function AdminDashboard() {
   const [settings, setSettings] = useState({});
   const [riderFee, setRiderFee] = useState('');
   const [savingSettings, setSavingSettings] = useState(false);
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [newUserPhone, setNewUserPhone] = useState('');
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserRole, setNewUserRole] = useState('merchant');
 
   useEffect(() => {
     if (user?.role !== 'admin') {
@@ -112,6 +116,38 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCreateUser = async () => {
+    if (!newUserPhone || !newUserName || !newUserRole) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    // Basic phone validation
+    if (!/^\+?[\d\s-]{10,}$/.test(newUserPhone)) {
+      alert('Please enter a valid phone number');
+      return;
+    }
+
+    try {
+      await api.createAdminUser(newUserPhone, newUserName, newUserRole);
+      alert(`${newUserRole === 'merchant' ? 'Merchant' : 'Rider'} created successfully`);
+      setShowCreateUserModal(false);
+      setNewUserPhone('');
+      setNewUserName('');
+      setNewUserRole('merchant');
+      loadData();
+    } catch (err) {
+      alert(err.message || `Failed to create ${newUserRole}`);
+    }
+  };
+
+  const openCreateUserModal = (role) => {
+    setNewUserRole(role);
+    setNewUserPhone('');
+    setNewUserName('');
+    setShowCreateUserModal(true);
+  };
+
   if (loading && !stats) return <div class="page"><p>Loading...</p></div>;
 
   return (
@@ -190,7 +226,10 @@ export default function AdminDashboard() {
 
         {activeTab === 'merchants' && (
           <div class="table-container">
-            <h3>Merchant Audit</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+              <h3>Merchant Audit</h3>
+              <button class="btn btn-primary" onClick={() => openCreateUserModal('merchant')}>+ Add Merchant</button>
+            </div>
             <table>
               <thead>
                 <tr>
@@ -229,7 +268,10 @@ export default function AdminDashboard() {
 
         {activeTab === 'riders' && (
           <div class="table-container">
-            <h3>Rider Audit</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+              <h3>Rider Audit</h3>
+              <button class="btn btn-primary" onClick={() => openCreateUserModal('rider')}>+ Add Rider</button>
+            </div>
             <table>
               <thead>
                 <tr>
@@ -719,6 +761,39 @@ export default function AdminDashboard() {
           font-size: 0.95em;
         }
       `}</style>
+
+      {/* Create User Modal */}
+      {showCreateUserModal && (
+        <div class="modal-overlay" onClick={() => setShowCreateUserModal(false)}>
+          <div class="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Add New {newUserRole === 'merchant' ? 'Merchant' : 'Rider'}</h3>
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input
+                type="tel"
+                placeholder="+23276XXXXXXX"
+                value={newUserPhone}
+                onInput={(e) => setNewUserPhone(e.target.value)}
+                class="form-input"
+              />
+            </div>
+            <div class="form-group">
+              <label>Full Name</label>
+              <input
+                type="text"
+                placeholder="Enter full name"
+                value={newUserName}
+                onInput={(e) => setNewUserName(e.target.value)}
+                class="form-input"
+              />
+            </div>
+            <div class="modal-actions">
+              <button class="btn btn-secondary" onClick={() => setShowCreateUserModal(false)}>Cancel</button>
+              <button class="btn btn-primary" onClick={handleCreateUser}>Create {newUserRole === 'merchant' ? 'Merchant' : 'Rider'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

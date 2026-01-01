@@ -856,6 +856,20 @@ class API {
     );
   }
 
+  // Admin User Management
+  async createAdminUser(phone, name, role) {
+    return this.request('/admin-panel/users', {
+      method: 'POST',
+      body: JSON.stringify({ phone, name, role }),
+    });
+  }
+
+  async deleteAdminUser(userId) {
+    return this.request(`/admin-panel/users/${userId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Predictions methods
   async getWeeklyPredictions() {
     return this.request('/merchant/predictions/weekly');
