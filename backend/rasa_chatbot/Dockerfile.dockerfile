@@ -1,9 +1,3 @@
-Create AbachaOL\backend\rasa_chatbot\Dockerfile:
-
-# Create the file
-notepad Dockerfile
-Paste this content:
-
 FROM python:3.10-slim
 
 WORKDIR /app
