@@ -2,11 +2,22 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including all build tools needed for RASA
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
+    gcc \
+    g++ \
+    git \
+    python3-dev \
+    libpq-dev \
+    libffi-dev \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip and install build dependencies
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir Cython
 
 # Copy requirements
 COPY requirements.txt .
