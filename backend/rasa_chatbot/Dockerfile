@@ -20,6 +20,9 @@ RUN apt-get update && apt-get install -y \
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir Cython
 
+# Pre-install PyYAML with --no-build-isolation to use our Cython
+RUN pip install --no-cache-dir --no-build-isolation "PyYAML>=5.3.1,<6.0"
+
 # Copy requirements
 COPY requirements.txt .
 
