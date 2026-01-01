@@ -163,8 +163,10 @@ app.use((req, res, next) => {
         req.path === '/api/v1/auth/verify-login' ||
         req.path === '/api/v1/auth/resend-otp' ||
         req.path === '/api/v1/auth/refresh' ||
+        req.path === '/api/v1/auth/profile' ||
         req.path.startsWith('/api/v1/wishlists') ||
         req.path.startsWith('/api/v1/addresses') ||
+        req.path.startsWith('/api/v1/admin-panel') ||
         req.path.startsWith('/api/v1/admin/predictions') ||
         req.path.startsWith('/api/v1/merchant/predictions') ||
         req.path.startsWith('/api/v1/rider/orders/') ||
