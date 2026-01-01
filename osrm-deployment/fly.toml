@@ -1,0 +1,35 @@
+# Fly.io Configuration for OSRM Server
+app = "abacha-osrm"
+
+[build]
+  image = "osrm/osrm-backend:latest"
+
+[env]
+  OSRM_DATA_PATH = "/data"
+
+[[services]]
+  internal_port = 5000
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [services.concurrency]
+    hard_limit = 25
+    soft_limit = 20
+    type = "connections"
+
+  [[services.tcp_checks]]
+    grace_period = "10s"
+    interval = "30s"
+    restart_limit = 3
+    timeout = "5s"
+
+[mounts]
+  source = "osrm_data"
+  destination = "/data"
