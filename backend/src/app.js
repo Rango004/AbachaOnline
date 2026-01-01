@@ -168,7 +168,7 @@ app.use((req, res, next) => {
         req.path.startsWith('/api/v1/addresses') ||
         req.path.startsWith('/api/v1/admin-panel') ||
         req.path.startsWith('/api/v1/admin/') ||
-        req.path.startsWith('/api/v1/merchant/predictions') ||
+        req.path.startsWith('/api/v1/merchant/') ||
         req.path.startsWith('/api/v1/rider/orders/') ||
         req.path.startsWith('/api/v1/rider/routes/') ||
         req.path.startsWith('/api/v1/chat/') ||
