@@ -158,6 +158,7 @@ app.use((req, res, next) => {
     // Skip CSRF check for health endpoints, auth routes (public endpoints), JWT-protected routes, and rider order operations
     if (req.path === '/health' || req.path === '/health/db' ||
         req.path === '/api/v1/auth/login' ||
+        req.path === '/api/v1/auth/login-pin' ||
         req.path === '/api/v1/auth/register' ||
         req.path === '/api/v1/auth/verify-otp' ||
         req.path === '/api/v1/auth/verify-login' ||
