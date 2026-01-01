@@ -1,5 +1,8 @@
 # RASA Chatbot Dependencies for WeGo (Bilingual: English + Krio)
 
+# Fix PyYAML build issue - install newer version first
+PyYAML>=6.0
+
 # Core RASA
 rasa==3.6.0
 rasa-sdk==3.6.0

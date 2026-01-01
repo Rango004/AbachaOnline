@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     libffi-dev \
     libssl-dev \
+    libyaml-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip and install build dependencies
