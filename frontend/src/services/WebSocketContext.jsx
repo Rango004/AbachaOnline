@@ -30,9 +30,10 @@ export function WebSocketProvider({ children }) {
     }
 
     try {
-      // Connect to WebSocket server
+      // Connect to WebSocket server - use API URL from environment variable
+      const wsUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? window.location.origin : 'http://localhost:3000');
       const newSocket = io(
-        import.meta.env.PROD ? window.location.origin : 'http://localhost:3000',
+        wsUrl,
         {
           auth: {
             token: token
