@@ -5,9 +5,9 @@ recipe: default.v1
 language: en
 
 pipeline:
-  # Spacy NLP for English base
+  # Spacy NLP for English base (using smaller model to fit in 512MB RAM)
   - name: SpacyNLP
-    model: "en_core_web_md"
+    model: "en_core_web_sm"
     case_sensitive: false
 
   # Tokenization
