@@ -1,37 +1,26 @@
-FROM python:3.10-slim
+# Use official RASA image - all dependencies pre-built and working
+FROM rasa/rasa:3.6.0
 
 WORKDIR /app
 
-# Install system dependencies including all build tools needed for RASA
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    gcc \
-    g++ \
-    git \
-    python3-dev \
-    libpq-dev \
-    libffi-dev \
-    libssl-dev \
-    libyaml-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Switch to root for installations
+USER root
 
-# Upgrade pip but pin setuptools to version compatible with PyYAML 5.x
-# setuptools 72+ broke PyYAML 5.4.1's Cython extension build
-RUN pip install --no-cache-dir --upgrade pip wheel && \
-    pip install --no-cache-dir "setuptools<72.0.0" Cython
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY requirements.txt .
+# Copy RASA configuration files
+COPY config.yml domain.yml ./
+COPY data/ ./data/
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy credentials and endpoints
+COPY credentials.yml endpoints.yml ./
 
-# Download spaCy language model
-RUN python -m spacy download en_core_web_md
+# Copy actions if they exist
+COPY actions.py ./
 
-# Copy all RASA files
-COPY . .
+# Switch back to non-root user for security
+USER 1001
 
 # Train the RASA model
 RUN rasa train --fixed-model-name model
@@ -40,8 +29,8 @@ RUN rasa train --fixed-model-name model
 EXPOSE 5005
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:5005/ || exit 1
 
 # Start RASA server
-CMD ["rasa", "run", "--enable-api", "--port", "5005", "--cors", "*"]
+CMD ["run", "--enable-api", "--port", "5005", "--cors", "*"]
