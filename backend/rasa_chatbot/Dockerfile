@@ -16,12 +16,10 @@ RUN apt-get update && apt-get install -y \
     libyaml-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip and install build dependencies
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir Cython
-
-# Pre-install PyYAML with --no-build-isolation to use our Cython
-RUN pip install --no-cache-dir --no-build-isolation "PyYAML>=5.3.1,<6.0"
+# Upgrade pip but pin setuptools to version compatible with PyYAML 5.x
+# setuptools 72+ broke PyYAML 5.4.1's Cython extension build
+RUN pip install --no-cache-dir --upgrade pip wheel && \
+    pip install --no-cache-dir "setuptools<72.0.0" Cython
 
 # Copy requirements
 COPY requirements.txt .
