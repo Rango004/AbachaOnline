@@ -301,6 +301,55 @@ router.get('/profile', authenticate, async (req, res) => {
 });
 
 /**
+ * @route   PUT /api/v1/auth/profile
+ * @desc    Update current user's profile
+ * @access  Private (requires authentication)
+ */
+router.put('/profile', authenticate, async (req, res) => {
+  try {
+    const { name, email, location_id } = req.body;
+    const userId = req.user.id;
+
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+
+    if (name) {
+      updates.push(`name = $${paramCount++}`);
+      values.push(name);
+    }
+    if (email !== undefined) {
+      updates.push(`email = $${paramCount++}`);
+      values.push(email);
+    }
+    if (location_id !== undefined) {
+      updates.push(`location_id = $${paramCount++}`);
+      values.push(location_id);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    values.push(userId);
+    const db = require('../config/database');
+    await db.query(
+      `UPDATE users SET ${updates.join(', ')}, updated_at = NOW() WHERE id = $${paramCount}`,
+      values
+    );
+
+    const profile = await AuthService.getUserProfile(userId);
+    res.json(profile);
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      error: 'Failed to update profile',
+      message: error.message
+    });
+  }
+});
+
+/**
  * @route   GET /api/v1/auth/test
  * @desc    Test authentication middleware
  * @access  Private (requires authentication)
