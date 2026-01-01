@@ -23,3 +23,15 @@ Thumbs.db
 
 # Git
 .git/
+
+# Build artifacts and test files
+tensorboard/
+actions_OLD_BACKUP/
+*.bat
+fix_*.py
+clean_cache.py
+train_rasa.py
+.env
+.env.example
+Dockerfile.dockerfile
+README.md

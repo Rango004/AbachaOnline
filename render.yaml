@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: abacha-rasa-chatbot
+    env: docker
+    dockerfilePath: ./backend/rasa_chatbot/Dockerfile
+    dockerContext: ./backend/rasa_chatbot
+    plan: free
+    envVars:
+      - key: PORT
+        value: 5005
+      - key: RASA_LOG_LEVEL
+        value: INFO
