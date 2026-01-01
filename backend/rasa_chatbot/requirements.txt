@@ -1,0 +1,18 @@
+# RASA Chatbot Dependencies for WeGo (Bilingual: English + Krio)
+
+# Core RASA
+rasa==3.6.0
+rasa-sdk==3.6.0
+
+# NLU & Language Processing
+spacy==3.5.0
+# After installing, run: python -m spacy download en_core_web_md
+
+# HTTP requests for webhook calls
+requests==2.31.0
+
+# Python utilities
+python-dateutil==2.8.2
+
+# Note: This setup works with Python 3.8, 3.9, or 3.10 ONLY
+# Python 3.11+ is NOT supported by RASA 3.6.0

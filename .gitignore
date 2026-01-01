@@ -98,6 +98,8 @@ backend/scripts/
 
 # Misc files
 *.txt
+!requirements.txt
+!requirements-*.txt
 *.ps1
 Receipt*.pdf
 
