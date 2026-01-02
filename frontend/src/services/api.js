@@ -4,6 +4,8 @@ class API {
   constructor() {
     this.baseURL = `${API_BASE}/api/v1`;
     this.token = localStorage.getItem('token');
+    this.csrfToken = null;
+    this.csrfTokenPromise = null;
   }
 
   setToken(token) {
@@ -12,11 +14,66 @@ class API {
       localStorage.setItem('token', token);
     } else {
       localStorage.removeItem('token');
+      // Clear CSRF token when logging out
+      this.csrfToken = null;
     }
+  }
+
+  // Fetch CSRF token with caching and deduplication
+  async fetchCsrfToken() {
+    // Return cached token if available
+    if (this.csrfToken) {
+      return this.csrfToken;
+    }
+
+    // If already fetching, wait for the existing promise
+    if (this.csrfTokenPromise) {
+      return this.csrfTokenPromise;
+    }
+
+    // Fetch new token
+    this.csrfTokenPromise = (async () => {
+      try {
+        const url = `${this.baseURL}/csrf-token`;
+        const headers = {
+          'Content-Type': 'application/json',
+        };
+
+        if (this.token) {
+          headers['Authorization'] = `Bearer ${this.token}`;
+        }
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers,
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          this.csrfToken = data.csrfToken;
+          return this.csrfToken;
+        }
+        return null;
+      } catch (error) {
+        console.error('[API] Failed to fetch CSRF token:', error);
+        return null;
+      } finally {
+        this.csrfTokenPromise = null;
+      }
+    })();
+
+    return this.csrfTokenPromise;
+  }
+
+  // Invalidate CSRF token (e.g., after a 403 error)
+  invalidateCsrfToken() {
+    this.csrfToken = null;
   }
 
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
+    const method = options.method || 'GET';
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -24,6 +81,27 @@ class API {
 
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    // Automatically add CSRF token for state-changing requests
+    const stateChangingMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
+    const publicAuthEndpoints = [
+      '/auth/login',
+      '/auth/login-pin',
+      '/auth/register',
+      '/auth/verify-otp',
+      '/auth/verify-login',
+      '/auth/resend-otp',
+      '/auth/refresh'
+    ];
+
+    // Add CSRF token for protected state-changing requests
+    if (stateChangingMethods.includes(method) &&
+        !publicAuthEndpoints.includes(endpoint)) {
+      const csrfToken = await this.fetchCsrfToken();
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
     }
 
     try {
@@ -34,6 +112,25 @@ class API {
       });
 
       const data = await response.json();
+
+      // If CSRF token is invalid, invalidate cache and retry once
+      if (response.status === 403 && data.code === 'EBADCSRFTOKEN') {
+        this.invalidateCsrfToken();
+        const newCsrfToken = await this.fetchCsrfToken();
+        if (newCsrfToken) {
+          headers['X-CSRF-Token'] = newCsrfToken;
+          const retryResponse = await fetch(url, {
+            ...options,
+            headers,
+            credentials: 'include',
+          });
+          const retryData = await retryResponse.json();
+          if (!retryResponse.ok) {
+            throw new Error(retryData.message || retryData.error || 'Request failed');
+          }
+          return retryData;
+        }
+      }
 
       if (!response.ok) {
         throw new Error(data.message || data.error || 'Request failed');
@@ -171,77 +268,36 @@ class API {
   }
 
   async createProduct(productData) {
-    // Get CSRF token for protected POST request
-    const csrfToken = await this.getCsrfToken();
-
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
-
     return this.request('/products', {
       method: 'POST',
-      headers,
       body: JSON.stringify(productData),
     });
   }
 
   async updateProduct(productId, productData) {
-    // Get CSRF token for protected PUT request
-    const csrfToken = await this.getCsrfToken();
-
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
-
     return this.request(`/products/${productId}`, {
       method: 'PUT',
-      headers,
       body: JSON.stringify(productData),
     });
   }
 
   async deleteProduct(productId) {
-    // Get CSRF token for protected DELETE request
-    const csrfToken = await this.getCsrfToken();
-
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
-
     return this.request(`/products/${productId}`, {
       method: 'DELETE',
-      headers,
     });
   }
 
   async bulkImportProducts(products) {
-    // Get CSRF token for protected POST request
-    const csrfToken = await this.getCsrfToken();
-
-    const body = { products };
-    if (csrfToken) {
-      body._csrf = csrfToken;
-    }
-
     return this.request('/products/bulk-import', {
       method: 'POST',
-      body: JSON.stringify(body),
+      body: JSON.stringify({ products }),
     });
   }
 
   async createOrder(orderData) {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request('/orders', {
       method: 'POST',
       body: JSON.stringify(orderData),
-      headers,
     });
   }
 
@@ -254,28 +310,16 @@ class API {
   }
 
   async cancelOrder(orderId, reason) {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request(`/orders/${orderId}/cancel`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
-      headers,
     });
   }
 
   async processPayment(orderId, paymentMethod = 'orange_money') {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request(`/orders/${orderId}/payment`, {
       method: 'POST',
       body: JSON.stringify({ payment_method: paymentMethod }),
-      headers,
     });
   }
 
@@ -288,78 +332,42 @@ class API {
   }
 
   async updateOrderStatus(orderId, status, notes, location) {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request(`/orders/${orderId}/status`, {
       method: 'POST',
       body: JSON.stringify({ status, notes, location }),
-      headers,
     });
   }
 
   async assignRider(orderId, riderId) {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request(`/orders/${orderId}/assign-rider`, {
       method: 'POST',
       body: JSON.stringify({ rider_id: riderId }),
-      headers,
     });
   }
 
   async claimOrder(orderId) {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request(`/orders/${orderId}/claim`, {
       method: 'POST',
-      headers,
     });
   }
 
   async autoAssignRider(orderId) {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request(`/orders/${orderId}/auto-assign`, {
       method: 'POST',
-      headers,
     });
   }
 
   async verifyPickup(orderId, trackingNumber) {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request(`/rider-workflow/orders/${orderId}/verify-pickup`, {
       method: 'POST',
       body: JSON.stringify({ tracking_number: trackingNumber }),
-      headers,
     });
   }
 
   async verifyDelivery(orderId, pickupCode) {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request(`/rider-workflow/orders/${orderId}/verify-delivery`, {
       method: 'POST',
       body: JSON.stringify({ pickup_code: pickupCode }),
-      headers,
     });
   }
 
@@ -386,15 +394,9 @@ class API {
   }
 
   async redeemTokenPIN(pinCode) {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request('/tokens/redeem', {
       method: 'POST',
       body: JSON.stringify({ pin_code: pinCode }),
-      headers,
     });
   }
 
@@ -516,38 +518,20 @@ class API {
   }
 
   async markAsRead(notificationId) {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request(`/notifications/${notificationId}/read`, {
       method: 'PUT',
-      headers,
     });
   }
 
   async markAllAsRead() {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request('/notifications/mark-all-read', {
       method: 'PUT',
-      headers,
     });
   }
 
   async deleteNotification(notificationId) {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request(`/notifications/${notificationId}`, {
       method: 'DELETE',
-      headers,
     });
   }
 
@@ -725,15 +709,9 @@ class API {
   }
 
   async createAddress(addressData) {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request('/addresses', {
       method: 'POST',
       body: JSON.stringify(addressData),
-      headers,
     });
   }
 
@@ -802,30 +780,14 @@ class API {
 
   // Route Optimization
   async optimizeRiderRoutes(method = 'clarke_wright') {
-    const csrfToken = await this.getCsrfToken();
-    const body = { method };
-    if (csrfToken) {
-      body._csrf = csrfToken;
-    }
     return this.request('/rider/routes/optimize', {
       method: 'POST',
-      body: JSON.stringify(body),
+      body: JSON.stringify({ method }),
     });
   }
 
   async getRouteItinerary(routeId) {
     return this.request(`/rider/routes/${routeId}/itinerary`);
-  }
-
-  // CSRF Token management
-  async getCsrfToken() {
-    try {
-      const response = await this.request('/csrf-token');
-      return response.csrfToken;
-    } catch (error) {
-      console.error('Failed to fetch CSRF token:', error);
-      return null;
-    }
   }
 
   // Admin Settings
@@ -834,17 +796,9 @@ class API {
   }
 
   async updateAdminSetting(key, value, description = null) {
-    // Get CSRF token for protected PUT request
-    const csrfToken = await this.getCsrfToken();
-
-    const body = { value, description };
-    if (csrfToken) {
-      body._csrf = csrfToken;
-    }
-
     return this.request(`/admin-panel/settings/${key}`, {
       method: 'PUT',
-      body: JSON.stringify(body),
+      body: JSON.stringify({ value, description }),
     });
   }
 
@@ -894,50 +848,27 @@ class API {
   }
 
   async addCustomEvent(eventData) {
-    const csrfToken = await this.getCsrfToken();
-    const body = eventData;
-    if (csrfToken) {
-      body._csrf = csrfToken;
-    }
     return this.request('/merchant/predictions/custom-event', {
       method: 'POST',
-      body: JSON.stringify(body),
+      body: JSON.stringify(eventData),
     });
   }
 
   async refreshPredictions() {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request('/merchant/predictions/refresh', {
       method: 'POST',
-      headers,
     });
   }
 
   async refreshAllPredictions() {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request('/admin/predictions/refresh-all', {
       method: 'POST',
-      headers,
     });
   }
 
   async refreshMerchantPredictions(merchantId) {
-    const csrfToken = await this.getCsrfToken();
-    const headers = {};
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
     return this.request(`/admin/predictions/refresh-merchant/${merchantId}`, {
       method: 'POST',
-      headers,
     });
   }
 

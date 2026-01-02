@@ -153,29 +153,27 @@ app.get('/api/v1/geocode', async (req, res) => {
 });
 
 // Apply CSRF protection to all state-changing requests (POST, PUT, DELETE, PATCH)
+// SECURITY: Only exempt truly public authentication endpoints
 app.use((req, res, next) => {
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
-    // Skip CSRF check for health endpoints, auth routes (public endpoints), JWT-protected routes, and rider order operations
+    // ONLY skip CSRF for truly public auth endpoints (before user is logged in)
+    const publicAuthPaths = [
+      '/api/v1/auth/login',
+      '/api/v1/auth/login-pin',
+      '/api/v1/auth/register',
+      '/api/v1/auth/verify-otp',
+      '/api/v1/auth/verify-login',
+      '/api/v1/auth/resend-otp',
+      '/api/v1/auth/refresh'
+    ];
+
+    // Skip CSRF only for health checks and public auth endpoints
     if (req.path === '/health' || req.path === '/health/db' ||
-        req.path === '/api/v1/auth/login' ||
-        req.path === '/api/v1/auth/login-pin' ||
-        req.path === '/api/v1/auth/register' ||
-        req.path === '/api/v1/auth/verify-otp' ||
-        req.path === '/api/v1/auth/verify-login' ||
-        req.path === '/api/v1/auth/resend-otp' ||
-        req.path === '/api/v1/auth/refresh' ||
-        req.path === '/api/v1/auth/profile' ||
-        req.path.startsWith('/api/v1/wishlists') ||
-        req.path.startsWith('/api/v1/addresses') ||
-        req.path.startsWith('/api/v1/admin-panel') ||
-        req.path.startsWith('/api/v1/admin/') ||
-        req.path.startsWith('/api/v1/merchant/') ||
-        req.path.startsWith('/api/v1/rider/orders/') ||
-        req.path.startsWith('/api/v1/rider/routes/') ||
-        req.path.startsWith('/api/v1/chat/') ||
-        req.path.startsWith('/api/v1/chatbot/')) {
+        publicAuthPaths.includes(req.path)) {
       return next();
     }
+
+    // All other state-changing requests require CSRF protection
     csrfProtection(req, res, next);
   } else {
     next();
