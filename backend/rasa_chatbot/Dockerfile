@@ -6,32 +6,25 @@ WORKDIR /app
 # Switch to root for installations
 USER root
 
-# Install curl for health checks and download smaller spaCy model (saves ~200MB RAM)
+# Install curl for health checks and download spaCy model
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/* && \
-    python -m spacy download en_core_web_sm
+    python -m spacy download en_core_web_md
 
-# Copy RASA configuration files
-COPY config.yml domain.yml ./
-COPY data/ ./data/
+# Copy pre-trained model (trained locally)
+COPY models/model.tar.gz ./models/
 
-# Copy credentials and endpoints
-COPY credentials.yml endpoints.yml ./
-
-# Copy actions if they exist
-COPY actions.py ./
+# Copy config files needed for runtime
+COPY domain.yml credentials.yml endpoints.yml ./
 
 # Switch back to non-root user for security
 USER 1001
 
-# Train the RASA model (with smaller spaCy to save memory)
-RUN rasa train --fixed-model-name model
-
 # Expose RASA port
 EXPOSE 5005
 
-# Health check with longer timeout for model loading
-HEALTHCHECK --interval=60s --timeout=30s --start-period=120s --retries=3 \
-  CMD curl -f http://localhost:5005/ || exit 1
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:${PORT:-5005}/ || exit 1
 
-# Start RASA server
-CMD ["run", "--enable-api", "--port", "5005", "--cors", "*"]
+# Start RASA server with pre-trained model (use PORT env var or default to 5005)
+CMD ["sh", "-c", "rasa run --enable-api --port ${PORT:-5005} --cors '*' -m models/model.tar.gz"]
