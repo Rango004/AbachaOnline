@@ -16,15 +16,15 @@ COPY models/model.tar.gz ./models/
 # Copy config files needed for runtime
 COPY domain.yml credentials.yml endpoints.yml ./
 
+# Create startup script that uses Railway's PORT
+RUN echo '#!/bin/bash\nexec rasa run --enable-api --port ${PORT:-5005} --cors "*" -m models/model.tar.gz' > /app/start.sh && \
+    chmod +x /app/start.sh
+
 # Switch back to non-root user for security
 USER 1001
 
-# Expose RASA port (Railway uses PORT env variable)
+# Expose default port
 EXPOSE 5005
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:5005/ || exit 1
-
-# Start RASA server with pre-trained model
-CMD ["run", "--enable-api", "--port", "5005", "--cors", "*", "-m", "models/model.tar.gz"]
+# Start RASA server using Railway's PORT env variable
+CMD ["/bin/bash", "/app/start.sh"]
