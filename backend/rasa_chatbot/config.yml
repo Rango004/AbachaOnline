@@ -5,9 +5,9 @@ recipe: default.v1
 language: en
 
 pipeline:
-  # Spacy NLP for English base (using smaller model to fit in 512MB RAM)
+  # Spacy NLP for English base (Railway has 8GB RAM - use full model)
   - name: SpacyNLP
-    model: "en_core_web_sm"
+    model: "en_core_web_md"
     case_sensitive: false
 
   # Tokenization
