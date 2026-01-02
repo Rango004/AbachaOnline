@@ -28,7 +28,9 @@ function sanitizeText(text) {
 
 class RASAChatbotService {
   constructor(wsService = null) {
-    this.rasaUrl = process.env.RASA_URL || 'http://localhost:5005';
+    // Remove trailing slash from RASA_URL to prevent double slash in webhook URL
+    const baseUrl = process.env.RASA_URL || 'http://localhost:5005';
+    this.rasaUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     this.rasaWebhookUrl = `${this.rasaUrl}/webhooks/rest/webhook`;
     this.wsService = wsService;
   }
