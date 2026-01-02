@@ -1,14 +1,103 @@
 import { createContext } from 'preact';
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
 import { route } from 'preact-router';
 import api from './api';
 
 export const AuthContext = createContext();
 
+// Inactivity timeout in milliseconds (10 minutes)
+const INACTIVITY_TIMEOUT = 10 * 60 * 1000;
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const inactivityTimerRef = useRef(null);
+  const isLoggingOutRef = useRef(false);
+
+  // Function to handle automatic logout due to inactivity
+  const handleInactivityLogout = useCallback(() => {
+    if (isLoggingOutRef.current) return;
+    isLoggingOutRef.current = true;
+
+    console.log('[Auth] Session expired due to inactivity');
+    api.setToken(null);
+    setUser(null);
+    setToken(null);
+
+    // Show a message to the user
+    alert('Your session has expired due to inactivity. Please log in again.');
+
+    route('/');
+    isLoggingOutRef.current = false;
+  }, []);
+
+  // Function to reset the inactivity timer
+  const resetInactivityTimer = useCallback(() => {
+    // Only run if user is logged in
+    if (!localStorage.getItem('token')) return;
+
+    // Clear existing timer
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+
+    // Set new timer
+    inactivityTimerRef.current = setTimeout(() => {
+      handleInactivityLogout();
+    }, INACTIVITY_TIMEOUT);
+  }, [handleInactivityLogout]);
+
+  // Set up activity listeners when user is logged in
+  useEffect(() => {
+    if (!token) {
+      // Clear timer when logged out
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+      return;
+    }
+
+    // Activity events to track
+    const activityEvents = [
+      'mousedown',
+      'mousemove',
+      'keydown',
+      'scroll',
+      'touchstart',
+      'click'
+    ];
+
+    // Throttle the reset function to avoid excessive calls
+    let lastActivity = Date.now();
+    const throttledReset = () => {
+      const now = Date.now();
+      // Only reset if more than 1 second has passed since last activity
+      if (now - lastActivity > 1000) {
+        lastActivity = now;
+        resetInactivityTimer();
+      }
+    };
+
+    // Add event listeners
+    activityEvents.forEach(event => {
+      window.addEventListener(event, throttledReset, { passive: true });
+    });
+
+    // Start the initial timer
+    resetInactivityTimer();
+
+    // Cleanup
+    return () => {
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, throttledReset);
+      });
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+    };
+  }, [token, resetInactivityTimer]);
 
   useEffect(() => {
     // Check if user is logged in
