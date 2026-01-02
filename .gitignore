@@ -40,7 +40,8 @@ Desktop.ini
 # RASA Chatbot
 # ===========================================
 backend/rasa_chatbot/.rasa/
-backend/rasa_chatbot/models/
+# Allow models folder for pre-trained model deployment
+# backend/rasa_chatbot/models/
 backend/rasa_chatbot/.cache/
 backend/rasa_chatbot/__pycache__/
 backend/rasa_chatbot/*.pyc
@@ -49,7 +50,8 @@ backend/rasa_chatbot/.venv/
 
 # RASA temp and cache
 .rasa/
-models/*.tar.gz
+# Allow model.tar.gz for deployment
+# models/*.tar.gz
 __pycache__/
 *.py[cod]
 *$py.class

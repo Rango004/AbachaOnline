@@ -9,7 +9,7 @@ env/
 
 # RASA
 .rasa/
-models/*.tar.gz
+# Keep models/*.tar.gz - needed for deployment
 results/
 *.log
 
