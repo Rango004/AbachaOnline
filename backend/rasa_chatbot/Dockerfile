@@ -24,26 +24,8 @@ COPY domain.yml credentials.yml endpoints.yml ./
 # Copy actions
 COPY actions.py ./
 
-# Create supervisor config to run both RASA and action server
-RUN echo '[supervisord]\n\
-nodaemon=true\n\
-user=root\n\
-\n\
-[program:rasa]\n\
-command=/bin/bash -c "rasa run --enable-api --port ${PORT:-5005} --cors * -m models/model.tar.gz"\n\
-stdout_logfile=/dev/stdout\n\
-stdout_logfile_maxbytes=0\n\
-stderr_logfile=/dev/stderr\n\
-stderr_logfile_maxbytes=0\n\
-autorestart=true\n\
-\n\
-[program:actions]\n\
-command=rasa run actions --port 5055\n\
-stdout_logfile=/dev/stdout\n\
-stdout_logfile_maxbytes=0\n\
-stderr_logfile=/dev/stderr\n\
-stderr_logfile_maxbytes=0\n\
-autorestart=true' > /etc/supervisor/conf.d/supervisord.conf
+# Copy supervisor config to run both RASA and action server
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Expose ports
 EXPOSE 5005 5055
