@@ -30,6 +30,8 @@ export default function DeliveryAddresses() {
   const [submitError, setSubmitError] = useState(null);
   const [capturingGPS, setCapturingGPS] = useState(false);
   const [gpsError, setGpsError] = useState(null);
+  const [capturingGPS, setCapturingGPS] = useState(false);
+  const [gpsError, setGpsError] = useState(null);
 
   useEffect(() => {
     loadAddresses();
@@ -77,6 +79,57 @@ export default function DeliveryAddresses() {
       ...formData,
       [name]: type === 'checkbox' ? checked : value,
     });
+  };
+
+  
+  const handleCaptureGPS = () => {
+    if (!navigator.geolocation) {
+      setGpsError('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setCapturingGPS(true);
+    setGpsError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData({
+          ...formData,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          useGPS: true,
+          location_id: '',
+        });
+        setCapturingGPS(false);
+      },
+      (error) => {
+        let errorMessage = 'Failed to get your location';
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMessage = 'Location permission denied. Please enable location access in your browser settings.';
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorMessage = 'Location information is unavailable.';
+        } else if (error.code === error.TIMEOUT) {
+          errorMessage = 'Location request timed out.';
+        }
+        setGpsError(errorMessage);
+        setCapturingGPS(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  };
+
+  const handleClearGPS = () => {
+    setFormData({
+      ...formData,
+      latitude: null,
+      longitude: null,
+      useGPS: false,
+    });
+    setGpsError(null);
   };
 
   

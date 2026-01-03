@@ -15,6 +15,8 @@ class DeliveryAddressService {
            sa.delivery_address,
            sa.notes,
            sa.is_default,
+           sa.latitude,
+           sa.longitude,
            sa.created_at,
            sa.updated_at,
            l.name as location_name
@@ -57,6 +59,8 @@ class DeliveryAddressService {
            sa.delivery_address,
            sa.notes,
            sa.is_default,
+           sa.latitude,
+           sa.longitude,
            sa.created_at,
            sa.updated_at,
            l.name as location_name
@@ -91,6 +95,8 @@ class DeliveryAddressService {
            sa.notes,
            sa.is_default,
            sa.created_at,
+           sa.latitude,
+           sa.longitude,
            sa.updated_at,
            l.name as location_name
          FROM student_addresses sa
@@ -167,7 +173,7 @@ class DeliveryAddressService {
         throw new Error('Address not found or you do not have permission to update it');
       }
 
-      const { location_id, address_label, delivery_address, notes, is_default } = addressData;
+      const { location_id, address_label, delivery_address, notes, is_default, latitude, longitude } = addressData;
 
       // Build dynamic update query
       const updates = [];
@@ -201,6 +207,15 @@ class DeliveryAddressService {
       if (notes !== undefined) {
         updates.push(`notes = $${paramCount++}`);
         params.push(notes);
+      }
+n      if (latitude !== undefined) {
+        updates.push(`latitude = $${paramCount++}`);
+        params.push(latitude || null);
+      }
+
+      if (longitude !== undefined) {
+        updates.push(`longitude = $${paramCount++}`);
+        params.push(longitude || null);
       }
 
       if (is_default !== undefined && is_default) {

@@ -432,3 +432,76 @@
   color: #666;
   margin-right: 6px;
 }
+/* GPS Feature Styles - Add these to frontend/src/styles/addresses.css */
+
+/* GPS Button */
+.gps-button {
+  margin-top: 10px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  background: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95em;
+  transition: background 0.3s ease;
+}
+
+.gps-button:hover:not(:disabled) {
+  background: #1976d2;
+}
+
+.gps-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* GPS Info Display */
+.gps-info {
+  background: #e3f2fd;
+  border: 2px solid #2196f3;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 8px;
+}
+
+.gps-coordinates {
+  margin-bottom: 12px;
+}
+
+.gps-coordinates strong {
+  display: block;
+  color: #1976d2;
+  margin-bottom: 8px;
+  font-size: 1em;
+}
+
+.gps-coordinates p {
+  margin: 4px 0;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #333;
+}
+
+/* GPS Error */
+.gps-error {
+  margin-top: 8px;
+  font-size: 0.9em;
+  padding: 8px 12px;
+}
+
+/* Address Detail with GPS Icon */
+.address-detail {
+  margin: 8px 0;
+  font-size: 0.95em;
+}
+
+.address-detail strong {
+  color: #666;
+  margin-right: 6px;
+}

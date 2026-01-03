@@ -70,7 +70,7 @@ router.get('/:id', authenticate, async (req, res) => {
  */
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { location_id, address_label, delivery_address, notes, is_default } = req.body;
+    const { location_id, address_label, delivery_address, notes, is_default, latitude, longitude } = req.body;
 
     if (!address_label || !delivery_address) {
       return res.status(400).json({
@@ -83,7 +83,9 @@ router.post('/', authenticate, async (req, res) => {
       address_label,
       delivery_address,
       notes,
-      is_default
+      is_default,
+      latitude,
+      longitude
     });
 
     res.status(201).json({
