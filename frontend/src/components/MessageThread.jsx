@@ -240,6 +240,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
+    maxHeight: '100vh',
     backgroundColor: '#f8f9fa'
   },
   header: {
@@ -297,10 +298,12 @@ const styles = {
   messagesContainer: {
     flex: 1,
     overflowY: 'auto',
+    overflowX: 'hidden',
     padding: '16px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px'
+    gap: '8px',
+    WebkitOverflowScrolling: 'touch'
   },
   noMessages: {
     display: 'flex',
@@ -461,6 +464,13 @@ style.textContent = `
   @keyframes typing {
     0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
     30% { transform: translateY(-10px); opacity: 1; }
+  }
+
+  /* Mobile responsive adjustments for message thread */
+  @media (max-width: 768px) {
+    .message-thread-container {
+      max-height: calc(100vh - var(--header-height, 60px) - var(--bottom-nav-height, 60px));
+    }
   }
 `;
 document.head.appendChild(style);

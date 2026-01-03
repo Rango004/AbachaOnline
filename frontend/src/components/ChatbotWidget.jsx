@@ -526,9 +526,9 @@ const styles = {
     position: 'fixed',
     bottom: '24px',
     right: '24px',
-    width: '380px',
-    height: '600px',
-    maxHeight: '80vh',
+    width: 'min(380px, calc(100vw - 32px))',
+    height: 'min(600px, calc(100vh - 120px))',
+    maxHeight: 'calc(100vh - 120px)',
     backgroundColor: '#fff',
     borderRadius: '16px',
     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
@@ -791,6 +791,26 @@ style.textContent = `
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+  }
+
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    .chatbot-pop-in {
+      bottom: 8px !important;
+      right: 8px !important;
+      left: 8px !important;
+      width: calc(100vw - 16px) !important;
+      max-width: calc(100vw - 16px) !important;
+      height: calc(100vh - 100px) !important;
+      max-height: calc(100vh - 100px) !important;
+      border-radius: 12px !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .chatbot-pop-in {
+      border-radius: 8px !important;
+    }
   }
 `;
 document.head.appendChild(style);
