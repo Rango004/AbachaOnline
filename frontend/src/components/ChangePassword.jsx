@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import api from '../services/api';
 
-export default function ChangePassword({ onClose, onSuccess }) {
+export default function ChangePassword({ onClose, onSuccess, isFirstTimeSetup = false }) {
   const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -29,9 +29,14 @@ export default function ChangePassword({ onClose, onSuccess }) {
     setError(null);
     setSuccess(null);
 
-    // Validation
-    if (!currentPin || !newPin || !confirmPin) {
-      setError('All fields are required');
+    // Validation - skip currentPin check for first-time setup
+    if (!isFirstTimeSetup && !currentPin) {
+      setError('Current PIN is required');
+      return;
+    }
+
+    if (!newPin || !confirmPin) {
+      setError('New PIN and confirmation are required');
       return;
     }
 
@@ -46,7 +51,7 @@ export default function ChangePassword({ onClose, onSuccess }) {
       return;
     }
 
-    if (currentPin === newPin) {
+    if (!isFirstTimeSetup && currentPin === newPin) {
       setError('New PIN must be different from current PIN');
       return;
     }
@@ -54,7 +59,8 @@ export default function ChangePassword({ onClose, onSuccess }) {
     try {
       setLoading(true);
       await api.changePassword(currentPin, newPin);
-      setSuccess('PIN changed successfully!');
+      const message = isFirstTimeSetup ? 'PIN set successfully!' : 'PIN changed successfully!';
+      setSuccess(message);
       setCurrentPin('');
       setNewPin('');
       setConfirmPin('');
@@ -65,7 +71,7 @@ export default function ChangePassword({ onClose, onSuccess }) {
         }, 1500);
       }
     } catch (err) {
-      setError(err.message || 'Failed to change PIN');
+      setError(err.message || (isFirstTimeSetup ? 'Failed to set PIN' : 'Failed to change PIN'));
     } finally {
       setLoading(false);
     }
@@ -80,7 +86,7 @@ export default function ChangePassword({ onClose, onSuccess }) {
     <div class="modal-overlay" onClick={onClose}>
       <div class="modal-content change-password-modal" onClick={e => e.stopPropagation()}>
         <div class="modal-header">
-          <h2>🔒 Change PIN</h2>
+          <h2>🔒 {isFirstTimeSetup ? 'Set PIN' : 'Change PIN'}</h2>
           <button class="modal-close" onClick={onClose}>✕</button>
         </div>
 
@@ -88,31 +94,33 @@ export default function ChangePassword({ onClose, onSuccess }) {
         {success && <div class="alert alert-success">{success}</div>}
 
         <form onSubmit={handleSubmit} class="change-password-form">
-          <div class="form-group">
-            <label>Current PIN</label>
-            <div class="pin-input-wrapper">
-              <input
-                type={showPins ? 'text' : 'password'}
-                value={currentPin}
-                onInput={handlePinInput(setCurrentPin)}
-                placeholder="Enter current 6-digit PIN"
-                maxLength="6"
-                pattern="\d{6}"
-                inputMode="numeric"
-                autoComplete="current-password"
-                disabled={loading}
-              />
+          {!isFirstTimeSetup && (
+            <div class="form-group">
+              <label>Current PIN</label>
+              <div class="pin-input-wrapper">
+                <input
+                  type={showPins ? 'text' : 'password'}
+                  value={currentPin}
+                  onInput={handlePinInput(setCurrentPin)}
+                  placeholder="Enter current 6-digit PIN"
+                  maxLength="6"
+                  pattern="\d{6}"
+                  inputMode="numeric"
+                  autoComplete="current-password"
+                  disabled={loading}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <div class="form-group">
-            <label>New PIN</label>
+            <label>{isFirstTimeSetup ? 'Choose a PIN' : 'New PIN'}</label>
             <div class="pin-input-wrapper">
               <input
                 type={showPins ? 'text' : 'password'}
                 value={newPin}
                 onInput={handlePinInput(setNewPin)}
-                placeholder="Enter new 6-digit PIN"
+                placeholder={isFirstTimeSetup ? 'Enter 6-digit PIN' : 'Enter new 6-digit PIN'}
                 maxLength="6"
                 pattern="\d{6}"
                 inputMode="numeric"
@@ -126,13 +134,13 @@ export default function ChangePassword({ onClose, onSuccess }) {
           </div>
 
           <div class="form-group">
-            <label>Confirm New PIN</label>
+            <label>Confirm PIN</label>
             <div class="pin-input-wrapper">
               <input
                 type={showPins ? 'text' : 'password'}
                 value={confirmPin}
                 onInput={handlePinInput(setConfirmPin)}
-                placeholder="Re-enter new PIN"
+                placeholder="Re-enter PIN"
                 maxLength="6"
                 pattern="\d{6}"
                 inputMode="numeric"
@@ -155,7 +163,7 @@ export default function ChangePassword({ onClose, onSuccess }) {
 
           <div class="form-actions">
             <button type="submit" class="btn-primary" disabled={loading}>
-              {loading ? 'Changing...' : 'Change PIN'}
+              {loading ? (isFirstTimeSetup ? 'Setting...' : 'Changing...') : (isFirstTimeSetup ? 'Set PIN' : 'Change PIN')}
             </button>
             <button type="button" class="btn-secondary" onClick={onClose} disabled={loading}>
               Cancel

@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'preact/hooks';
 import { route } from 'preact-router';
 import { AuthContext } from '../../services/AuthContext';
+import ChangePassword from '../../components/ChangePassword';
 import api from '../../services/api';
 import AnalyticsTab from '../../components/AnalyticsTab';
 import LiveOrderFeed from '../../components/LiveOrderFeed';
@@ -27,6 +28,8 @@ export default function AdminDashboard() {
   const [newUserPhone, setNewUserPhone] = useState('');
   const [newUserName, setNewUserName] = useState('');
   const [newUserRole, setNewUserRole] = useState('merchant');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     if (user?.role !== 'admin') {

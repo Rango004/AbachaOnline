@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'preact/hooks';
 import { AuthContext } from '../../services/AuthContext';
+import ChangePassword from '../../components/ChangePassword';
 import api from '../../services/api';
 
 export default function MerchantSettings() {
@@ -9,6 +10,7 @@ export default function MerchantSettings() {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [activeTab, setActiveTab] = useState('basic');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   // Basic Info
   const [basicInfo, setBasicInfo] = useState({
@@ -212,6 +214,12 @@ export default function MerchantSettings() {
             onClick={() => setActiveTab('hours')}
           >
             🕐 Business Hours
+          </button>
+          <button
+            class={`tab-button ${activeTab === 'security' ? 'active' : ''}`}
+            onClick={() => setActiveTab('security')}
+          >
+            🔐 Security
           </button>
         </div>
 
@@ -481,6 +489,56 @@ export default function MerchantSettings() {
           </div>
         )}
 
+        {/* Security Tab */}
+        {activeTab === 'security' && (
+          <div class="settings-section">
+            <h3>🔐 Security Settings</h3>
+            <p class="section-note">
+              Manage your account security and login credentials
+            </p>
+
+            <div class="security-settings-list">
+              <div class="security-item">
+                <div class="security-item-info">
+                  <h4>Login PIN</h4>
+                  <p>Update your 6-digit login PIN for secure access to your merchant account</p>
+                </div>
+                <button
+                  type="button"
+                  class="btn-save"
+                  onClick={() => setShowPasswordModal(true)}
+                >
+                  Change PIN
+                </button>
+              </div>
+
+              <div class="security-item">
+                <div class="security-item-info">
+                  <h4>Two-Factor Authentication</h4>
+                  <p>Add an extra layer of security to your account (Coming soon)</p>
+                </div>
+                <button
+                  type="button"
+                  class="btn-save"
+                  disabled
+                >
+                  Enable 2FA
+                </button>
+              </div>
+
+              <div class="info-box info">
+                <h4>💡 Security Tips</h4>
+                <ul>
+                  <li>Use a unique PIN that you don't use elsewhere</li>
+                  <li>Never share your PIN with anyone</li>
+                  <li>Change your PIN regularly for better security</li>
+                  <li>Avoid using easily guessable PINs like birthdays or sequential numbers</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Help Section */}
         <div class="help-section">
           <h3>Need Help?</h3>
@@ -491,6 +549,18 @@ export default function MerchantSettings() {
           <button class="btn-secondary">Contact Support</button>
         </div>
       </div>
+
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <ChangePassword
+          onClose={() => setShowPasswordModal(false)}
+          onSuccess={() => {
+            setShowPasswordModal(false);
+            setSuccessMessage('PIN changed successfully!');
+            setTimeout(() => setSuccessMessage(''), 3000);
+          }}
+        />
+      )}
 
       <style>{`
         .merchant-settings {
@@ -716,6 +786,39 @@ export default function MerchantSettings() {
           flex: 1;
         }
 
+        .security-settings-list {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .security-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px;
+          background: #f9fafb;
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          gap: 20px;
+        }
+
+        .security-item-info {
+          flex: 1;
+        }
+
+        .security-item-info h4 {
+          margin: 0 0 8px 0;
+          color: #1f2937;
+          font-size: 1.05em;
+        }
+
+        .security-item-info p {
+          margin: 0;
+          color: #6b7280;
+          font-size: 0.9em;
+        }
+
         .info-box {
           border-radius: 6px;
           padding: 15px;
@@ -733,6 +836,12 @@ export default function MerchantSettings() {
           color: #78350f;
         }
 
+        .info-box.info {
+          background-color: #dbeafe;
+          border: 1px solid #93c5fd;
+          color: #1e40af;
+        }
+
         .info-box ul {
           list-style: none;
           padding: 0;
@@ -742,6 +851,13 @@ export default function MerchantSettings() {
         .info-box li {
           padding: 6px 0;
           font-size: 0.9em;
+        }
+
+        .info-box li:before {
+          content: "• ";
+          color: currentColor;
+          font-weight: bold;
+          margin-right: 8px;
         }
 
         .btn-save {
@@ -836,6 +952,16 @@ export default function MerchantSettings() {
           .tab-button.active {
             border-bottom: none;
             border-left-color: #3b82f6;
+          }
+
+          .security-item {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .security-item .btn-save {
+            width: 100%;
+            margin-top: 0;
           }
         }
       `}</style>
