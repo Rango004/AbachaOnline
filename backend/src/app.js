@@ -12,6 +12,7 @@ app.use(helmet());
 
 app.use(cors({
   origin: function(origin, callback) {
+    // Define a whitelist of allowed origins.
     const allowedOrigins = [
       'http://localhost:8080',
       'http://localhost:8081',
@@ -19,18 +20,18 @@ app.use(cors({
       'http://127.0.0.1:8081'
     ];
 
-    if (process.env.NODE_ENV === 'production') {
-      // In production, use the FRONTEND_URL from environment
-      allowedOrigins.length = 0; // Clear development origins
-      if (process.env.FRONTEND_URL) {
-        allowedOrigins.push(process.env.FRONTEND_URL);
-      }
+    // In a production environment, add URLs from the FRONTEND_URLS environment variable.
+    // This allows for a flexible list of allowed domains (e.g., for production, staging, and preview deployments).
+    if (process.env.NODE_ENV === 'production' && process.env.FRONTEND_URLS) {
+      const frontendUrls = process.env.FRONTEND_URLS.split(',').map(url => url.trim());
+      allowedOrigins.push(...frontendUrls);
     }
 
-    // Allow requests with no origin (like mobile apps or curl requests)
+    // Allow requests with no origin (like mobile apps or curl requests) and requests from whitelisted origins.
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      // Block requests from non-whitelisted origins.
       callback(new Error('Not allowed by CORS'));
     }
   },
