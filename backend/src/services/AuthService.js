@@ -670,6 +670,155 @@ class AuthService {
       throw error;
     }
   }
+
+  /**
+   * Change user's PIN/password
+   * @param {number} userId - User ID
+   * @param {string} currentPin - Current PIN
+   * @param {string} newPin - New PIN
+   * @returns {Promise<Object>} Success message
+   */
+  async changePassword(userId, currentPin, newPin) {
+    try {
+      // Validate new PIN
+      const pinValidation = this.validatePIN(newPin);
+      if (!pinValidation.valid) {
+        throw new Error(pinValidation.message);
+      }
+
+      // Get current user
+      const result = await db.query(
+        'SELECT id, password_hash FROM users WHERE id = $1',
+        [userId]
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error('User not found');
+      }
+
+      const user = result.rows[0];
+
+      // Verify current PIN
+      if (!user.password_hash) {
+        throw new Error('No PIN set. Please set a PIN first.');
+      }
+
+      const isValidPin = await bcrypt.compare(currentPin, user.password_hash);
+      if (!isValidPin) {
+        throw new Error('Current PIN is incorrect');
+      }
+
+      // Check new PIN is different from current
+      const isSamePin = await bcrypt.compare(newPin, user.password_hash);
+      if (isSamePin) {
+        throw new Error('New PIN must be different from current PIN');
+      }
+
+      // Hash and save new PIN
+      const newPinHash = await bcrypt.hash(newPin, 10);
+      await db.query(
+        'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+        [newPinHash, userId]
+      );
+
+      return {
+        success: true,
+        message: 'PIN changed successfully'
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Request password reset OTP
+   * @param {string} phone - Phone number
+   * @returns {Promise<Object>} Success message
+   */
+  async requestPasswordReset(phone) {
+    try {
+      const result = await db.query(
+        'SELECT id, name, is_verified FROM users WHERE phone = $1',
+        [phone]
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error('No account found with this phone number');
+      }
+
+      const user = result.rows[0];
+
+      if (!user.is_verified) {
+        throw new Error('Account not verified. Please complete registration first.');
+      }
+
+      const otp = this.generateOTP();
+
+      // Store OTP for password reset
+      await db.query(
+        'UPDATE users SET verification_code = $1, updated_at = NOW() WHERE id = $2',
+        [otp, user.id]
+      );
+
+      // Send OTP via multi-channel service
+      const otpResult = await otpService.sendOTP(phone, otp, { userName: user.name });
+
+      return {
+        success: true,
+        message: otpResult.message || 'Password reset OTP sent. Please check your messages.',
+        method: otpResult.method
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Reset password with OTP
+   * @param {string} phone - Phone number
+   * @param {string} code - OTP code
+   * @param {string} newPin - New PIN
+   * @returns {Promise<Object>} Success message
+   */
+  async resetPassword(phone, code, newPin) {
+    try {
+      // Validate new PIN
+      const pinValidation = this.validatePIN(newPin);
+      if (!pinValidation.valid) {
+        throw new Error(pinValidation.message);
+      }
+
+      // Verify OTP
+      const result = await db.query(
+        'SELECT id, verification_code FROM users WHERE phone = $1 AND is_verified = true',
+        [phone]
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error('User not found or not verified');
+      }
+
+      const user = result.rows[0];
+
+      if (user.verification_code !== code) {
+        throw new Error('Invalid OTP code');
+      }
+
+      // Hash and save new PIN, clear OTP
+      const newPinHash = await bcrypt.hash(newPin, 10);
+      await db.query(
+        'UPDATE users SET password_hash = $1, verification_code = NULL, updated_at = NOW() WHERE id = $2',
+        [newPinHash, user.id]
+      );
+
+      return {
+        success: true,
+        message: 'PIN reset successfully. You can now login with your new PIN.'
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 module.exports = new AuthService();

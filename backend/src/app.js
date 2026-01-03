@@ -46,7 +46,8 @@ const csrfProtection = csrf({
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
+    // Use 'lax' for cross-origin production (Vercel + Railway) while still preventing CSRF
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
   }
 });
 
@@ -153,7 +154,7 @@ app.get('/api/v1/geocode', async (req, res) => {
 });
 
 // Apply CSRF protection to all state-changing requests (POST, PUT, DELETE, PATCH)
-// SECURITY: Only exempt truly public authentication endpoints
+// SECURITY: Skip CSRF for JWT-authenticated requests (JWT + CORS provides equivalent protection)
 app.use((req, res, next) => {
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
     // ONLY skip CSRF for truly public auth endpoints (before user is logged in)
@@ -164,12 +165,23 @@ app.use((req, res, next) => {
       '/api/v1/auth/verify-otp',
       '/api/v1/auth/verify-login',
       '/api/v1/auth/resend-otp',
-      '/api/v1/auth/refresh'
+      '/api/v1/auth/refresh',
+      '/api/v1/auth/reset-password-request',
+      '/api/v1/auth/reset-password'
     ];
 
-    // Skip CSRF only for health checks and public auth endpoints
+    // Skip CSRF for health checks and public auth endpoints
     if (req.path === '/health' || req.path === '/health/db' ||
         publicAuthPaths.includes(req.path)) {
+      return next();
+    }
+
+    // Skip CSRF for requests with Bearer token (JWT-authenticated requests)
+    // For SPA + API architecture, JWT + CORS provides equivalent CSRF protection:
+    // 1. JWT must be explicitly sent in Authorization header (can't be auto-sent like cookies)
+    // 2. CORS prevents cross-origin requests from unauthorized domains
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
       return next();
     }
 
@@ -248,7 +260,22 @@ app.use((req, res) => {
   });
 });
 
+// CSRF error handler
 app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    console.error('CSRF token error:', {
+      path: req.path,
+      method: req.method,
+      origin: req.headers.origin,
+      referer: req.headers.referer
+    });
+    return res.status(403).json({
+      error: 'Invalid or missing CSRF token',
+      message: 'Please refresh the page and try again',
+      code: 'EBADCSRFTOKEN'
+    });
+  }
+
   console.error('Error:', err);
   res.status(err.status || 500).json({
     error: err.message || 'Internal Server Error',

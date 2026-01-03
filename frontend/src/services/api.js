@@ -92,7 +92,9 @@ class API {
       '/auth/verify-otp',
       '/auth/verify-login',
       '/auth/resend-otp',
-      '/auth/refresh'
+      '/auth/refresh',
+      '/auth/reset-password-request',
+      '/auth/reset-password'
     ];
 
     // Add CSRF token for protected state-changing requests
@@ -244,6 +246,27 @@ class API {
 
   async getProfile() {
     return this.request('/auth/profile');
+  }
+
+  async changePassword(currentPin, newPin) {
+    return this.request('/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPin, newPin }),
+    });
+  }
+
+  async requestPasswordReset(phone) {
+    return this.request('/auth/reset-password-request', {
+      method: 'POST',
+      body: JSON.stringify({ phone }),
+    });
+  }
+
+  async resetPassword(phone, code, newPin) {
+    return this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ phone, code, newPin }),
+    });
   }
 
   async getProducts(filters = {}) {

@@ -361,4 +361,103 @@ router.get('/test', authenticate, (req, res) => {
   });
 });
 
+/**
+ * @route   PUT /api/v1/auth/change-password
+ * @desc    Change user's PIN/password
+ * @access  Private (requires authentication)
+ */
+router.put('/change-password', authenticate, async (req, res) => {
+  try {
+    const { currentPin, newPin } = req.body;
+    const userId = req.user.id;
+
+    // Validation
+    if (!currentPin || !newPin) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Current PIN and new PIN are required'
+      });
+    }
+
+    // Validate new PIN format (6 digits)
+    if (!/^\d{6}$/.test(newPin)) {
+      return res.status(400).json({
+        error: 'Invalid PIN',
+        message: 'New PIN must be exactly 6 digits'
+      });
+    }
+
+    const result = await AuthService.changePassword(userId, currentPin, newPin);
+    res.json(result);
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(400).json({
+      error: 'Password change failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * @route   POST /api/v1/auth/reset-password-request
+ * @desc    Request password reset OTP
+ * @access  Public
+ */
+router.post('/reset-password-request', async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Phone number is required'
+      });
+    }
+
+    const result = await AuthService.requestPasswordReset(phone);
+    res.json(result);
+  } catch (error) {
+    console.error('Password reset request error:', error);
+    res.status(400).json({
+      error: 'Request failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * @route   POST /api/v1/auth/reset-password
+ * @desc    Reset password with OTP
+ * @access  Public
+ */
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { phone, code, newPin } = req.body;
+
+    if (!phone || !code || !newPin) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Phone, OTP code, and new PIN are required'
+      });
+    }
+
+    // Validate new PIN format (6 digits)
+    if (!/^\d{6}$/.test(newPin)) {
+      return res.status(400).json({
+        error: 'Invalid PIN',
+        message: 'New PIN must be exactly 6 digits'
+      });
+    }
+
+    const result = await AuthService.resetPassword(phone, code, newPin);
+    res.json(result);
+  } catch (error) {
+    console.error('Password reset error:', error);
+    res.status(400).json({
+      error: 'Reset failed',
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;

@@ -706,3 +706,60 @@
     width: 100%;
   }
 }
+
+/* Security Settings Card */
+.profile-card.security-settings {
+  border-left: 4px solid var(--primary-color);
+}
+
+/* Change Password Modal */
+.change-password-modal {
+  max-width: 420px;
+}
+
+.change-password-form {
+  padding: var(--spacing-lg);
+}
+
+.pin-input-wrapper {
+  position: relative;
+}
+
+.pin-input-wrapper input {
+  font-family: monospace;
+  font-size: 1.25rem;
+  letter-spacing: 0.5rem;
+  text-align: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.form-hint {
+  display: block;
+  margin-top: var(--spacing-sm);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+/* Dark mode support */
+[data-theme="dark"] .profile-card,
+[data-theme="dark"] .settings-card,
+[data-theme="dark"] .modal-content {
+  background: var(--bg-card);
+}
+
+[data-theme="dark"] .alert-error {
+  background-color: rgba(244, 67, 54, 0.15);
+  border-color: rgba(244, 67, 54, 0.3);
+}
+
+[data-theme="dark"] .alert-success {
+  background-color: rgba(76, 175, 80, 0.15);
+  border-color: rgba(76, 175, 80, 0.3);
+}
+
+[data-theme="dark"] .modal-overlay {
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}

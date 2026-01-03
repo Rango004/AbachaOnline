@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'preact/hooks';
 import { AuthContext } from '../services/AuthContext';
 import { AddressContext } from '../services/AddressContext';
+import ChangePassword from '../components/ChangePassword';
 import api from '../services/api';
 import './Profile.css';
 
@@ -20,6 +21,7 @@ export default function Profile() {
   // Address management states
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [addressFormData, setAddressFormData] = useState({
     address_label: '',
     location_id: '',
@@ -408,6 +410,23 @@ export default function Profile() {
             </div>
           </div>
 
+          <div class="profile-card security-settings">
+            <div class="card-header">
+              <h2>🔐 Security</h2>
+            </div>
+            <div class="settings-list">
+              <div class="setting-item">
+                <div>
+                  <h4>Change PIN</h4>
+                  <p>Update your 6-digit login PIN</p>
+                </div>
+                <button class="btn-secondary btn-sm" onClick={() => setShowPasswordModal(true)}>
+                  Change PIN
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="profile-card danger-zone">
             <div class="card-header">
               <h2>Account Settings</h2>
@@ -522,6 +541,18 @@ export default function Profile() {
               </form>
             </div>
           </div>
+        )}
+
+        {/* Change Password Modal */}
+        {showPasswordModal && (
+          <ChangePassword
+            onClose={() => setShowPasswordModal(false)}
+            onSuccess={() => {
+              setShowPasswordModal(false);
+              setSuccess('PIN changed successfully!');
+              setTimeout(() => setSuccess(null), 3000);
+            }}
+          />
         )}
       </div>
     </div>
