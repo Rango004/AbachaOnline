@@ -6,11 +6,14 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-const connectionString = process.env.DATABASE_URL;
+// Get PostgreSQL connection from command line argument OR environment variable
+const connectionString = process.argv[2] || process.env.DATABASE_URL;
 
 if (!connectionString) {
   console.error('❌ Error: No database connection string provided');
-  console.log('\nPlease set DATABASE_URL in your .env file\n');
+  console.log('\nUsage:');
+  console.log('  node seed-locations.js "postgresql://user:pass@host:port/database"');
+  console.log('\nOr set DATABASE_URL in your .env file\n');
   process.exit(1);
 }
 

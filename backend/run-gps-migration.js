@@ -8,12 +8,14 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-// Get PostgreSQL connection from environment
-const connectionString = process.env.DATABASE_URL;
+// Get PostgreSQL connection from command line argument OR environment variable
+const connectionString = process.argv[2] || process.env.DATABASE_URL;
 
 if (!connectionString) {
   console.error('❌ Error: No database connection string provided');
-  console.log('\nPlease set DATABASE_URL in your .env file');
+  console.log('\nUsage:');
+  console.log('  node run-gps-migration.js "postgresql://user:pass@host:port/database"');
+  console.log('\nOr set DATABASE_URL in your .env file');
   console.log('Example: DATABASE_URL=postgresql://user:pass@host:port/database\n');
   process.exit(1);
 }
