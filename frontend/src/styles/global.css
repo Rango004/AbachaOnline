@@ -1569,12 +1569,9 @@ input::placeholder, textarea::placeholder {
   z-index: 999;
   transform: translateX(100%);
   transition: transform 0.3s ease;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding-bottom: var(--bottom-nav-height, 60px);
 }
 
 .mobile-menu.active {
@@ -1591,6 +1588,7 @@ input::placeholder, textarea::placeholder {
   padding: var(--spacing-lg);
   border-bottom: 1px solid var(--border-color);
   background: rgba(76, 175, 80, 0.1);
+  flex-shrink: 0;
 }
 
 .mobile-menu-user {
@@ -1630,6 +1628,8 @@ input::placeholder, textarea::placeholder {
   padding: var(--spacing-md) 0;
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
 }
 
 .mobile-menu-item {
@@ -1674,6 +1674,12 @@ input::placeholder, textarea::placeholder {
 .mobile-menu-footer {
   padding: var(--spacing-lg);
   border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="dark"] .mobile-menu-footer {
+  background: rgba(30, 30, 30, 0.95);
 }
 
 .mobile-menu-footer .btn-logout {

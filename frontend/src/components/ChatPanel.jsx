@@ -126,18 +126,20 @@ const styles = {
     position: 'relative'
   },
   backButton: {
-    position: 'absolute',
-    top: '14px',
-    left: '12px',
-    padding: '8px 16px',
+    padding: '12px 16px',
     border: 'none',
-    backgroundColor: 'transparent',
+    backgroundColor: '#fff',
+    borderBottom: '1px solid #e0e0e0',
     color: '#1976d2',
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
-    zIndex: 10,
-    borderRadius: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    width: '100%',
+    textAlign: 'left',
+    flexShrink: 0,
     transition: 'background-color 0.2s',
     ':hover': {
       backgroundColor: '#f5f5f5'
