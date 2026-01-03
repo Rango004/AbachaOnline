@@ -371,11 +371,11 @@ router.put('/change-password', authenticate, async (req, res) => {
     const { currentPin, newPin } = req.body;
     const userId = req.user.id;
 
-    // Validation
-    if (!currentPin || !newPin) {
+    // Validation - newPin is always required, currentPin is optional for first-time setup
+    if (!newPin) {
       return res.status(400).json({
         error: 'Validation failed',
-        message: 'Current PIN and new PIN are required'
+        message: 'New PIN is required'
       });
     }
 
@@ -387,7 +387,7 @@ router.put('/change-password', authenticate, async (req, res) => {
       });
     }
 
-    const result = await AuthService.changePassword(userId, currentPin, newPin);
+    const result = await AuthService.changePassword(userId, currentPin || '', newPin);
     res.json(result);
   } catch (error) {
     console.error('Change password error:', error);

@@ -698,11 +698,23 @@ class AuthService {
 
       const user = result.rows[0];
 
-      // Verify current PIN
-      if (!user.password_hash) {
-        throw new Error('No PIN set. Please set a PIN first.');
+      // Handle first-time PIN setup (no current PIN exists)
+      if (!user.password_hash || user.password_hash === '') {
+        // First-time setup - no current PIN required
+        const newPinHash = await bcrypt.hash(newPin, 10);
+        await db.query(
+          'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+          [newPinHash, userId]
+        );
+
+        return {
+          success: true,
+          message: 'PIN set successfully',
+          firstTimeSetup: true
+        };
       }
 
+      // Verify current PIN for existing users
       const isValidPin = await bcrypt.compare(currentPin, user.password_hash);
       if (!isValidPin) {
         throw new Error('Current PIN is incorrect');
@@ -723,7 +735,8 @@ class AuthService {
 
       return {
         success: true,
-        message: 'PIN changed successfully'
+        message: 'PIN changed successfully',
+        firstTimeSetup: false
       };
     } catch (error) {
       throw error;
