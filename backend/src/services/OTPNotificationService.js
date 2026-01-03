@@ -1,12 +1,13 @@
 /**
  * Multi-Channel OTP Notification Service
- * Supports: WhatsApp, Flash Call, SMS, and Simple Fallback
+ * Supports: Email, WhatsApp, Flash Call, SMS, and Simple Fallback
  *
  * Priority Order:
- * 1. WhatsApp OTP (if configured) - Most reliable in Africa
- * 2. Flash Call / Missed Call (if configured) - Simple for users
- * 3. SMS (if configured) - Traditional method
- * 4. Simple Fallback - Always works (shows OTP in response)
+ * 1. Email OTP (if configured & email provided) - Most reliable and cost-effective
+ * 2. WhatsApp OTP (if configured) - Reliable in Africa
+ * 3. Flash Call / Missed Call (if configured) - Simple for users
+ * 4. SMS (if configured) - Unreliable, last resort
+ * 5. Simple Fallback - Always works (shows OTP in response)
  *
  * Sierra Leone Mobile Prefixes:
  * - Orange: +232 25, +232 76, +232 78
@@ -133,7 +134,21 @@ class OTPNotificationService {
     // Track which methods we tried
     const attempts = [];
 
-    // Try WhatsApp first (most reliable in Africa)
+    // Try Email FIRST if provided (most reliable and cost-effective)
+    if (this.emailEnabled && email && preferredMethod !== 'skip_email') {
+      console.log(`[OTP] Trying Email to ${email}...`);
+      const result = await this.sendEmail(email, otp, userName);
+      attempts.push({ method: 'email', ...result });
+      if (result.success) {
+        return {
+          ...result,
+          method: 'email',
+          message: 'OTP sent to your email. Please check your inbox (and spam folder).'
+        };
+      }
+    }
+
+    // Try WhatsApp as backup (reliable in Africa)
     if (this.whatsappEnabled && preferredMethod !== 'skip_whatsapp') {
       console.log(`[OTP] Trying WhatsApp...`);
       const result = await this.sendWhatsApp(phone, otp);
@@ -153,7 +168,7 @@ class OTPNotificationService {
       }
     }
 
-    // Try SMS
+    // Try SMS as last resort (unreliable)
     if (this.smsEnabled && preferredMethod !== 'skip_sms') {
       console.log(`[OTP] Trying SMS...`);
       const result = await this.sendSMS(phone, otp);
@@ -163,20 +178,6 @@ class OTPNotificationService {
           ...result,
           method: 'sms',
           message: 'OTP sent via SMS. Please wait 1-2 minutes. Use "Resend Code" if not received.'
-        };
-      }
-    }
-
-    // Try Email if provided (recovery option)
-    if (this.emailEnabled && email && preferredMethod !== 'skip_email') {
-      console.log(`[OTP] Trying Email to ${email}...`);
-      const result = await this.sendEmail(email, otp, userName);
-      attempts.push({ method: 'email', ...result });
-      if (result.success) {
-        return {
-          ...result,
-          method: 'email',
-          message: 'OTP sent to your email. Please check your inbox (and spam folder).'
         };
       }
     }
