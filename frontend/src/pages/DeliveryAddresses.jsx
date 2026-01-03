@@ -25,11 +25,12 @@ export default function DeliveryAddresses() {
     delivery_address: '',
     notes: '',
     is_default: false,
+    latitude: null,
+    longitude: null,
+    useGPS: false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [capturingGPS, setCapturingGPS] = useState(false);
-  const [gpsError, setGpsError] = useState(null);
   const [capturingGPS, setCapturingGPS] = useState(false);
   const [gpsError, setGpsError] = useState(null);
 
@@ -41,6 +42,17 @@ export default function DeliveryAddresses() {
   const handleOpenModal = (address = null) => {
     if (address) {
       setEditingId(address.id);
+      setFormData({
+        address_label: address.address_label,
+        location_id: address.location_id || '',
+        delivery_address: address.delivery_address,
+        notes: address.notes || '',
+        is_default: address.is_default,
+        latitude: address.latitude || null,
+        longitude: address.longitude || null,
+        useGPS: !!(address.latitude && address.longitude),
+      });
+    } else {
       setFormData({
         address_label: '',
         location_id: '',
@@ -132,57 +144,6 @@ export default function DeliveryAddresses() {
     setGpsError(null);
   };
 
-  
-  const handleCaptureGPS = () => {
-    if (!navigator.geolocation) {
-      setGpsError('Geolocation is not supported by your browser');
-      return;
-    }
-
-    setCapturingGPS(true);
-    setGpsError(null);
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setFormData({
-          ...formData,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          useGPS: true,
-          location_id: '',
-        });
-        setCapturingGPS(false);
-      },
-      (error) => {
-        let errorMessage = 'Failed to get your location';
-        if (error.code === error.PERMISSION_DENIED) {
-          errorMessage = 'Location permission denied. Please enable location access in your browser settings.';
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          errorMessage = 'Location information is unavailable.';
-        } else if (error.code === error.TIMEOUT) {
-          errorMessage = 'Location request timed out.';
-        }
-        setGpsError(errorMessage);
-        setCapturingGPS(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }
-    );
-  };
-
-  const handleClearGPS = () => {
-    setFormData({
-      ...formData,
-      latitude: null,
-      longitude: null,
-      useGPS: false,
-    });
-    setGpsError(null);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -193,6 +154,8 @@ export default function DeliveryAddresses() {
         ...formData,
         location_id: formData.location_id ? parseInt(formData.location_id) : null,
       };
+
+      delete dataToSubmit.useGPS;
 
       if (editingId) {
         await updateAddress(editingId, dataToSubmit);
@@ -226,10 +189,15 @@ export default function DeliveryAddresses() {
     }
   };
 
-  const getLocationName = (locationId) => {
-    if (!locationId) return 'No dormitory';
-    const location = locations.find(loc => loc.id === locationId);
-    return location?.name || 'Unknown';
+  const getLocationDisplay = (address) => {
+    if (address.latitude && address.longitude) {
+      return `📍 GPS (${address.latitude.toFixed(4)}, ${address.longitude.toFixed(4)})`;
+    }
+    if (address.location_id) {
+      const location = locations.find(loc => loc.id === address.location_id);
+      return location?.name || 'Unknown';
+    }
+    return 'No location specified';
   };
 
   return (
@@ -348,20 +316,55 @@ export default function DeliveryAddresses() {
               </div>
 
               <div class="form-group">
-                <label htmlFor="location_id">Dormitory/Location</label>
-                <select
-                  id="location_id"
-                  name="location_id"
-                  value={formData.location_id}
-                  onChange={handleInputChange}
-                >
-                  <option value="">Select a dormitory</option>
-                  {locations.map((location) => (
-                    <option key={location.id} value={location.id}>
-                      {location.name}
-                    </option>
-                  ))}
-                </select>
+                <label htmlFor="location_id">Location Method</label>
+
+                {!formData.useGPS ? (
+                  <>
+                    <select
+                      id="location_id"
+                      name="location_id"
+                      value={formData.location_id}
+                      onChange={handleInputChange}
+                      disabled={formData.useGPS}
+                    >
+                      <option value="">Select a dormitory</option>
+                      {locations.map((location) => (
+                        <option key={location.id} value={location.id}>
+                          {location.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      class="btn-secondary gps-button"
+                      onClick={handleCaptureGPS}
+                      disabled={capturingGPS}
+                    >
+                      {capturingGPS ? '📍 Capturing...' : '📍 Use My GPS Location Instead'}
+                    </button>
+                  </>
+                ) : (
+                  <div class="gps-info">
+                    <div class="gps-coordinates">
+                      <strong>📍 GPS Location Captured</strong>
+                      <p>Latitude: {formData.latitude?.toFixed(6)}</p>
+                      <p>Longitude: {formData.longitude?.toFixed(6)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn-secondary"
+                      onClick={handleClearGPS}
+                    >
+                      Use Dormitory Selection Instead
+                    </button>
+                  </div>
+                )}
+
+                {gpsError && (
+                  <div class="alert alert-error gps-error">
+                    {gpsError}
+                  </div>
+                )}
               </div>
 
               <div class="form-group">

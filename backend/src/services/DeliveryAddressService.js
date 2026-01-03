@@ -208,7 +208,8 @@ class DeliveryAddressService {
         updates.push(`notes = $${paramCount++}`);
         params.push(notes);
       }
-n      if (latitude !== undefined) {
+
+      if (latitude !== undefined) {
         updates.push(`latitude = $${paramCount++}`);
         params.push(latitude || null);
       }
