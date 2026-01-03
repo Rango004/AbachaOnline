@@ -335,7 +335,7 @@ class AuthService {
   async resendOTP(phone) {
     try {
       const result = await db.query(
-        'SELECT id, is_verified, name FROM users WHERE phone = $1',
+        'SELECT id, is_verified, name, email FROM users WHERE phone = $1',
         [phone]
       );
 
@@ -357,7 +357,7 @@ class AuthService {
       );
 
       // Send OTP via multi-channel service
-      const otpResult = await otpService.sendOTP(phone, otp, { userName: user.name });
+      const otpResult = await otpService.sendOTP(phone, otp, { userName: user.name, email: user.email });
 
       return {
         message: otpResult.message || 'OTP resent. Please check your messages.',
@@ -376,7 +376,7 @@ class AuthService {
   async requestLoginOTP(phone) {
     try {
       const result = await db.query(
-        'SELECT id, is_verified, name, role FROM users WHERE phone = $1',
+        'SELECT id, is_verified, name, role, email FROM users WHERE phone = $1',
         [phone]
       );
 
@@ -399,7 +399,7 @@ class AuthService {
       );
 
       // Send OTP via multi-channel service
-      const otpResult = await otpService.sendOTP(phone, otp, { userName: user.name });
+      const otpResult = await otpService.sendOTP(phone, otp, { userName: user.name, email: user.email });
 
       return {
         message: otpResult.message || 'Login OTP sent. Please check your messages.',
@@ -751,7 +751,7 @@ class AuthService {
   async requestPasswordReset(phone) {
     try {
       const result = await db.query(
-        'SELECT id, name, is_verified FROM users WHERE phone = $1',
+        'SELECT id, name, is_verified, email FROM users WHERE phone = $1',
         [phone]
       );
 
@@ -774,7 +774,7 @@ class AuthService {
       );
 
       // Send OTP via multi-channel service
-      const otpResult = await otpService.sendOTP(phone, otp, { userName: user.name });
+      const otpResult = await otpService.sendOTP(phone, otp, { userName: user.name, email: user.email });
 
       return {
         success: true,
