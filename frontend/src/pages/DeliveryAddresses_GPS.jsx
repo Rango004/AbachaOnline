@@ -28,8 +28,6 @@ export default function DeliveryAddresses() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [capturingGPS, setCapturingGPS] = useState(false);
-  const [gpsError, setGpsError] = useState(null);
 
   useEffect(() => {
     loadAddresses();
@@ -40,18 +38,23 @@ export default function DeliveryAddresses() {
     if (address) {
       setEditingId(address.id);
       setFormData({
+        address_label: address.address_label,
+        location_id: address.location_id || '',
+        delivery_address: address.delivery_address,
+        notes: address.notes || '',
+        is_default: address.is_default,
+      });
+    } else {
+      setEditingId(null);
+      setFormData({
         address_label: '',
         location_id: '',
         delivery_address: '',
         notes: '',
         is_default: false,
-        latitude: null,
-        longitude: null,
-        useGPS: false,
       });
     }
     setSubmitError(null);
-    setGpsError(null);
     setShowModal(true);
   };
 
@@ -64,11 +67,7 @@ export default function DeliveryAddresses() {
       delivery_address: '',
       notes: '',
       is_default: false,
-      latitude: null,
-      longitude: null,
-      useGPS: false,
     });
-    setGpsError(null);
   };
 
   const handleInputChange = (e) => {
@@ -77,57 +76,6 @@ export default function DeliveryAddresses() {
       ...formData,
       [name]: type === 'checkbox' ? checked : value,
     });
-  };
-
-  
-  const handleCaptureGPS = () => {
-    if (!navigator.geolocation) {
-      setGpsError('Geolocation is not supported by your browser');
-      return;
-    }
-
-    setCapturingGPS(true);
-    setGpsError(null);
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setFormData({
-          ...formData,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          useGPS: true,
-          location_id: '',
-        });
-        setCapturingGPS(false);
-      },
-      (error) => {
-        let errorMessage = 'Failed to get your location';
-        if (error.code === error.PERMISSION_DENIED) {
-          errorMessage = 'Location permission denied. Please enable location access in your browser settings.';
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          errorMessage = 'Location information is unavailable.';
-        } else if (error.code === error.TIMEOUT) {
-          errorMessage = 'Location request timed out.';
-        }
-        setGpsError(errorMessage);
-        setCapturingGPS(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }
-    );
-  };
-
-  const handleClearGPS = () => {
-    setFormData({
-      ...formData,
-      latitude: null,
-      longitude: null,
-      useGPS: false,
-    });
-    setGpsError(null);
   };
 
   const handleSubmit = async (e) => {
@@ -224,7 +172,7 @@ export default function DeliveryAddresses() {
 
               <div class="card-content">
                 <div class="address-detail">
-                  <strong>Location:</strong> {getLocationDisplay(address)}
+                  <strong>Location:</strong> {getLocationName(address.location_id)}
                 </div>
                 <div class="address-detail">
                   <strong>Address:</strong> {address.delivery_address}
