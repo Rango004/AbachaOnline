@@ -43,12 +43,59 @@ export default function Header({ currentRoute }) {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  // Get navigation items based on user role
+  const getDesktopNavItems = () => {
+    if (!user) return [];
+
+    switch (user.role) {
+      case 'admin':
+        return [
+          { label: 'Dashboard', path: '/admin' },
+        ];
+      case 'merchant':
+        return [
+          { label: 'Dashboard', path: '/merchant' },
+          { label: 'Products', path: '/merchant/products' },
+          { label: 'Orders', path: '/merchant/orders' },
+          { label: 'Analytics', path: '/merchant/analytics' },
+        ];
+      case 'rider':
+        return [
+          { label: 'Deliveries', path: '/rider' },
+        ];
+      default: // student
+        return [
+          { label: 'Dashboard', path: '/student' },
+          { label: 'Products', path: '/products' },
+          { label: 'Orders', path: '/orders' },
+          { label: 'Profile', path: '/profile' },
+        ];
+    }
+  };
+
   return (
     <>
       <header class={`header ${isScrolled ? 'scrolled' : ''}`}>
         <a href="/" class="logo" onClick={(e) => { e.preventDefault(); route('/'); }}>
           AbachaOnline 🛍️
         </a>
+        
+        {/* Desktop Navigation */}
+        {user && (
+          <nav class="desktop-nav">
+            {getDesktopNavItems().map(item => (
+              <a 
+                key={item.path}
+                href={item.path} 
+                class={`desktop-nav-item ${currentRoute === item.path ? 'active' : ''}`}
+                onClick={(e) => { e.preventDefault(); route(item.path); }}
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+        )}
+        
         <div class="header-actions">
           {user && (
             <>

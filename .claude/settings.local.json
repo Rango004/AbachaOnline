@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node scripts/populate-hostel-locations.js:*)"
+      "Bash(node scripts/populate-hostel-locations.js:*)",
+      "Bash(npm install:*)"
     ]
   }
 }
