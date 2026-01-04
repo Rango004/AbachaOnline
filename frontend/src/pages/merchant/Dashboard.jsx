@@ -50,6 +50,21 @@ export default function MerchantDashboard() {
     }
   };
 
+  const openMerchantSupport = () => {
+    // Check if ChatWidget exists and open it
+    const chatWidget = document.querySelector('.chat-widget');
+    if (chatWidget) {
+      // Trigger chat widget open
+      const chatButton = chatWidget.querySelector('button');
+      if (chatButton) {
+        chatButton.click();
+      }
+    } else {
+      // Fallback: show merchant support message
+      alert('Merchant support chat will be available soon. Please contact us at merchant-support@abachaonline.com');
+    }
+  };
+
   if (loading) {
     return <div class="page"><div class="loading">Loading dashboard...</div></div>;
   }
@@ -125,6 +140,14 @@ export default function MerchantDashboard() {
               <li>Respond to orders promptly</li>
               <li>Update order status as you prepare items</li>
             </ul>
+          </div>
+          
+          <div class="info-card">
+            <h3>📞 Contact Support</h3>
+            <p>Need help with your merchant account?</p>
+            <button class="btn-secondary" onClick={openMerchantSupport}>
+              💬 Chat with Support
+            </button>
           </div>
         </div>
       </div>

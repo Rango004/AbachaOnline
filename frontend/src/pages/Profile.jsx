@@ -186,6 +186,21 @@ export default function Profile() {
     }
   };
 
+  const openChatSupport = () => {
+    // Check if ChatWidget exists and open it
+    const chatWidget = document.querySelector('.chat-widget');
+    if (chatWidget) {
+      // Trigger chat widget open
+      const chatButton = chatWidget.querySelector('button');
+      if (chatButton) {
+        chatButton.click();
+      }
+    } else {
+      // Fallback: redirect to a support page or show message
+      alert('Chat support will be available soon. Please contact us via phone or email.');
+    }
+  };
+
   if (loading && !user) {
     return <div class="page"><div class="loading">Loading profile...</div></div>;
   }
@@ -376,7 +391,7 @@ export default function Profile() {
             <div class="settings-card">
               <h3>💝 Wishlist & Favorites</h3>
               <p>Save items for later and track favorites</p>
-              <a href="#" class="btn-link">View Wishlist →</a>
+              <a href="/wishlist" class="btn-link">View Wishlist →</a>
             </div>
 
             <div class="settings-card">
@@ -388,7 +403,7 @@ export default function Profile() {
             <div class="settings-card">
               <h3>💳 Payment Methods</h3>
               <p>Manage your payment information securely</p>
-              <a href="#" class="btn-link">Manage Payments →</a>
+              <button class="btn-link" onClick={() => openAddressModal()}>Add Payment Method →</button>
             </div>
 
             <div class="settings-card">
@@ -406,7 +421,7 @@ export default function Profile() {
             <div class="settings-card">
               <h3>❓ Help & Support</h3>
               <p>Get help with your orders and account</p>
-              <a href="#" class="btn-link">Contact Support →</a>
+              <button class="btn-link" onClick={() => openChatSupport()}>Contact Support →</button>
             </div>
           </div>
 

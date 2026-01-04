@@ -1754,6 +1754,23 @@ select.success {
   border-top: 1px solid var(--border-color);
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.95);
+  /* Dynamic positioning based on screen height */
+  position: sticky;
+  bottom: 0;
+}
+
+/* On smaller screens, move footer to top */
+@media (max-height: 600px) {
+  .mobile-menu {
+    flex-direction: column-reverse;
+  }
+  
+  .mobile-menu-footer {
+    position: static;
+    border-top: none;
+    border-bottom: 1px solid var(--border-color);
+    order: -1;
+  }
 }
 
 [data-theme="dark"] .mobile-menu-footer {
