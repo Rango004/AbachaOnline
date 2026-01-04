@@ -32,6 +32,7 @@ import MerchantOrders from './pages/merchant/Orders';
 import MerchantPayouts from './pages/merchant/Payouts';
 import MerchantSettings from './pages/merchant/Settings';
 import MerchantPredictions from './pages/merchant/Predictions';
+import MerchantAnalytics from './pages/merchant/Analytics';
 
 // Rider Pages
 import RiderDashboard from './pages/rider/Dashboard';
@@ -89,6 +90,7 @@ function AppContent() {
                 <MerchantPayouts path="/merchant/payouts" />
                 <MerchantSettings path="/merchant/settings" />
                 <MerchantPredictions path="/merchant/predictions" />
+                <MerchantAnalytics path="/merchant/analytics" />
 
                 {/* Rider Routes */}
                 <RiderDashboard path="/rider" />

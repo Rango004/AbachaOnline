@@ -36,7 +36,26 @@ export default function AdminDashboard() {
       route('/products');
       return;
     }
+    
+    // Check for tab from localStorage (from mobile menu)
+    const savedTab = localStorage.getItem('adminActiveTab');
+    if (savedTab) {
+      setActiveTab(savedTab);
+      localStorage.removeItem('adminActiveTab');
+    }
+    
+    // Listen for tab changes from mobile menu
+    const handleTabChange = (event) => {
+      setActiveTab(event.detail.tab);
+    };
+    
+    window.addEventListener('adminTabChange', handleTabChange);
+    
     loadData();
+    
+    return () => {
+      window.removeEventListener('adminTabChange', handleTabChange);
+    };
   }, [user, activeTab]);
 
   const loadData = async () => {

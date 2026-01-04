@@ -51,6 +51,8 @@ export default function Header({ currentRoute }) {
       case 'admin':
         return [
           { label: 'Dashboard', path: '/admin' },
+          { label: 'Analytics', path: '/admin' },
+          { label: 'Settings', path: '/admin' },
         ];
       case 'merchant':
         return [

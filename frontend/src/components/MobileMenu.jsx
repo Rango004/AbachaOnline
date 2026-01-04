@@ -6,7 +6,20 @@ export default function MobileMenu({ isOpen, onClose, currentRoute }) {
   const { user, logout } = useContext(AuthContext);
 
   const handleNavigation = (path) => {
-    route(path);
+    // Handle admin dashboard tab navigation
+    if (path === '/admin' && user?.role === 'admin') {
+      route('/admin');
+    } else if (path.startsWith('/admin/tab/')) {
+      // Extract tab name from path like /admin/tab/merchants
+      const tab = path.split('/admin/tab/')[1];
+      route('/admin');
+      // Set tab in localStorage for admin dashboard to read
+      localStorage.setItem('adminActiveTab', tab);
+      // Trigger a custom event to notify admin dashboard
+      window.dispatchEvent(new CustomEvent('adminTabChange', { detail: { tab } }));
+    } else {
+      route(path);
+    }
     onClose();
   };
 
@@ -43,12 +56,13 @@ export default function MobileMenu({ isOpen, onClose, currentRoute }) {
     switch (user.role) {
       case 'admin':
         return [
-          { icon: '📊', label: 'Dashboard', path: '/admin/dashboard' },
-          { icon: '👥', label: 'Users', path: '/admin/dashboard' },
-          { icon: '📦', label: 'Orders', path: '/admin/dashboard' },
-          { icon: '🏪', label: 'Merchants', path: '/admin/dashboard' },
-          { icon: '🚚', label: 'Riders', path: '/admin/dashboard' },
-          { icon: '📍', label: 'Locations', path: '/admin/dashboard' },
+          { icon: '📊', label: 'Dashboard', path: '/admin' },
+          { icon: '📈', label: 'Analytics', path: '/admin/tab/analytics' },
+          { icon: '🏪', label: 'Merchants', path: '/admin/tab/merchants' },
+          { icon: '🚚', label: 'Riders', path: '/admin/tab/riders' },
+          { icon: '👥', label: 'Customers', path: '/admin/tab/customers' },
+          { icon: '📦', label: 'Orders', path: '/admin/tab/orders' },
+          { icon: '⚙️', label: 'Settings', path: '/admin/tab/settings' },
           { divider: true },
           ...commonItems,
           { icon: '🔒', label: 'Change Password', path: '/profile', action: 'password' },
