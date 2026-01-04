@@ -17,6 +17,7 @@
  */
 
 const https = require('https');
+const sgMail = require('@sendgrid/mail');
 
 class OTPNotificationService {
   constructor() {
@@ -49,12 +50,16 @@ class OTPNotificationService {
     this.fallbackEnabled = process.env.OTP_FALLBACK_ENABLED !== 'false'; // Enabled by default
 
     // ===========================================
-    // Email Configuration (SendGrid) - Optional backup
+    // Email Configuration (SendGrid)
     // ===========================================
     this.emailEnabled = !!process.env.SENDGRID_API_KEY;
-    this.sendGridApiKey = process.env.SENDGRID_API_KEY;
     this.sendGridFromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@abachaonline.com';
     this.sendGridFromName = process.env.SENDGRID_FROM_NAME || 'AbachaOnline';
+    
+    // Initialize SendGrid
+    if (this.emailEnabled) {
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    }
 
     // Log available channels
     console.log('[OTP Service] Available channels:');
@@ -392,62 +397,48 @@ class OTPNotificationService {
     }
 
     try {
-      const htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: #4CAF50; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-            <h1 style="margin: 0;">AbachaOnline</h1>
-            <p style="margin: 5px 0 0 0; font-size: 14px;">Campus Delivery Platform</p>
-          </div>
-          <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
-            <p style="color: #333; font-size: 16px;">Hello${userName ? ` ${userName}` : ''},</p>
-            <p style="color: #666; font-size: 14px;">Your verification code is:</p>
-            <div style="background: #fff; border: 2px dashed #4CAF50; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px;">
-              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #333;">${otp}</span>
-            </div>
-            <p style="color: #666; font-size: 14px;">This code is valid for <strong>5 minutes</strong>.</p>
-            <p style="color: #999; font-size: 12px; margin-top: 20px;">If you didn't request this code, please ignore this email.</p>
-          </div>
-          <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-            <p>AbachaOnline - Your Campus Delivery Partner</p>
-          </div>
-        </div>
-      `;
-
-      const textContent = `AbachaOnline Verification Code\n\nHello${userName ? ` ${userName}` : ''},\n\nYour verification code is: ${otp}\n\nThis code is valid for 5 minutes.\n\nIf you didn't request this code, please ignore this email.`;
-
-      const response = await this.httpPost(
-        'https://api.sendgrid.com/v3/mail/send',
-        {
-          personalizations: [{
-            to: [{ email: email }],
-            subject: `Your AbachaOnline verification code: ${otp}`
-          }],
-          from: {
-            email: this.sendGridFromEmail,
-            name: this.sendGridFromName
-          },
-          content: [
-            { type: 'text/plain', value: textContent },
-            { type: 'text/html', value: htmlContent }
-          ]
+      const msg = {
+        to: email,
+        from: {
+          email: this.sendGridFromEmail,
+          name: this.sendGridFromName
         },
-        {
-          'Authorization': `Bearer ${this.sendGridApiKey}`,
-          'Content-Type': 'application/json'
-        }
-      );
+        subject: `Your AbachaOnline verification code: ${otp}`,
+        text: `AbachaOnline Verification Code\n\nHello${userName ? ` ${userName}` : ''},\n\nYour verification code is: ${otp}\n\nThis code is valid for 5 minutes.\n\nIf you didn't request this code, please ignore this email.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: #4CAF50; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+              <h1 style="margin: 0;">AbachaOnline</h1>
+              <p style="margin: 5px 0 0 0; font-size: 14px;">Campus Delivery Platform</p>
+            </div>
+            <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
+              <p style="color: #333; font-size: 16px;">Hello${userName ? ` ${userName}` : ''},</p>
+              <p style="color: #666; font-size: 14px;">Your verification code is:</p>
+              <div style="background: #fff; border: 2px dashed #4CAF50; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #333;">${otp}</span>
+              </div>
+              <p style="color: #666; font-size: 14px;">This code is valid for <strong>5 minutes</strong>.</p>
+              <p style="color: #999; font-size: 12px; margin-top: 20px;">If you didn't request this code, please ignore this email.</p>
+            </div>
+            <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
+              <p>AbachaOnline - Your Campus Delivery Partner</p>
+            </div>
+          </div>
+        `
+      };
 
-      console.log(`[OTP] SendGrid response:`, JSON.stringify(response));
-
-      // SendGrid returns empty response on success (202 Accepted)
-      if (!response.errors) {
-        console.log(`[OTP] ✅ Email OTP sent successfully to ${email}`);
-        return { success: true, message: 'OTP sent via email' };
-      } else {
-        return { success: false, error: response.errors?.[0]?.message || 'Email send failed' };
-      }
+      console.log(`[OTP] Sending email to ${email} using SendGrid...`);
+      const response = await sgMail.send(msg);
+      
+      console.log(`[OTP] ✅ Email OTP sent successfully to ${email}`);
+      console.log(`[OTP] SendGrid response status:`, response[0].statusCode);
+      
+      return { success: true, message: 'OTP sent via email' };
     } catch (error) {
-      console.error(`[OTP] Email error:`, error.message);
+      console.error(`[OTP] SendGrid error:`, error.message);
+      if (error.response) {
+        console.error(`[OTP] SendGrid error body:`, error.response.body);
+      }
       return { success: false, error: error.message };
     }
   }
