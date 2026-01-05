@@ -651,7 +651,7 @@ class AuthService {
   async getUserProfile(userId) {
     try {
       const result = await db.query(
-        `SELECT u.id, u.phone, u.name, u.role, u.zone_id, u.is_verified, u.created_at,
+        `SELECT u.id, u.phone, u.name, u.email, u.role, u.zone_id, u.is_verified, u.created_at,
                 z.name as zone_name,
                 tc.balance as token_balance
          FROM users u

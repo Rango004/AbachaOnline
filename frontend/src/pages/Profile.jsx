@@ -33,6 +33,8 @@ export default function Profile() {
 
   useEffect(() => {
     loadProfile();
+    // Debug: Check if locations are loaded
+    console.log('Profile loaded, locations:', locations);
   }, []);
 
   const loadProfile = async () => {
@@ -87,6 +89,11 @@ export default function Profile() {
   };
 
   const openAddressModal = (addr = null) => {
+    // Load locations if not already loaded
+    if (locations.length === 0) {
+      loadAddresses();
+    }
+    
     if (addr) {
       setEditingAddressId(addr.id);
       setAddressFormData({
@@ -501,13 +508,14 @@ export default function Profile() {
                     value={addressFormData.location_id}
                     onChange={handleAddressFormChange}
                   >
-                    <option value="">-- No specific location --</option>
+                    <option value="">-- Select a location --</option>
                     {locations.map(loc => (
                       <option key={loc.id} value={loc.id}>
                         {loc.name}
                       </option>
                     ))}
                   </select>
+                  <small class="form-help">Choose your hostel or dormitory location</small>
                 </div>
 
                 <div class="form-group">
