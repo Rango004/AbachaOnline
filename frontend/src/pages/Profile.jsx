@@ -7,7 +7,7 @@ import './Profile.css';
 
 export default function Profile() {
   const { user, logout } = useContext(AuthContext);
-  const { addresses, locations, loadAddresses, createAddress, updateAddress, deleteAddress, setDefault } = useContext(AddressContext);
+  const { addresses, locations, loadAddresses, createAddress, updateAddress, deleteAddress, setDefault, loadLocations } = useContext(AddressContext);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -33,6 +33,7 @@ export default function Profile() {
 
   useEffect(() => {
     loadProfile();
+    loadLocations();
     // Debug: Check if locations are loaded
     console.log('Profile loaded, locations:', locations);
   }, []);
@@ -91,7 +92,7 @@ export default function Profile() {
   const openAddressModal = (addr = null) => {
     // Load locations if not already loaded
     if (locations.length === 0) {
-      loadAddresses();
+      loadLocations();
     }
     
     if (addr) {
