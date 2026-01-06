@@ -1655,10 +1655,10 @@ select.success {
   z-index: 999;
   transform: translateX(100%);
   transition: transform 0.3s ease;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  position: relative;
 }
 
 .mobile-menu.active {
