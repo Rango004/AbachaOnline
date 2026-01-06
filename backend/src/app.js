@@ -8,7 +8,23 @@ require('dotenv').config();
 
 const app = express();
 
-app.use(helmet());
+// Configure Content Security Policy to allow Cloudinary images, data URIs,
+// and the Railway websocket host used in production.
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'"],
+      imgSrc: ["'self'", 'https://res.cloudinary.com', 'data:'],
+      connectSrc: ["'self'", 'https://abachaonline.up.railway.app', 'wss://abachaonline.up.railway.app'],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      baseUri: ["'self'"]
+    }
+  }
+}));
 
 app.use(cors({
   origin: function(origin, callback) {

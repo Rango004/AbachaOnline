@@ -61,6 +61,7 @@ router.get('/optimize', (req, res) => {
     width: parseInt(width),
     height: parseInt(height),
     crop: 'fill',
+    secure: true,
     quality: 'auto:good',
     fetch_format: 'auto'
   });
