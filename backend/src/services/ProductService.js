@@ -117,7 +117,7 @@ class ProductService {
     try {
       await client.query('BEGIN');
 
-      const { name, description, price, category, image_url, stock_quantity } = productData;
+      const { name, description, price, category, images, stock_quantity } = productData;
 
       const merchantCheck = await client.query(
         'SELECT id, role FROM users WHERE id = $1',
@@ -133,10 +133,10 @@ class ProductService {
       }
 
       const result = await client.query(
-        `INSERT INTO products (merchant_id, name, description, price, category, image_url, stock_quantity, is_active)
+        `INSERT INTO products (merchant_id, name, description, price, category, images, stock_quantity, is_active)
          VALUES ($1, $2, $3, $4, $5, $6, $7, true)
          RETURNING *`,
-        [merchantId, name, description, price, category, image_url, stock_quantity || 0]
+        [merchantId, name, description, price, category, JSON.stringify(images || []), stock_quantity || 0]
       );
 
       await client.query('COMMIT');
@@ -169,7 +169,7 @@ class ProductService {
         throw new Error('Unauthorized: You can only update your own products');
       }
 
-      const allowedFields = ['name', 'description', 'price', 'category', 'image_url', 'stock_quantity', 'is_active'];
+      const allowedFields = ['name', 'description', 'price', 'category', 'images', 'stock_quantity', 'is_active'];
       const updateFields = [];
       const params = [];
       let paramIndex = 1;
@@ -177,7 +177,7 @@ class ProductService {
       for (const [key, value] of Object.entries(updates)) {
         if (allowedFields.includes(key) && value !== undefined) {
           updateFields.push(`${key} = $${paramIndex}`);
-          params.push(value);
+          params.push(key === 'images' ? JSON.stringify(value) : value);
           paramIndex++;
         }
       }

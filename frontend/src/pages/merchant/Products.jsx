@@ -2,6 +2,8 @@ import { useState, useEffect, useContext } from 'preact/hooks';
 import { route } from 'preact-router';
 import { AuthContext } from '../../services/AuthContext';
 import api from '../../services/api';
+import ImageUpload from '../../components/ImageUpload';
+import './Products.css';
 
 export default function MerchantProducts() {
   const { user } = useContext(AuthContext);
@@ -18,7 +20,7 @@ export default function MerchantProducts() {
     price: '',
     category: 'food',
     stock_quantity: '',
-    image_url: ''
+    images: []
   });
 
   useEffect(() => {
@@ -66,7 +68,7 @@ export default function MerchantProducts() {
         price: '',
         category: 'food',
         stock_quantity: '',
-        image_url: ''
+        images: []
       });
       loadProducts();
     } catch (err) {
@@ -82,7 +84,7 @@ export default function MerchantProducts() {
       price: product.price,
       category: product.category || 'food',
       stock_quantity: product.stock_quantity || '',
-      image_url: product.image_url || ''
+      images: product.images || []
     });
     setShowForm(true);
   };
@@ -166,7 +168,7 @@ export default function MerchantProducts() {
                   price: '',
                   category: 'food',
                   stock_quantity: '',
-                  image_url: ''
+                  images: []
                 });
               }}
             >
@@ -243,12 +245,11 @@ export default function MerchantProducts() {
                 </div>
 
                 <div class="form-group">
-                  <label>Image URL</label>
-                  <input
-                    type="url"
-                    name="image_url"
-                    value={formData.image_url}
-                    onInput={handleInputChange}
+                  <label>Product Images (Max 5, 1MB each)</label>
+                  <ImageUpload
+                    onImagesChange={(images) => setFormData(prev => ({ ...prev, images }))}
+                    maxImages={5}
+                    existingImages={formData.images}
                   />
                 </div>
 
@@ -384,6 +385,9 @@ export default function MerchantProducts() {
           ) : (
             products.map(product => (
               <div key={product.id} class={`product-card ${!product.is_active ? 'inactive' : ''}`}>
+                {product.images && product.images.length > 0 && (
+                  <img src={product.images[0].url} alt={product.name} class="product-image" />
+                )}
                 <div class="product-info">
                   <h3>{product.name}</h3>
                   {product.description && <p class="description">{product.description}</p>}

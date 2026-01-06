@@ -134,7 +134,7 @@ router.get('/:id(\\d+)', async (req, res) => {
  */
 router.post('/', authenticate, authorize('merchant', 'admin'), async (req, res) => {
   try {
-    const { name, description, price, category, image_url, stock_quantity } = req.body;
+    const { name, description, price, category, images, stock_quantity } = req.body;
 
     // Validation
     if (!name || !price) {
@@ -156,7 +156,7 @@ router.post('/', authenticate, authorize('merchant', 'admin'), async (req, res) 
       description,
       price: parseFloat(price),
       category,
-      image_url,
+      images: images || [],
       stock_quantity: stock_quantity ? parseInt(stock_quantity) : 0
     };
 
