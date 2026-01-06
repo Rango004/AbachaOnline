@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const { upload, cloudinary } = require('../config/cloudinary');
-const { authenticateToken, requireRole } = require('../middleware/auth');
+const { authenticate, authorize } = require('../middleware/auth');
 const db = require('../config/database');
 
 // Upload product images (merchant only)
 router.post('/upload', 
-  authenticateToken, 
-  requireRole(['merchant']),
+  authenticate, 
+  authorize('merchant', 'admin'),
   upload.array('images', 5),
   async (req, res) => {
     try {
@@ -34,8 +34,8 @@ router.post('/upload',
 
 // Delete image (merchant only)
 router.delete('/delete/:publicId', 
-  authenticateToken, 
-  requireRole(['merchant']),
+  authenticate, 
+  authorize('merchant', 'admin'),
   async (req, res) => {
     try {
       const { publicId } = req.params;
