@@ -5,6 +5,7 @@
 
 const CACHE_NAME = 'wego-cache-v1';
 const TILE_CACHE_NAME = 'wego-tiles-v1';
+const IMAGE_CACHE_NAME = 'wego-images-v1';
 const SYNC_TAG = 'wego-sync';
 
 // URLs to cache on install
@@ -26,6 +27,11 @@ const API_CACHE_PATTERNS = [
 // Tile server URLs
 const TILE_URLS = [
   /https:\/\/[a-z]\.tile\.openstreetmap\.org\//
+];
+
+// Cloudinary image URLs
+const IMAGE_URLS = [
+  /https:\/\/res\.cloudinary\.com\//
 ];
 
 /**
@@ -55,7 +61,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== TILE_CACHE_NAME) {
+          if (cacheName !== CACHE_NAME && cacheName !== TILE_CACHE_NAME && cacheName !== IMAGE_CACHE_NAME) {
             console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -109,6 +115,34 @@ self.addEventListener('fetch', (event) => {
           });
 
           return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // Handle Cloudinary images - cache first, network fallback
+  if (isImageRequest(url)) {
+    event.respondWith(
+      caches.match(request).then((response) => {
+        if (response) {
+          return response;
+        }
+
+        return fetch(request).then((response) => {
+          if (!response || response.status !== 200) {
+            return response;
+          }
+
+          const responseToCache = response.clone();
+          caches.open(IMAGE_CACHE_NAME).then((cache) => {
+            cache.put(request, responseToCache);
+          });
+
+          return response;
+        }).catch(() => {
+          // Return placeholder image if offline
+          return caches.match('/placeholder-image.png');
         });
       })
     );
@@ -210,6 +244,13 @@ self.addEventListener('message', (event) => {
  */
 function isTileRequest(url) {
   return TILE_URLS.some((pattern) => pattern.test(url.href));
+}
+
+/**
+ * Helper function to check if request is for images
+ */
+function isImageRequest(url) {
+  return IMAGE_URLS.some((pattern) => pattern.test(url.href));
 }
 
 /**

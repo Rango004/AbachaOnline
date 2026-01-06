@@ -221,6 +221,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const userRoleRoutes = require('./routes/user-role');
 const chatRoutes = require('./routes/chat');
 const chatbotRoutes = require('./routes/chatbot');
+const imageRoutes = require('./routes/images');
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/products', productRoutes);
@@ -249,6 +250,7 @@ app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/user', userRoleRoutes);
 app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/chatbot', chatbotRoutes);
+app.use('/api/v1/images', imageRoutes);
 
 // Serve static diagnostic tools from frontend/public
 const path = require('path');
@@ -264,6 +266,28 @@ app.use((req, res) => {
 
 // CSRF error handler
 app.use((err, req, res, next) => {
+  // Multer file upload errors
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({
+      error: 'File too large',
+      message: 'Image must be less than 1MB'
+    });
+  }
+  
+  if (err.code === 'LIMIT_FILE_COUNT') {
+    return res.status(400).json({
+      error: 'Too many files',
+      message: 'Maximum 5 images allowed'
+    });
+  }
+  
+  if (err.message === 'Only image files are allowed') {
+    return res.status(400).json({
+      error: 'Invalid file type',
+      message: err.message
+    });
+  }
+
   if (err.code === 'EBADCSRFTOKEN') {
     console.error('CSRF token error:', {
       path: req.path,
