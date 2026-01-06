@@ -148,13 +148,6 @@ export default function MobileMenu({ isOpen, onClose, currentRoute }) {
             );
           })}
         </nav>
-
-        {/* Footer with logout */}
-        <div class="mobile-menu-footer">
-          <button class="btn-logout" onClick={handleLogout}>
-            🚪 Logout
-          </button>
-        </div>
       </div>
     </>
   );
