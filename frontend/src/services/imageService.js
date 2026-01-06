@@ -40,6 +40,13 @@ export async function deleteProductImage(publicId) {
   return response.json();
 }
 
-export function getOptimizedImageUrl(publicId, width = 400, height = 400) {
-  return `${API_URL}/api/v1/images/optimize?publicId=${publicId}&width=${width}&height=${height}`;
+// Fetch the optimized Cloudinary URL from the backend
+export async function getOptimizedImageUrl(publicId, width = 400, height = 400) {
+  const url = `${API_URL}/api/v1/images/optimize?publicId=${encodeURIComponent(publicId)}&width=${width}&height=${height}`;
+  const res = await fetch(url, { method: 'GET', credentials: 'include' });
+  if (!res.ok) {
+    throw new Error('Failed to fetch optimized image URL');
+  }
+  const data = await res.json();
+  return data.url;
 }

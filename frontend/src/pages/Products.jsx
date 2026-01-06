@@ -26,6 +26,7 @@ export default function Products() {
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('random');
   const [showFilters, setShowFilters] = useState(false);
+  const [imageUrls, setImageUrls] = useState({});
 
   // Redirect non-customers to their appropriate dashboards
   useEffect(() => {
@@ -105,6 +106,20 @@ export default function Products() {
       const productsData = await api.getProducts({ limit: 999999 });
       const products = productsData.products || [];
       setAllProducts(products);
+
+      // Preload optimized image URLs for products that have Cloudinary public IDs
+      const urls = {};
+      await Promise.all(products.map(async (p) => {
+        if (p.public_id) {
+          try {
+            const u = await getOptimizedImageUrl(p.public_id);
+            urls[p.public_id] = u;
+          } catch (err) {
+            // ignore per-image failures
+          }
+        }
+      }));
+      setImageUrls(urls);
 
       // Extract unique categories
       const uniqueCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
@@ -235,8 +250,14 @@ export default function Products() {
           </div>
         )}
         <div className="product-image">
-          {product.public_id || product.image || product.image_url ? (
-            <img src={product.public_id ? getOptimizedImageUrl(product.public_id) : (product.image || product.image_url)} alt={product.name} />
+          {product.public_id ? (
+            imageUrls[product.public_id] ? (
+              <img src={imageUrls[product.public_id]} alt={product.name} />
+            ) : (
+              <div style={{ fontSize: '32px' }}>⏳</div>
+            )
+          ) : (product.image || product.image_url) ? (
+            <img src={product.image || product.image_url} alt={product.name} />
           ) : (
             <div style={{ fontSize: '48px' }}>📦</div>
           )}

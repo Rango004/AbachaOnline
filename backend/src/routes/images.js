@@ -65,7 +65,15 @@ router.get('/optimize', (req, res) => {
     fetch_format: 'auto'
   });
 
-  res.redirect(optimizedUrl);
+  // Return the optimized Cloudinary URL as JSON to avoid cross-origin
+  // redirect issues in browsers and allow the frontend to set `img.src`.
+  const origin = req.headers.origin || '*';
+  res.set('Access-Control-Allow-Origin', origin);
+  res.set('Access-Control-Allow-Credentials', 'true');
+  res.set('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  return res.json({ url: optimizedUrl });
 });
 
 module.exports = router;
