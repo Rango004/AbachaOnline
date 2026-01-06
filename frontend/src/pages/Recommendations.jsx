@@ -2,6 +2,7 @@
 import { CartContext } from '../services/CartContext';
 import { WishlistContext } from '../services/WishlistContext';
 import api from '../services/api';
+import { getOptimizedImageUrl } from '../services/imageService';
 import '../pages/Products.css';
 
 export default function Recommendations() {
@@ -9,6 +10,7 @@ export default function Recommendations() {
   const { isInWishlist, toggleWishlist } = useContext(WishlistContext);
   const [recommendations, setRecommendations] = useState([]);
   const [merchantRatings, setMerchantRatings] = useState({});
+  const [imageUrls, setImageUrls] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -23,6 +25,20 @@ export default function Recommendations() {
       const data = await api.getRecommendations(15);
       const items = data.recommendations || [];
       setRecommendations(items);
+
+      // Preload optimized image URLs for recommendations that have Cloudinary public IDs
+      const urls = {};
+      await Promise.all(items.map(async (p) => {
+        if (p.public_id) {
+          try {
+            const u = await getOptimizedImageUrl(p.public_id);
+            urls[p.public_id] = u;
+          } catch (err) {
+            // ignore per-image failures
+          }
+        }
+      }));
+      setImageUrls(urls);
 
       const uniqueMerchantIds = [...new Set(items.map(p => p.merchant_id).filter(Boolean))];
       const ratings = {};
@@ -102,7 +118,19 @@ export default function Recommendations() {
                 <div style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: '#2196F3', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', zIndex: 10 }}>
                   Score: {product.score.toFixed(1)}
                 </div>
-                <img src={product.image || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3C/svg%3E'} alt={product.name} className="product-image" />
+                <div className="product-image" style={{width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                  {product.public_id ? (
+                    imageUrls[product.public_id] ? (
+                      <img src={imageUrls[product.public_id]} alt={product.name} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                    ) : (
+                      <div style={{fontSize: '24px'}}>⏳</div>
+                    )
+                  ) : (product.image || product.image_url) ? (
+                    <img src={product.image || product.image_url} alt={product.name} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                  ) : (
+                    <div style={{fontSize: '48px'}}>📦</div>
+                  )}
+                </div>
                 <div className="product-info">
                   <h3 style={{ margin: '8px 0 4px 0', fontSize: '14px', fontWeight: 'bold' }}>{product.name}</h3>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
