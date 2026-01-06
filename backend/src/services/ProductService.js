@@ -19,7 +19,8 @@ class ProductService {
       let query = `
         SELECT p.*,
                u.name as merchant_name,
-               u.phone as merchant_phone
+               u.phone as merchant_phone,
+               COALESCE(p.image_url, (p.images -> 0 ->> 'url')) as image
         FROM products p
         LEFT JOIN users u ON p.merchant_id = u.id
         WHERE p.is_active = true
@@ -94,7 +95,8 @@ class ProductService {
         `SELECT p.*,
                 u.name as merchant_name,
                 u.phone as merchant_phone,
-                u.zone_id as merchant_zone_id
+                u.zone_id as merchant_zone_id,
+                COALESCE(p.image_url, (p.images -> 0 ->> 'url')) as image
          FROM products p
          LEFT JOIN users u ON p.merchant_id = u.id
          WHERE p.id = $1`,
@@ -335,10 +337,12 @@ class ProductService {
             continue;
           }
 
+          const images = image_url ? JSON.stringify([{ url: image_url, publicId: image_url }]) : null;
+
           await client.query(
-            `INSERT INTO products (merchant_id, name, description, price, category, image_url, stock_quantity, is_active)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
-            [merchantId, name, description || '', parseFloat(price), category || 'other', image_url || '', parseInt(stock_quantity) || 0]
+            `INSERT INTO products (merchant_id, name, description, price, category, image_url, images, stock_quantity, is_active)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)`,
+            [merchantId, name, description || '', parseFloat(price), category || 'other', image_url || null, images, parseInt(stock_quantity) || 0]
           );
 
           results.successful++;
