@@ -65,7 +65,7 @@ router.get('/optimize', (req, res) => {
     fetch_format: 'auto'
   });
 
-  res.json({ url: optimizedUrl });
+  res.redirect(optimizedUrl);
 });
 
 module.exports = router;
