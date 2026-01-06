@@ -36,7 +36,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; img-src 'self' res.cloudinary.com; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' abachaonline.up.railway.app;"
+          "value": "default-src 'self'; img-src 'self' https://res.cloudinary.com data:; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://abachaonline.up.railway.app wss://abachaonline.up.railway.app;"
         }
       ]
     }
