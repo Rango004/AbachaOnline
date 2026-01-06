@@ -19,9 +19,9 @@ if (!connectionString) {
 
 const pool = new Pool({
   connectionString,
-  ssl: {
+  ssl: process.env.NODE_ENV === 'production' ? {
     rejectUnauthorized: false
-  }
+  } : false
 });
 
 const migration = `
@@ -255,13 +255,14 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS picked_up_at TIMESTAMP;
 -- ==============================================
 
 -- Order status history for audit trail
+DROP TABLE IF EXISTS order_status_history;
 CREATE TABLE IF NOT EXISTS order_status_history (
   id SERIAL PRIMARY KEY,
   order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-  old_status VARCHAR(50),
-  new_status VARCHAR(50) NOT NULL,
-  changed_by INT REFERENCES users(id) ON DELETE SET NULL,
+  status VARCHAR(50) NOT NULL,
   notes TEXT,
+  updated_by INT REFERENCES users(id) ON DELETE SET NULL,
+  updated_by_role VARCHAR(50),
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -303,8 +304,19 @@ CREATE TABLE IF NOT EXISTS rider_current_location (
 );
 
 -- ==============================================
+-- 10. FIX PRODUCTS TABLE
+-- ==============================================
+-- Add images column to products table for product galleries
+ALTER TABLE products ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]';
+
+-- Update existing products to have a non-null empty array
+UPDATE products SET images = '[]' WHERE images IS NULL;
+
+
+-- ==============================================
 -- 9. CREATE INDEXES
 -- ==============================================
+CREATE INDEX IF NOT EXISTS idx_products_images ON products USING GIN (images);
 CREATE INDEX IF NOT EXISTS idx_websocket_sessions_user_id ON websocket_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_websocket_sessions_socket_id ON websocket_sessions(socket_id);
 CREATE INDEX IF NOT EXISTS idx_websocket_sessions_is_active ON websocket_sessions(is_active);
@@ -343,6 +355,7 @@ async function runMigration() {
     console.log('  - chatbot_sessions/messages: add missing columns');
     console.log('  - users: add is_active, email');
     console.log('  - orders: add picked_up_at');
+    console.log('  - products: add images column');
     console.log('  - Create missing tables: order_status_history, merchant_balances, etc.');
     console.log('');
 
