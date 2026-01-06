@@ -5,6 +5,7 @@ import { WishlistContext } from '../services/WishlistContext';
 import { ChatContext } from '../services/ChatContext';
 import { AuthContext } from '../services/AuthContext';
 import api from '../services/api';
+import { getOptimizedImageUrl } from '../services/imageService';
 
 export default function Products() {
   const { addToCart } = useContext(CartContext);
@@ -224,6 +225,7 @@ export default function Products() {
   };
 
   const renderProductCard = (product) => {
+    console.log(product);
     const inWishlist = isInWishlist(product.product_id || product.id);
     return (
       <div key={product.product_id || product.id} className="product-card" style={{ position: 'relative' }}>
@@ -233,8 +235,8 @@ export default function Products() {
           </div>
         )}
         <div className="product-image">
-          {product.image || product.image_url ? (
-            <img src={product.image || product.image_url} alt={product.name} />
+          {product.public_id || product.image || product.image_url ? (
+            <img src={product.public_id ? getOptimizedImageUrl(product.public_id) : (product.image || product.image_url)} alt={product.name} />
           ) : (
             <div style={{ fontSize: '48px' }}>📦</div>
           )}
