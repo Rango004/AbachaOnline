@@ -16,7 +16,9 @@ async function startServer() {
     app.listen(PORT, HOST, () => {
       console.log(`\n🚀 Server running at http://${HOST}:${PORT}`);
       console.log(`📝 Environment: ${process.env.NODE_ENV}`);
-      console.log(`🗄️  Database: ${process.env.DATABASE_URL}`);
+      // SECURITY: Never log database connection strings
+      const dbHost = process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).host : 'not configured';
+      console.log(`🗄️  Database: Connected to ${dbHost}`);
       console.log(`\n✅ API ready for requests`);
       console.log(`\nHealth checks:`);
       console.log(`  - http://${HOST}:${PORT}/health`);

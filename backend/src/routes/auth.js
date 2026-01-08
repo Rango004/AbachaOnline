@@ -1,6 +1,12 @@
 const express = require('express');
 const AuthService = require('../services/AuthService');
 const { authenticate } = require('../middleware/auth');
+const {
+  registrationLimiter,
+  otpVerificationLimiter,
+  otpRequestLimiter,
+  pinLoginLimiter
+} = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
@@ -9,7 +15,7 @@ const router = express.Router();
  * @desc    Register a new user and send OTP
  * @access  Public
  */
-router.post('/register', async (req, res) => {
+router.post('/register', registrationLimiter, async (req, res) => {
   try {
     const { phone, name, pin, role, location_id, email } = req.body;
 
@@ -62,6 +68,15 @@ router.post('/register', async (req, res) => {
     res.status(201).json(result);
   } catch (error) {
     console.error('Registration error:', error);
+
+    // SECURITY: Don't reveal if phone already exists
+    if (error.message === 'User already registered. Please login.') {
+      return res.status(400).json({
+        error: 'Registration failed',
+        message: 'Unable to complete registration. Please try logging in instead.'
+      });
+    }
+
     res.status(400).json({
       error: 'Registration failed',
       message: error.message
@@ -74,7 +89,7 @@ router.post('/register', async (req, res) => {
  * @desc    Verify OTP code and get JWT tokens
  * @access  Public
  */
-router.post('/verify-otp', async (req, res) => {
+router.post('/verify-otp', otpVerificationLimiter, async (req, res) => {
   try {
     const { phone, code } = req.body;
 
@@ -109,7 +124,7 @@ router.post('/verify-otp', async (req, res) => {
  * @desc    Resend OTP code to user
  * @access  Public
  */
-router.post('/resend-otp', async (req, res) => {
+router.post('/resend-otp', otpRequestLimiter, async (req, res) => {
   try {
     const { phone } = req.body;
 
@@ -136,7 +151,7 @@ router.post('/resend-otp', async (req, res) => {
  * @desc    Request login OTP for returning users
  * @access  Public
  */
-router.post('/login', async (req, res) => {
+router.post('/login', otpRequestLimiter, async (req, res) => {
   try {
     const { phone } = req.body;
 
@@ -163,7 +178,7 @@ router.post('/login', async (req, res) => {
  * @desc    Verify login OTP for returning users
  * @access  Public
  */
-router.post('/verify-login', async (req, res) => {
+router.post('/verify-login', otpVerificationLimiter, async (req, res) => {
   try {
     const { phone, code } = req.body;
 
@@ -198,7 +213,7 @@ router.post('/verify-login', async (req, res) => {
  * @desc    Login with phone and 6-digit PIN
  * @access  Public
  */
-router.post('/login-pin', async (req, res) => {
+router.post('/login-pin', pinLoginLimiter, async (req, res) => {
   try {
     const { phone, pin } = req.body;
 

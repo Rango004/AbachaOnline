@@ -21,9 +21,24 @@ app.use(helmet({
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       frameAncestors: ["'none'"],
-      baseUri: ["'self'"]
+      baseUri: ["'self'"],
+      formAction: ["'self'"]
     }
-  }
+  },
+  // Enforce HTTPS in production
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  },
+  // Prevent MIME type sniffing
+  noSniff: true,
+  // Prevent clickjacking
+  frameguard: {
+    action: 'deny'
+  },
+  // Hide X-Powered-By header
+  hidePoweredBy: true
 }));
 
 app.use(cors({
@@ -44,8 +59,14 @@ app.use(cors({
       allowedOrigins.push(...frontendUrls);
     }
 
-    // Allow requests with no origin (like mobile apps or curl requests) and requests from whitelisted origins.
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    // SECURITY: In production, only allow whitelisted origins
+    // In development, allow no-origin for testing with curl/Postman
+    if (!origin && process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else if (!origin) {
+      // Production: reject requests with no origin header
+      callback(new Error('Not allowed by CORS - Origin header required'));
+    } else if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       // Block requests from non-whitelisted origins.
@@ -130,17 +151,10 @@ app.get('/api/v1/csrf-token', csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
-// Google Maps API key endpoint
-app.get('/api/v1/config/maps-key', (req, res) => {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY || '';
-  if (!apiKey) {
-    return res.status(500).json({
-      error: 'Google Maps API key not configured',
-      message: 'GOOGLE_MAPS_API_KEY environment variable is required'
-    });
-  }
-  res.json({ key: apiKey });
-});
+// Google Maps API key endpoint - REMOVED FOR SECURITY
+// Use server-side geocoding instead via /api/v1/geocode endpoint
+// If frontend needs Google Maps, configure API key directly in Vercel environment
+// and restrict by HTTP referrer in Google Cloud Console
 
 // Geocoding proxy endpoint - calls Google Maps API from backend
 app.get('/api/v1/geocode', async (req, res) => {
