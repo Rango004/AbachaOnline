@@ -3,6 +3,7 @@ import { CartContext } from '../services/CartContext';
 import { WishlistContext } from '../services/WishlistContext';
 import api from '../services/api';
 import { getOptimizedImageUrl } from '../services/imageService';
+import ImageCarousel from '../components/ImageCarousel';
 import '../pages/Products.css';
 
 export default function Recommendations() {
@@ -26,18 +27,25 @@ export default function Recommendations() {
       const items = data.recommendations || [];
       setRecommendations(items);
 
-      // Preload optimized image URLs for recommendations that have Cloudinary public IDs
+      // Preload optimized image URLs for all recommendation images
       const urls = {};
-      await Promise.all(items.map(async (p) => {
-        if (p.public_id) {
-          try {
-            const u = await getOptimizedImageUrl(p.public_id);
-            urls[p.public_id] = u;
-          } catch (err) {
-            // ignore per-image failures
-          }
+      const imagePromises = [];
+
+      items.forEach((p) => {
+        if (p.all_images && Array.isArray(p.all_images)) {
+          p.all_images.forEach((img) => {
+            if (img && img.publicId && !urls[img.publicId]) {
+              imagePromises.push(
+                getOptimizedImageUrl(img.publicId)
+                  .then(u => { urls[img.publicId] = u; })
+                  .catch(() => {}) // ignore per-image failures
+              );
+            }
+          });
         }
-      }));
+      });
+
+      await Promise.all(imagePromises);
       setImageUrls(urls);
 
       const uniqueMerchantIds = [...new Set(items.map(p => p.merchant_id).filter(Boolean))];
@@ -118,18 +126,12 @@ export default function Recommendations() {
                 <div style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: '#2196F3', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', zIndex: 10 }}>
                   Score: {product.score.toFixed(1)}
                 </div>
-                <div className="product-image" style={{width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                  {product.public_id ? (
-                    imageUrls[product.public_id] ? (
-                      <img src={imageUrls[product.public_id]} alt={product.name} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
-                    ) : (
-                      <div style={{fontSize: '24px'}}>⏳</div>
-                    )
-                  ) : (product.image || product.image_url) ? (
-                    <img src={product.image || product.image_url} alt={product.name} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
-                  ) : (
-                    <div style={{fontSize: '48px'}}>📦</div>
-                  )}
+                <div className="product-image" style={{width: '200px', height: '200px'}}>
+                  <ImageCarousel
+                    images={product.all_images}
+                    imageUrls={imageUrls}
+                    productName={product.name}
+                  />
                 </div>
                 <div className="product-info">
                   <h3 style={{ margin: '8px 0 4px 0', fontSize: '14px', fontWeight: 'bold' }}>{product.name}</h3>

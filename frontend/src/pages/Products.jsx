@@ -6,6 +6,7 @@ import { ChatContext } from '../services/ChatContext';
 import { AuthContext } from '../services/AuthContext';
 import api from '../services/api';
 import { getOptimizedImageUrl } from '../services/imageService';
+import ImageCarousel from '../components/ImageCarousel';
 
 export default function Products() {
   const { addToCart } = useContext(CartContext);
@@ -107,18 +108,25 @@ export default function Products() {
       const products = productsData.products || [];
       setAllProducts(products);
 
-      // Preload optimized image URLs for products that have Cloudinary public IDs
+      // Preload optimized image URLs for all product images
       const urls = {};
-      await Promise.all(products.map(async (p) => {
-        if (p.public_id) {
-          try {
-            const u = await getOptimizedImageUrl(p.public_id);
-            urls[p.public_id] = u;
-          } catch (err) {
-            // ignore per-image failures
-          }
+      const imagePromises = [];
+
+      products.forEach((p) => {
+        if (p.all_images && Array.isArray(p.all_images)) {
+          p.all_images.forEach((img) => {
+            if (img && img.publicId && !urls[img.publicId]) {
+              imagePromises.push(
+                getOptimizedImageUrl(img.publicId)
+                  .then(u => { urls[img.publicId] = u; })
+                  .catch(() => {}) // ignore per-image failures
+              );
+            }
+          });
         }
-      }));
+      });
+
+      await Promise.all(imagePromises);
       setImageUrls(urls);
 
       // Extract unique categories
@@ -250,17 +258,11 @@ export default function Products() {
           </div>
         )}
         <div className="product-image">
-          {product.public_id ? (
-            imageUrls[product.public_id] ? (
-              <img src={imageUrls[product.public_id]} alt={product.name} />
-            ) : (
-              <div style={{ fontSize: '32px' }}>⏳</div>
-            )
-          ) : (product.image || product.image_url) ? (
-            <img src={product.image || product.image_url} alt={product.name} />
-          ) : (
-            <div style={{ fontSize: '48px' }}>📦</div>
-          )}
+          <ImageCarousel
+            images={product.all_images}
+            imageUrls={imageUrls}
+            productName={product.name}
+          />
         </div>
         <div style={{ padding: '12px' }}>
           <h3 style={{ margin: '8px 0 4px 0', fontSize: '14px', fontWeight: 'bold' }}>{product.name}</h3>

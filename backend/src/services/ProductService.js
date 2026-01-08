@@ -21,7 +21,8 @@ class ProductService {
                u.name as merchant_name,
                u.phone as merchant_phone,
                COALESCE(p.image_url, (p.images -> 0 ->> 'url')) as image,
-               (p.images -> 0 ->> 'publicId') as public_id
+               (p.images -> 0 ->> 'publicId') as public_id,
+               p.images as all_images
         FROM products p
         LEFT JOIN users u ON p.merchant_id = u.id
         WHERE p.is_active = true
@@ -98,7 +99,8 @@ class ProductService {
                 u.phone as merchant_phone,
                 u.zone_id as merchant_zone_id,
                 COALESCE(p.image_url, (p.images -> 0 ->> 'url')) as image,
-                (p.images -> 0 ->> 'publicId') as public_id
+                (p.images -> 0 ->> 'publicId') as public_id,
+                p.images as all_images
          FROM products p
          LEFT JOIN users u ON p.merchant_id = u.id
          WHERE p.id = $1`,
