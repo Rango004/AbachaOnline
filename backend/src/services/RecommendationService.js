@@ -78,6 +78,8 @@ class RecommendationService {
     const result = await db.query(
       `SELECT oi2.product_id, p.name, p.price, p.category, p.avg_rating, p.review_count,
               u.name as merchant_name, u.id as merchant_id,
+              COALESCE(p.image_url, (p.images -> 0 ->> 'url')) as image,
+              (p.images -> 0 ->> 'publicId') as public_id,
               COUNT(*) as co_purchase_freq
        FROM order_items oi1
        JOIN order_items oi2 ON oi1.order_id = oi2.order_id
@@ -87,7 +89,7 @@ class RecommendationService {
        AND oi2.product_id != ALL($1)
        AND p.is_active = true
        GROUP BY oi2.product_id, p.name, p.price, p.category, p.avg_rating, p.review_count,
-                u.name, u.id
+                u.name, u.id, p.image_url, p.images
        ORDER BY COUNT(*) DESC
        LIMIT $2`,
       [productIds, limit * 2]
@@ -102,6 +104,8 @@ class RecommendationService {
       review_count: r.review_count || 0,
       merchant_id: r.merchant_id,
       merchant_name: r.merchant_name,
+      image: r.image,
+      public_id: r.public_id,
       co_purchase_freq: r.co_purchase_freq,
       signal: 'collaborative'
     }));
@@ -114,7 +118,9 @@ class RecommendationService {
 
     const result = await db.query(
       `SELECT p.id, p.name, p.price, p.category, p.avg_rating, p.review_count,
-              u.name as merchant_name, u.id as merchant_id
+              u.name as merchant_name, u.id as merchant_id,
+              COALESCE(p.image_url, (p.images -> 0 ->> 'url')) as image,
+              (p.images -> 0 ->> 'publicId') as public_id
        FROM products p
        LEFT JOIN users u ON p.merchant_id = u.id
        WHERE p.category = ANY($1)
@@ -134,6 +140,8 @@ class RecommendationService {
       review_count: r.review_count || 0,
       merchant_id: r.merchant_id,
       merchant_name: r.merchant_name,
+      image: r.image,
+      public_id: r.public_id,
       signal: 'content-based'
     }));
   }
@@ -142,6 +150,8 @@ class RecommendationService {
     const result = await db.query(
       `SELECT p.id, p.name, p.price, p.category, p.avg_rating, p.review_count,
               u.name as merchant_name, u.id as merchant_id,
+              COALESCE(p.image_url, (p.images -> 0 ->> 'url')) as image,
+              (p.images -> 0 ->> 'publicId') as public_id,
               COUNT(oi.id) as recent_orders
        FROM products p
        LEFT JOIN users u ON p.merchant_id = u.id
@@ -152,7 +162,7 @@ class RecommendationService {
        AND p.avg_rating >= 3.5
        AND p.review_count > 0
        GROUP BY p.id, p.name, p.price, p.category, p.avg_rating, p.review_count,
-                u.name, u.id
+                u.name, u.id, p.image_url, p.images
        ORDER BY p.avg_rating DESC, p.review_count DESC, COUNT(oi.id) DESC
        LIMIT $2`,
       [excludeIds, limit * 2]
@@ -167,6 +177,8 @@ class RecommendationService {
       review_count: r.review_count || 0,
       merchant_id: r.merchant_id,
       merchant_name: r.merchant_name,
+      image: r.image,
+      public_id: r.public_id,
       recent_orders: r.recent_orders || 0,
       signal: 'rating-based'
     }));
@@ -176,6 +188,8 @@ class RecommendationService {
     const result = await db.query(
       `SELECT p.id, p.name, p.price, p.category, p.avg_rating, p.review_count,
               u.name as merchant_name, u.id as merchant_id,
+              COALESCE(p.image_url, (p.images -> 0 ->> 'url')) as image,
+              (p.images -> 0 ->> 'publicId') as public_id,
               COUNT(oi.id) as sales_count
        FROM products p
        LEFT JOIN users u ON p.merchant_id = u.id
@@ -184,7 +198,7 @@ class RecommendationService {
        AND p.id != ALL($1)
        AND p.avg_rating >= 2.0
        GROUP BY p.id, p.name, p.price, p.category, p.avg_rating, p.review_count,
-                u.name, u.id
+                u.name, u.id, p.image_url, p.images
        ORDER BY COUNT(oi.id) DESC, p.avg_rating DESC
        LIMIT $2`,
       [excludeIds, limit * 2]
@@ -199,6 +213,8 @@ class RecommendationService {
       review_count: r.review_count || 0,
       merchant_id: r.merchant_id,
       merchant_name: r.merchant_name,
+      image: r.image,
+      public_id: r.public_id,
       merchant_rating: 0,
       sales_count: r.sales_count || 0,
       signal: 'merchant-quality'
@@ -228,6 +244,8 @@ class RecommendationService {
       review_count: item.review_count,
       merchant_id: item.merchant_id,
       merchant_name: item.merchant_name,
+      image: item.image,
+      public_id: item.public_id,
       score: 0,
       signals: []
     });
@@ -411,6 +429,8 @@ class RecommendationService {
         `WITH ranked_products AS (
           SELECT p.id, p.name, p.price, p.category, p.avg_rating, p.review_count,
                  u.name as merchant_name, u.id as merchant_id,
+                 COALESCE(p.image_url, (p.images -> 0 ->> 'url')) as image,
+                 (p.images -> 0 ->> 'publicId') as public_id,
                  (6371 * acos(cos(radians($1)) * cos(radians(u.latitude)) * cos(radians(u.longitude) - radians($2)) +
                  sin(radians($1)) * sin(radians(u.latitude)))) AS distance,
                  ROW_NUMBER() OVER (PARTITION BY u.id ORDER BY
@@ -424,7 +444,7 @@ class RecommendationService {
           AND p.stock_quantity > 0
         )
         SELECT id, name, price, category, avg_rating, review_count,
-               merchant_name, merchant_id, distance
+               merchant_name, merchant_id, image, public_id, distance
         FROM ranked_products
         WHERE rn <= $4
         ORDER BY COALESCE(avg_rating, 0) DESC, COALESCE(review_count, 0) DESC, distance ASC`,
@@ -447,6 +467,8 @@ class RecommendationService {
           review_count: p.review_count || 0,
           merchant_id: p.merchant_id,
           merchant_name: p.merchant_name,
+          image: p.image,
+          public_id: p.public_id,
           distance: (p.distance || 0).toFixed(2),
           score: proximityScore * 0.4 + ratingScore * 0.6, // Weighted score
           signals: [
@@ -468,7 +490,9 @@ class RecommendationService {
   async getTopRatedFallback(limit) {
     const result = await db.query(
       `SELECT p.id, p.name, p.price, p.category, p.avg_rating, p.review_count,
-              u.name as merchant_name, u.id as merchant_id
+              u.name as merchant_name, u.id as merchant_id,
+              COALESCE(p.image_url, (p.images -> 0 ->> 'url')) as image,
+              (p.images -> 0 ->> 'publicId') as public_id
        FROM products p
        JOIN users u ON p.merchant_id = u.id
        WHERE p.is_active = true
@@ -490,6 +514,8 @@ class RecommendationService {
       review_count: p.review_count || 0,
       merchant_id: p.merchant_id,
       merchant_name: p.merchant_name,
+      image: p.image,
+      public_id: p.public_id,
       score: (parseFloat(p.avg_rating) || 0) * 2,
       signals: ['Highly rated', 'Top pick']
     }));
