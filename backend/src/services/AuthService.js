@@ -13,6 +13,28 @@ class AuthService {
   }
 
   /**
+   * Generate a random 6-digit temporary PIN
+   * Ensures PIN is not sequential or repeated
+   * @returns {string} Temporary PIN
+   */
+  generateTemporaryPIN() {
+    let pin;
+    let attempts = 0;
+    const maxAttempts = 100;
+
+    do {
+      pin = crypto.randomInt(100000, 999999).toString();
+      attempts++;
+
+      if (attempts >= maxAttempts) {
+        throw new Error('Failed to generate valid temporary PIN after maximum attempts');
+      }
+    } while (!this.validatePIN(pin).valid);
+
+    return pin;
+  }
+
+  /**
    * Get carrier info for phone number
    * @param {string} phone - Phone number
    * @returns {Object} Carrier info
@@ -53,6 +75,34 @@ class AuthService {
     if (!email) return true; // Email is optional
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  }
+
+  /**
+   * Validate email format with stricter rules
+   * @param {string} email - Email to validate
+   * @param {boolean} required - Whether email is required
+   * @returns {Object} Validation result
+   */
+  validateEmailStrict(email, required = false) {
+    if (!email) {
+      if (required) {
+        return { valid: false, message: 'Email is required' };
+      }
+      return { valid: true };
+    }
+
+    // RFC 5322 compliant email regex (simplified)
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
+    if (!emailRegex.test(email)) {
+      return { valid: false, message: 'Invalid email format' };
+    }
+
+    if (email.length > 255) {
+      return { valid: false, message: 'Email address is too long' };
+    }
+
+    return { valid: true };
   }
 
   /**
@@ -521,6 +571,81 @@ class AuthService {
   }
 
   /**
+   * Login with email and password
+   * @param {string} email - Email address
+   * @param {string} password - Password (6-digit PIN)
+   * @returns {Promise<Object>} Tokens, user info, and password reset requirement
+   */
+  async loginWithEmail(email, password) {
+    try {
+      const emailValidation = this.validateEmailStrict(email, true);
+      if (!emailValidation.valid) {
+        throw new Error(emailValidation.message);
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+
+      if (!/^\d{6}$/.test(password)) {
+        throw new Error('Password must be exactly 6 digits');
+      }
+
+      const result = await db.query(
+        `SELECT id, phone, name, email, role, zone_id, password_hash, is_verified,
+                password_reset_required, temp_password_expires_at
+         FROM users WHERE LOWER(email) = $1`,
+        [normalizedEmail]
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error('Invalid email or password');
+      }
+
+      const user = result.rows[0];
+
+      if (!user.is_verified) {
+        throw new Error('Please verify your account first');
+      }
+
+      if (!user.password_hash) {
+        throw new Error('No password set for this account. Please contact administrator.');
+      }
+
+      // Check temporary password expiration
+      if (user.temp_password_expires_at) {
+        const now = new Date();
+        const expiresAt = new Date(user.temp_password_expires_at);
+        if (now > expiresAt) {
+          throw new Error('Temporary password expired. Please use password reset.');
+        }
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.password_hash);
+      if (!isValidPassword) {
+        throw new Error('Invalid email or password');
+      }
+
+      const accessToken = this.generateAccessToken(user);
+      const refreshToken = this.generateRefreshToken(user);
+
+      return {
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          phone: user.phone,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          zone_id: user.zone_id
+        },
+        passwordResetRequired: user.password_reset_required || false
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
    * Check if user exists and has a PIN set
    * @param {string} phone - Phone number
    * @returns {Promise<Object>} User existence and PIN status
@@ -593,6 +718,113 @@ class AuthService {
           name: user.name,
           role: user.role
         }
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Admin creates merchant account with email and temporary PIN
+   * Sends welcome email with login credentials
+   * @param {string} email - Merchant's email address (required)
+   * @param {string} name - Merchant's full name (required)
+   * @param {string} phone - Phone number (optional, can be generated)
+   * @returns {Promise<Object>} Created merchant info and temporary PIN
+   */
+  async adminCreateMerchantWithEmail(email, name, phone = null) {
+    const client = await db.getClient();
+
+    try {
+      await client.query('BEGIN');
+
+      // Validate email (required)
+      const emailValidation = this.validateEmailStrict(email, true);
+      if (!emailValidation.valid) {
+        throw new Error(emailValidation.message);
+      }
+
+      // Normalize email to lowercase
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Check if email already exists
+      const existingEmail = await client.query(
+        'SELECT id, role FROM users WHERE LOWER(email) = $1',
+        [normalizedEmail]
+      );
+
+      if (existingEmail.rows.length > 0) {
+        throw new Error('Email address already registered');
+      }
+
+      // Generate or validate phone number
+      let merchantPhone = phone;
+      if (!merchantPhone) {
+        // Generate placeholder phone number for merchants without phones
+        const timestamp = Date.now().toString().slice(-6);
+        const random = crypto.randomInt(1000, 9999);
+        merchantPhone = `+232999${timestamp}${random}`;
+      } else {
+        // Validate phone format if provided
+        const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+        if (!phoneRegex.test(merchantPhone)) {
+          throw new Error('Invalid phone number format');
+        }
+
+        // Check if phone already exists
+        const existingPhone = await client.query(
+          'SELECT id FROM users WHERE phone = $1',
+          [merchantPhone]
+        );
+
+        if (existingPhone.rows.length > 0) {
+          throw new Error('Phone number already registered');
+        }
+      }
+
+      // Generate temporary PIN
+      const tempPIN = this.generateTemporaryPIN();
+      const pinHash = await bcrypt.hash(tempPIN, 10);
+
+      // Calculate expiration (7 days from now)
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      // Insert new merchant
+      const result = await client.query(
+        `INSERT INTO users (
+          phone, name, email, role, password_hash, is_verified,
+          password_reset_required, temp_password_expires_at, last_password_change
+        ) VALUES ($1, $2, $3, $4, $5, true, true, $6, NOW())
+        RETURNING id, phone, name, email, role`,
+        [merchantPhone, name, normalizedEmail, 'merchant', pinHash, expiresAt]
+      );
+
+      const merchant = result.rows[0];
+      await client.query('COMMIT');
+
+      // Send welcome email
+      try {
+        await otpService.sendMerchantWelcomeEmail(normalizedEmail, name, tempPIN, expiresAt);
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+      }
+
+      return {
+        success: true,
+        message: 'Merchant account created successfully. Welcome email sent with temporary PIN.',
+        merchant: {
+          id: merchant.id,
+          phone: merchant.phone,
+          name: merchant.name,
+          email: merchant.email,
+          role: merchant.role
+        },
+        temporaryPIN: tempPIN,
+        expiresAt: expiresAt.toISOString()
       };
     } catch (error) {
       await client.query('ROLLBACK');
@@ -703,7 +935,13 @@ class AuthService {
         // First-time setup - no current PIN required
         const newPinHash = await bcrypt.hash(newPin, 10);
         await db.query(
-          'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+          `UPDATE users
+           SET password_hash = $1,
+               password_reset_required = false,
+               temp_password_expires_at = NULL,
+               last_password_change = NOW(),
+               updated_at = NOW()
+           WHERE id = $2`,
           [newPinHash, userId]
         );
 
@@ -729,7 +967,13 @@ class AuthService {
       // Hash and save new PIN
       const newPinHash = await bcrypt.hash(newPin, 10);
       await db.query(
-        'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+        `UPDATE users
+         SET password_hash = $1,
+             password_reset_required = false,
+             temp_password_expires_at = NULL,
+             last_password_change = NOW(),
+             updated_at = NOW()
+         WHERE id = $2`,
         [newPinHash, userId]
       );
 
@@ -744,22 +988,45 @@ class AuthService {
   }
 
   /**
-   * Request password reset OTP
-   * @param {string} phone - Phone number
+   * Request password reset OTP (supports both phone and email)
+   * @param {string} identifier - Phone number or email address
    * @returns {Promise<Object>} Success message
    */
-  async requestPasswordReset(phone) {
+  async requestPasswordReset(identifier) {
     try {
-      const result = await db.query(
-        'SELECT id, name, is_verified, email FROM users WHERE phone = $1',
-        [phone]
-      );
-
-      if (result.rows.length === 0) {
-        throw new Error('No account found with this phone number');
+      if (!identifier) {
+        throw new Error('Phone number or email is required');
       }
 
-      const user = result.rows[0];
+      let user;
+      let isEmail = false;
+
+      // Determine if identifier is email or phone
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (emailRegex.test(identifier)) {
+        isEmail = true;
+        const normalizedEmail = identifier.toLowerCase().trim();
+
+        const result = await db.query(
+          'SELECT id, name, phone, email, is_verified FROM users WHERE LOWER(email) = $1',
+          [normalizedEmail]
+        );
+
+        if (result.rows.length === 0) {
+          throw new Error('No account found with this email address');
+        }
+        user = result.rows[0];
+      } else {
+        const result = await db.query(
+          'SELECT id, name, phone, email, is_verified FROM users WHERE phone = $1',
+          [identifier]
+        );
+
+        if (result.rows.length === 0) {
+          throw new Error('No account found with this phone number');
+        }
+        user = result.rows[0];
+      }
 
       if (!user.is_verified) {
         throw new Error('Account not verified. Please complete registration first.');
@@ -767,19 +1034,25 @@ class AuthService {
 
       const otp = this.generateOTP();
 
-      // Store OTP for password reset
       await db.query(
         'UPDATE users SET verification_code = $1, updated_at = NOW() WHERE id = $2',
         [otp, user.id]
       );
 
-      // Send OTP via multi-channel service
-      const otpResult = await otpService.sendOTP(phone, otp, { userName: user.name, email: user.email });
+      // Send OTP via appropriate channel
+      let otpResult;
+      if (isEmail && user.email) {
+        otpResult = await otpService.sendPasswordResetEmail(user.email, otp, user.name);
+        otpResult.method = 'email';
+      } else {
+        otpResult = await otpService.sendOTP(user.phone, otp, { userName: user.name, email: user.email });
+      }
 
       return {
         success: true,
-        message: otpResult.message || 'Password reset OTP sent. Please check your messages.',
-        method: otpResult.method
+        message: otpResult.message || `Password reset OTP sent to your ${isEmail ? 'email' : 'phone'}.`,
+        method: otpResult.method,
+        identifier_type: isEmail ? 'email' : 'phone'
       };
     } catch (error) {
       throw error;
@@ -787,46 +1060,63 @@ class AuthService {
   }
 
   /**
-   * Reset password with OTP
-   * @param {string} phone - Phone number
+   * Reset password with OTP (supports both phone and email)
+   * @param {string} identifier - Phone number or email address
    * @param {string} code - OTP code
    * @param {string} newPin - New PIN
    * @returns {Promise<Object>} Success message
    */
-  async resetPassword(phone, code, newPin) {
+  async resetPassword(identifier, code, newPin) {
     try {
-      // Validate new PIN
       const pinValidation = this.validatePIN(newPin);
       if (!pinValidation.valid) {
         throw new Error(pinValidation.message);
       }
 
-      // Verify OTP
-      const result = await db.query(
-        'SELECT id, verification_code FROM users WHERE phone = $1 AND is_verified = true',
-        [phone]
-      );
+      let user;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const isEmail = emailRegex.test(identifier);
 
-      if (result.rows.length === 0) {
-        throw new Error('User not found or not verified');
+      if (isEmail) {
+        const normalizedEmail = identifier.toLowerCase().trim();
+        const result = await db.query(
+          'SELECT id, verification_code FROM users WHERE LOWER(email) = $1 AND is_verified = true',
+          [normalizedEmail]
+        );
+
+        if (result.rows.length === 0) {
+          throw new Error('User not found or not verified');
+        }
+        user = result.rows[0];
+      } else {
+        const result = await db.query(
+          'SELECT id, verification_code FROM users WHERE phone = $1 AND is_verified = true',
+          [identifier]
+        );
+
+        if (result.rows.length === 0) {
+          throw new Error('User not found or not verified');
+        }
+        user = result.rows[0];
       }
-
-      const user = result.rows[0];
 
       if (user.verification_code !== code) {
         throw new Error('Invalid OTP code');
       }
 
-      // Hash and save new PIN, clear OTP
       const newPinHash = await bcrypt.hash(newPin, 10);
       await db.query(
-        'UPDATE users SET password_hash = $1, verification_code = NULL, updated_at = NOW() WHERE id = $2',
+        `UPDATE users
+         SET password_hash = $1, verification_code = NULL,
+             password_reset_required = false, temp_password_expires_at = NULL,
+             last_password_change = NOW(), updated_at = NOW()
+         WHERE id = $2`,
         [newPinHash, user.id]
       );
 
       return {
         success: true,
-        message: 'PIN reset successfully. You can now login with your new PIN.'
+        message: 'Password reset successfully. You can now login with your new password.'
       };
     } catch (error) {
       throw error;

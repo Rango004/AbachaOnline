@@ -105,8 +105,59 @@ const optionalAuth = (req, res, next) => {
   }
 };
 
+/**
+ * Middleware to check if password reset is required
+ * Blocks access if password change is required
+ */
+const requirePasswordChange = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        error: 'Authentication required'
+      });
+    }
+
+    const db = require('../config/database');
+    const result = await db.query(
+      'SELECT password_reset_required, temp_password_expires_at FROM users WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = result.rows[0];
+
+    if (user.password_reset_required) {
+      return res.status(403).json({
+        error: 'Password change required',
+        passwordResetRequired: true
+      });
+    }
+
+    if (user.temp_password_expires_at) {
+      const now = new Date();
+      const expiresAt = new Date(user.temp_password_expires_at);
+
+      if (now > expiresAt) {
+        return res.status(403).json({
+          error: 'Temporary password expired',
+          passwordResetRequired: true
+        });
+      }
+    }
+
+    next();
+  } catch (error) {
+    console.error('Password reset check error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 module.exports = {
   authenticate,
   authorize,
-  optionalAuth
+  optionalAuth,
+  requirePasswordChange
 };

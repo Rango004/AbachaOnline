@@ -459,6 +459,165 @@ class OTPNotificationService {
     }
   }
 
+  /**
+   * Send merchant welcome email with temporary credentials
+   * @param {string} email - Merchant email
+   * @param {string} name - Merchant name
+   * @param {string} tempPIN - Temporary PIN
+   * @param {Date} expiresAt - PIN expiration date
+   * @returns {Promise<Object>} Send result
+   */
+  async sendMerchantWelcomeEmail(email, name, tempPIN, expiresAt) {
+    if (!this.emailEnabled) {
+      return { success: false, error: 'Email not configured' };
+    }
+
+    try {
+      const expiryDateStr = new Date(expiresAt).toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric'
+      });
+
+      const msg = {
+        personalizations: [{
+          to: [{ email: email }],
+          subject: 'Welcome to AbachaOnline - Your Merchant Account'
+        }],
+        from: {
+          email: this.sendGridFromEmail,
+          name: this.sendGridFromName
+        },
+        content: [
+          {
+            type: 'text/plain',
+            value: `Welcome to AbachaOnline, ${name}!\n\nYour merchant account has been created.\n\nLogin Credentials:\n- Email: ${email}\n- Temporary Password: ${tempPIN}\n\nIMPORTANT: This password expires on ${expiryDateStr}. You must change it on first login.\n\nThe AbachaOnline Team`
+          },
+          {
+            type: 'text/html',
+            value: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: #4CAF50; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                  <h1 style="margin: 0;">Welcome to AbachaOnline</h1>
+                  <p style="margin: 10px 0 0 0;">Merchant Portal Access</p>
+                </div>
+                <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
+                  <p style="color: #333;">Hello <strong>${name}</strong>,</p>
+                  <p style="color: #666;">Your merchant account has been successfully created. You can now access the AbachaOnline merchant portal.</p>
+                  <div style="background: #fff; border-left: 4px solid #4CAF50; padding: 20px; margin: 20px 0;">
+                    <h3 style="margin: 0 0 15px 0; color: #333;">Your Login Credentials</h3>
+                    <p style="margin: 5px 0; color: #666;"><strong>Email:</strong> ${email}</p>
+                    <p style="margin: 5px 0; color: #666;"><strong>Temporary Password:</strong></p>
+                    <div style="background: #fff; border: 2px dashed #4CAF50; padding: 15px; text-align: center; margin: 10px 0;">
+                      <span style="font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #333;">${tempPIN}</span>
+                    </div>
+                  </div>
+                  <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+                    <p style="margin: 0; color: #856404;"><strong>⚠️ Security Notice:</strong> This password expires on ${expiryDateStr}. You must change it immediately after your first login.</p>
+                  </div>
+                  <p style="color: #666; font-size: 14px;">If you have any questions or need assistance, please contact our support team.</p>
+                </div>
+                <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
+                  <p>AbachaOnline - Your Campus Delivery Partner</p>
+                </div>
+              </div>
+            `
+          }
+        ]
+      };
+
+      const response = await this.httpPost(
+        'https://api.sendgrid.com/v3/mail/send',
+        msg,
+        {
+          'Authorization': `Bearer ${this.sendGridApiKey}`,
+          'Content-Type': 'application/json'
+        }
+      );
+
+      if (!response.errors) {
+        console.log(`[EMAIL] ✅ Merchant welcome email sent to ${email}`);
+        return { success: true, message: 'Welcome email sent' };
+      } else {
+        return { success: false, error: response.errors?.[0]?.message || 'Email send failed' };
+      }
+    } catch (error) {
+      console.error(`[EMAIL] Welcome email error:`, error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Send password reset OTP via email
+   * @param {string} email - User email
+   * @param {string} otp - OTP code
+   * @param {string} userName - User's name
+   * @returns {Promise<Object>} Send result
+   */
+  async sendPasswordResetEmail(email, otp, userName) {
+    if (!this.emailEnabled) {
+      return { success: false, error: 'Email not configured' };
+    }
+
+    try {
+      const msg = {
+        personalizations: [{
+          to: [{ email: email }],
+          subject: `Password Reset Code: ${otp}`
+        }],
+        from: {
+          email: this.sendGridFromEmail,
+          name: this.sendGridFromName
+        },
+        content: [
+          {
+            type: 'text/plain',
+            value: `Password Reset Request\n\nHello${userName ? ` ${userName}` : ''},\n\nYour verification code is: ${otp}\n\nThis code is valid for 5 minutes.\n\nIf you didn't request this, please ignore this email.`
+          },
+          {
+            type: 'text/html',
+            value: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: #FF5722; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                  <h1 style="margin: 0;">Password Reset Request</h1>
+                </div>
+                <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
+                  <p style="color: #333;">Hello${userName ? ` ${userName}` : ''},</p>
+                  <p style="color: #666;">We received a request to reset your password. Your verification code is:</p>
+                  <div style="background: #fff; border: 2px dashed #FF5722; padding: 20px; text-align: center; margin: 20px 0;">
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #333;">${otp}</span>
+                  </div>
+                  <p style="color: #666;">This code is valid for <strong>5 minutes</strong>.</p>
+                  <p style="color: #999; font-size: 12px; margin-top: 20px;">If you didn't request this password reset, please ignore this email and your password will remain unchanged.</p>
+                </div>
+                <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
+                  <p>AbachaOnline - Your Campus Delivery Partner</p>
+                </div>
+              </div>
+            `
+          }
+        ]
+      };
+
+      const response = await this.httpPost(
+        'https://api.sendgrid.com/v3/mail/send',
+        msg,
+        {
+          'Authorization': `Bearer ${this.sendGridApiKey}`,
+          'Content-Type': 'application/json'
+        }
+      );
+
+      if (!response.errors) {
+        console.log(`[EMAIL] ✅ Password reset email sent to ${email}`);
+        return { success: true, message: 'Password reset code sent to your email' };
+      } else {
+        return { success: false, error: response.errors?.[0]?.message || 'Email send failed' };
+      }
+    } catch (error) {
+      console.error(`[EMAIL] Password reset email error:`, error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
   // ===========================================
   // HTTP HELPERS
   // ===========================================

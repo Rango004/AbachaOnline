@@ -27,7 +27,10 @@ export default function AdminDashboard() {
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [newUserPhone, setNewUserPhone] = useState('');
   const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState('merchant');
+  const [creationMethod, setCreationMethod] = useState('phone'); // 'phone' or 'email'
+  const [createdMerchant, setCreatedMerchant] = useState(null); // Stores temp PIN data
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -139,34 +142,79 @@ export default function AdminDashboard() {
   };
 
   const handleCreateUser = async () => {
-    if (!newUserPhone || !newUserName || !newUserRole) {
-      alert('Please fill in all fields');
-      return;
-    }
+    // Validation based on creation method
+    if (creationMethod === 'email') {
+      // Email-based creation (only for merchants)
+      if (!newUserEmail || !newUserName) {
+        alert('Please fill in all required fields (Email and Name)');
+        return;
+      }
 
-    // Basic phone validation
-    if (!/^\+?[\d\s-]{10,}$/.test(newUserPhone)) {
-      alert('Please enter a valid phone number');
-      return;
-    }
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newUserEmail)) {
+        alert('Please enter a valid email address');
+        return;
+      }
 
-    try {
-      await api.createAdminUser(newUserPhone, newUserName, newUserRole);
-      alert(`${newUserRole === 'merchant' ? 'Merchant' : 'Rider'} created successfully`);
-      setShowCreateUserModal(false);
-      setNewUserPhone('');
-      setNewUserName('');
-      setNewUserRole('merchant');
-      loadData();
-    } catch (err) {
-      alert(err.message || `Failed to create ${newUserRole}`);
+      try {
+        const result = await api.createMerchantWithEmail(
+          newUserEmail,
+          newUserName,
+          newUserPhone || null
+        );
+        setCreatedMerchant(result);
+        // Don't close modal yet - show temp PIN
+      } catch (err) {
+        alert(err.message || 'Failed to create merchant');
+      }
+    } else {
+      // Phone-based creation (for merchants and riders)
+      if (!newUserPhone || !newUserName || !newUserRole) {
+        alert('Please fill in all fields');
+        return;
+      }
+
+      // Basic phone validation
+      if (!/^\+?[\d\s-]{10,}$/.test(newUserPhone)) {
+        alert('Please enter a valid phone number');
+        return;
+      }
+
+      try {
+        await api.createAdminUser(newUserPhone, newUserName, newUserRole);
+        alert(`${newUserRole === 'merchant' ? 'Merchant' : 'Rider'} created successfully`);
+        setShowCreateUserModal(false);
+        setNewUserPhone('');
+        setNewUserName('');
+        setNewUserEmail('');
+        setNewUserRole('merchant');
+        setCreationMethod('phone');
+        loadData();
+      } catch (err) {
+        alert(err.message || `Failed to create ${newUserRole}`);
+      }
     }
+  };
+
+  const closeCreateUserModal = () => {
+    setShowCreateUserModal(false);
+    setCreatedMerchant(null);
+    setNewUserPhone('');
+    setNewUserName('');
+    setNewUserEmail('');
+    setNewUserRole('merchant');
+    setCreationMethod('phone');
+    loadData();
   };
 
   const openCreateUserModal = (role) => {
     setNewUserRole(role);
     setNewUserPhone('');
     setNewUserName('');
+    setNewUserEmail('');
+    setCreationMethod('phone');
+    setCreatedMerchant(null);
     setShowCreateUserModal(true);
   };
 
@@ -786,33 +834,204 @@ export default function AdminDashboard() {
 
       {/* Create User Modal */}
       {showCreateUserModal && (
-        <div class="modal-overlay" onClick={() => setShowCreateUserModal(false)}>
+        <div class="modal-overlay" onClick={() => closeCreateUserModal()}>
           <div class="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Add New {newUserRole === 'merchant' ? 'Merchant' : 'Rider'}</h3>
-            <div class="form-group">
-              <label>Phone Number</label>
-              <input
-                type="tel"
-                placeholder="+23276XXXXXXX"
-                value={newUserPhone}
-                onInput={(e) => setNewUserPhone(e.target.value)}
-                class="form-input"
-              />
-            </div>
-            <div class="form-group">
-              <label>Full Name</label>
-              <input
-                type="text"
-                placeholder="Enter full name"
-                value={newUserName}
-                onInput={(e) => setNewUserName(e.target.value)}
-                class="form-input"
-              />
-            </div>
-            <div class="modal-actions">
-              <button class="btn btn-secondary" onClick={() => setShowCreateUserModal(false)}>Cancel</button>
-              <button class="btn btn-primary" onClick={handleCreateUser}>Create {newUserRole === 'merchant' ? 'Merchant' : 'Rider'}</button>
-            </div>
+            {!createdMerchant ? (
+              <>
+                <h3>Add New {newUserRole === 'merchant' ? 'Merchant' : 'Rider'}</h3>
+
+                {/* Only show method toggle for merchants */}
+                {newUserRole === 'merchant' && (
+                  <div class="method-toggle" style={{
+                    display: 'flex',
+                    gap: '10px',
+                    marginBottom: '20px',
+                    borderBottom: '2px solid var(--border-color)',
+                    paddingBottom: '10px'
+                  }}>
+                    <button
+                      class={`toggle-btn ${creationMethod === 'phone' ? 'active' : ''}`}
+                      onClick={() => setCreationMethod('phone')}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        border: creationMethod === 'phone' ? '2px solid var(--primary-color)' : '1px solid var(--border-color)',
+                        background: creationMethod === 'phone' ? 'rgba(33, 150, 243, 0.1)' : 'white',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: creationMethod === 'phone' ? 'bold' : 'normal',
+                        color: creationMethod === 'phone' ? 'var(--primary-color)' : 'var(--text-secondary)'
+                      }}
+                    >
+                      📱 Phone-Based
+                    </button>
+                    <button
+                      class={`toggle-btn ${creationMethod === 'email' ? 'active' : ''}`}
+                      onClick={() => setCreationMethod('email')}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        border: creationMethod === 'email' ? '2px solid var(--primary-color)' : '1px solid var(--border-color)',
+                        background: creationMethod === 'email' ? 'rgba(33, 150, 243, 0.1)' : 'white',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: creationMethod === 'email' ? 'bold' : 'normal',
+                        color: creationMethod === 'email' ? 'var(--primary-color)' : 'var(--text-secondary)'
+                      }}
+                    >
+                      ✉️ Email-Based
+                    </button>
+                  </div>
+                )}
+
+                {creationMethod === 'email' ? (
+                  <>
+                    <div class="form-group">
+                      <label>Email Address <span style={{color: 'red'}}>*</span></label>
+                      <input
+                        type="email"
+                        placeholder="merchant@example.com"
+                        value={newUserEmail}
+                        onInput={(e) => setNewUserEmail(e.target.value)}
+                        class="form-input"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>Full Name <span style={{color: 'red'}}>*</span></label>
+                      <input
+                        type="text"
+                        placeholder="Enter full name"
+                        value={newUserName}
+                        onInput={(e) => setNewUserName(e.target.value)}
+                        class="form-input"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>Phone Number (Optional)</label>
+                      <input
+                        type="tel"
+                        placeholder="+23276XXXXXXX"
+                        value={newUserPhone}
+                        onInput={(e) => setNewUserPhone(e.target.value)}
+                        class="form-input"
+                      />
+                      <small style={{color: 'var(--text-secondary)', fontSize: '0.85em'}}>
+                        If not provided, a placeholder will be generated
+                      </small>
+                    </div>
+                    <div style={{
+                      background: '#fff3cd',
+                      border: '1px solid #ffc107',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      marginTop: '15px',
+                      fontSize: '0.9em'
+                    }}>
+                      <strong>ℹ️ Note:</strong> A temporary 6-digit PIN will be generated and emailed to the merchant. They must change it on first login.
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div class="form-group">
+                      <label>Phone Number</label>
+                      <input
+                        type="tel"
+                        placeholder="+23276XXXXXXX"
+                        value={newUserPhone}
+                        onInput={(e) => setNewUserPhone(e.target.value)}
+                        class="form-input"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>Full Name</label>
+                      <input
+                        type="text"
+                        placeholder="Enter full name"
+                        value={newUserName}
+                        onInput={(e) => setNewUserName(e.target.value)}
+                        class="form-input"
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div class="modal-actions">
+                  <button class="btn btn-secondary" onClick={() => closeCreateUserModal()}>Cancel</button>
+                  <button class="btn btn-primary" onClick={handleCreateUser}>
+                    Create {newUserRole === 'merchant' ? 'Merchant' : 'Rider'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{textAlign: 'center'}}>
+                  <div style={{fontSize: '48px', marginBottom: '10px'}}>✅</div>
+                  <h3 style={{color: '#4CAF50', marginBottom: '20px'}}>Merchant Created Successfully!</h3>
+                </div>
+
+                <div style={{
+                  background: '#f9f9f9',
+                  border: '2px solid #4CAF50',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  marginBottom: '20px'
+                }}>
+                  <div style={{marginBottom: '15px'}}>
+                    <strong>Name:</strong> {createdMerchant.merchant.name}
+                  </div>
+                  <div style={{marginBottom: '15px'}}>
+                    <strong>Email:</strong> {createdMerchant.merchant.email}
+                  </div>
+                  <div style={{marginBottom: '15px'}}>
+                    <strong>Phone:</strong> {createdMerchant.merchant.phone}
+                  </div>
+                  <div style={{
+                    background: 'white',
+                    border: '2px dashed #4CAF50',
+                    borderRadius: '8px',
+                    padding: '15px',
+                    textAlign: 'center',
+                    marginTop: '15px'
+                  }}>
+                    <div style={{fontSize: '0.9em', marginBottom: '8px', color: 'var(--text-secondary)'}}>
+                      Temporary PIN:
+                    </div>
+                    <div style={{
+                      fontSize: '32px',
+                      fontWeight: 'bold',
+                      letterSpacing: '8px',
+                      color: '#4CAF50',
+                      fontFamily: 'monospace'
+                    }}>
+                      {createdMerchant.temporaryPIN}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  background: '#fff3cd',
+                  border: '1px solid #ffc107',
+                  borderRadius: '8px',
+                  padding: '15px',
+                  marginBottom: '20px',
+                  fontSize: '0.9em'
+                }}>
+                  <strong>⚠️ Important:</strong>
+                  <ul style={{marginTop: '8px', paddingLeft: '20px', marginBottom: 0}}>
+                    <li>A welcome email has been sent to the merchant</li>
+                    <li>The temporary PIN expires in 7 days</li>
+                    <li>Merchant must change PIN on first login</li>
+                    <li>Save this PIN securely - it won't be shown again</li>
+                  </ul>
+                </div>
+
+                <div class="modal-actions">
+                  <button class="btn btn-primary" onClick={() => closeCreateUserModal()} style={{width: '100%'}}>
+                    Done
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

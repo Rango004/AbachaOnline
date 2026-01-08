@@ -88,6 +88,7 @@ class API {
     const publicAuthEndpoints = [
       '/auth/login',
       '/auth/login-pin',
+      '/auth/login-email',
       '/auth/register',
       '/auth/verify-otp',
       '/auth/verify-login',
@@ -240,6 +241,17 @@ class API {
     return data;
   }
 
+  async loginWithEmail(email, password) {
+    const data = await this.request('/auth/login-email', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    if (data.accessToken) {
+      this.setToken(data.accessToken);
+    }
+    return data;
+  }
+
   async checkUser(phone) {
     return this.request(`/auth/check-user?phone=${encodeURIComponent(phone)}`);
   }
@@ -255,17 +267,17 @@ class API {
     });
   }
 
-  async requestPasswordReset(phone) {
+  async requestPasswordReset(identifier) {
     return this.request('/auth/reset-password-request', {
       method: 'POST',
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({ identifier }),
     });
   }
 
-  async resetPassword(phone, code, newPin) {
+  async resetPassword(identifier, code, newPin) {
     return this.request('/auth/reset-password', {
       method: 'POST',
-      body: JSON.stringify({ phone, code, newPin }),
+      body: JSON.stringify({ identifier, code, newPin }),
     });
   }
 
@@ -838,6 +850,13 @@ class API {
     return this.request('/admin-panel/users', {
       method: 'POST',
       body: JSON.stringify({ phone, name, role }),
+    });
+  }
+
+  async createMerchantWithEmail(email, name, phone) {
+    return this.request('/admin-panel/merchants/create-with-email', {
+      method: 'POST',
+      body: JSON.stringify({ email, name, phone }),
     });
   }
 

@@ -33,6 +33,50 @@ router.post('/users', async (req, res) => {
 });
 
 /**
+ * @route   POST /api/v1/admin-panel/merchants/create-with-email
+ * @desc    Admin creates merchant account with email and temporary PIN
+ * @access  Private (Admin only)
+ */
+router.post('/merchants/create-with-email', async (req, res) => {
+  try {
+    const { email, name, phone } = req.body;
+
+    if (!email || !name) {
+      return res.status(400).json({
+        error: 'Email and name are required'
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: 'Invalid email format'
+      });
+    }
+
+    if (phone) {
+      const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+      if (!phoneRegex.test(phone)) {
+        return res.status(400).json({
+          error: 'Invalid phone format'
+        });
+      }
+    }
+
+    const result = await AuthService.adminCreateMerchantWithEmail(email, name, phone);
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('Create merchant with email error:', error);
+
+    if (error.message.includes('already registered')) {
+      return res.status(409).json({ error: error.message });
+    }
+
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
  * @route   DELETE /api/v1/admin-panel/users/:id
  * @desc    Admin deletes merchant or rider account
  * @access  Private (Admin only)

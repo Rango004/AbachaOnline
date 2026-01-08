@@ -12,6 +12,7 @@ import { ThemeProvider } from './services/ThemeContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
 import Products from './pages/Products';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
@@ -70,6 +71,7 @@ function AppContent() {
                   <Home path="/" />
                   <Login path="/login" />
                   <Register path="/register" />
+                  <ForgotPassword path="/forgot-password" />
                   <Products path="/products" />
                   <Cart path="/cart" />
                   <Checkout path="/checkout" />

@@ -244,6 +244,51 @@ router.post('/login-pin', pinLoginLimiter, async (req, res) => {
 });
 
 /**
+ * @route   POST /api/v1/auth/login-email
+ * @desc    Login with email and password
+ * @access  Public
+ */
+router.post('/login-email', pinLoginLimiter, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Email and password are required'
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: 'Invalid email'
+      });
+    }
+
+    if (!/^\d{6}$/.test(password)) {
+      return res.status(400).json({
+        error: 'Invalid password'
+      });
+    }
+
+    const result = await AuthService.loginWithEmail(email, password);
+
+    if (result.passwordResetRequired) {
+      res.set('X-Password-Reset-Required', 'true');
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('Email login error:', error);
+    res.status(401).json({
+      error: 'Login failed',
+      message: 'Invalid email or password'
+    });
+  }
+});
+
+/**
  * @route   GET /api/v1/auth/check-user
  * @desc    Check if user exists and has PIN set
  * @access  Public
@@ -415,56 +460,60 @@ router.put('/change-password', authenticate, async (req, res) => {
 
 /**
  * @route   POST /api/v1/auth/reset-password-request
- * @desc    Request password reset OTP
+ * @desc    Request password reset OTP (supports phone or email)
  * @access  Public
  */
-router.post('/reset-password-request', async (req, res) => {
+router.post('/reset-password-request', otpRequestLimiter, async (req, res) => {
   try {
-    const { phone } = req.body;
+    const { identifier } = req.body;
 
-    if (!phone) {
+    if (!identifier) {
       return res.status(400).json({
         error: 'Validation failed',
-        message: 'Phone number is required'
+        message: 'Phone number or email is required'
       });
     }
 
-    const result = await AuthService.requestPasswordReset(phone);
+    const result = await AuthService.requestPasswordReset(identifier);
     res.json(result);
   } catch (error) {
     console.error('Password reset request error:', error);
     res.status(400).json({
       error: 'Request failed',
-      message: error.message
+      message: 'If an account exists, a reset code has been sent.'
     });
   }
 });
 
 /**
  * @route   POST /api/v1/auth/reset-password
- * @desc    Reset password with OTP
+ * @desc    Reset password with OTP (supports phone or email)
  * @access  Public
  */
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', otpVerificationLimiter, async (req, res) => {
   try {
-    const { phone, code, newPin } = req.body;
+    const { identifier, code, newPin } = req.body;
 
-    if (!phone || !code || !newPin) {
+    if (!identifier || !code || !newPin) {
       return res.status(400).json({
         error: 'Validation failed',
-        message: 'Phone, OTP code, and new PIN are required'
+        message: 'Identifier, OTP code, and new password are required'
       });
     }
 
-    // Validate new PIN format (6 digits)
     if (!/^\d{6}$/.test(newPin)) {
       return res.status(400).json({
-        error: 'Invalid PIN',
-        message: 'New PIN must be exactly 6 digits'
+        error: 'Invalid password'
       });
     }
 
-    const result = await AuthService.resetPassword(phone, code, newPin);
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({
+        error: 'Invalid OTP'
+      });
+    }
+
+    const result = await AuthService.resetPassword(identifier, code, newPin);
     res.json(result);
   } catch (error) {
     console.error('Password reset error:', error);

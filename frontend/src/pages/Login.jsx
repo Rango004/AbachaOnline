@@ -5,16 +5,20 @@ import api from '../services/api';
 
 export default function Login() {
   const { user, setUser } = useContext(AuthContext);
+  const [loginType, setLoginType] = useState('choice'); // 'choice', 'phone', 'email'
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [pin, setPin] = useState('');
-  const [step, setStep] = useState('phone'); // 'phone', 'choose', 'otp', or 'pin'
+  const [step, setStep] = useState('phone'); // 'phone', 'choose', 'otp', 'pin', or 'email'
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [otpMethod, setOtpMethod] = useState('');
   const [hasPIN, setHasPIN] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handlePinInput = (e) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 6);
@@ -144,13 +148,175 @@ export default function Login() {
     }
   };
 
+  const handleEmailLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    // Validate email and password
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    if (!/^\d{6}$/.test(password)) {
+      setError('Password must be exactly 6 digits');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const data = await api.loginWithEmail(email, password);
+
+      // Check if password reset is required
+      if (data.passwordResetRequired) {
+        setMessage('⚠️ You must change your temporary password. Redirecting to password change...');
+        setTimeout(() => {
+          route('/profile'); // Will trigger password change modal
+          window.location.reload();
+        }, 2000);
+        return;
+      }
+
+      // Get user profile to determine role-based routing
+      const profile = await api.getProfile();
+
+      // Route user to their role-specific dashboard
+      let dashboardPath = '/products';
+
+      if (profile.role === 'merchant') {
+        dashboardPath = '/merchant';
+      } else if (profile.role === 'rider') {
+        dashboardPath = '/rider';
+      } else if (profile.role === 'admin') {
+        dashboardPath = '/admin';
+      }
+
+      route(dashboardPath);
+      window.location.reload();
+    } catch (err) {
+      setError(err.message || 'Email login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div class="page login-page">
       <div class="container">
         <div class="auth-card">
           <h2>Login to AbachaOnline</h2>
 
-          {step === 'phone' && (
+          {/* Login Type Choice */}
+          {loginType === 'choice' && (
+            <div class="login-type-choice">
+              <p style="text-align: center; color: #666; margin-bottom: 24px;">
+                Choose your login method
+              </p>
+
+              <button
+                class="btn-primary"
+                onClick={() => {
+                  setLoginType('phone');
+                  setStep('phone');
+                }}
+                style="width: 100%; margin-bottom: 16px; font-size: 16px; padding: 14px;"
+              >
+                📱 Login with Phone
+              </button>
+
+              <button
+                class="btn-secondary"
+                onClick={() => {
+                  setLoginType('email');
+                  setStep('email');
+                }}
+                style="width: 100%; background: #f5f5f5; color: #333; border: 1px solid #ddd; font-size: 16px; padding: 14px;"
+              >
+                ✉️ Login with Email
+              </button>
+
+              <p style="text-align: center; color: #999; font-size: 13px; margin-top: 16px;">
+                Most users login with phone number
+              </p>
+            </div>
+          )}
+
+          {/* Email Login Form */}
+          {step === 'email' && (
+            <form onSubmit={handleEmailLogin}>
+              <div class="form-group">
+                <label>Email Address</label>
+                <input
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={email}
+                  onInput={(e) => setEmail(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Password (6-digit PIN)</label>
+                <div style="position: relative;">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    inputMode="numeric"
+                    placeholder="Enter 6-digit password"
+                    value={password}
+                    onInput={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setPassword(value);
+                    }}
+                    maxLength="6"
+                    required
+                    style="font-size: 24px; text-align: center; letter-spacing: 8px; padding-right: 45px;"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 20px;"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? '🙈' : '👁️'}
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" class="btn-primary" disabled={loading || password.length !== 6}>
+                {loading ? 'Logging in...' : 'Login'}
+              </button>
+
+              <div style="margin-top: 16px; text-align: center;">
+                <a
+                  href="/forgot-password"
+                  style="color: #1976d2; text-decoration: underline; font-size: 14px;"
+                >
+                  Forgot Password?
+                </a>
+              </div>
+
+              <button
+                type="button"
+                class="btn-secondary"
+                onClick={() => {
+                  setLoginType('choice');
+                  setStep('phone');
+                  setEmail('');
+                  setPassword('');
+                  setError('');
+                }}
+                style="margin-top: 12px; width: 100%;"
+              >
+                Back to Login Options
+              </button>
+            </form>
+          )}
+
+          {step === 'phone' && loginType === 'phone' && (
             <form onSubmit={handlePhoneSubmit}>
               <div class="form-group">
                 <label>Phone Number</label>
@@ -168,6 +334,19 @@ export default function Login() {
 
               <button type="submit" class="btn-primary" disabled={loading}>
                 {loading ? 'Checking...' : 'Continue'}
+              </button>
+
+              <button
+                type="button"
+                class="btn-secondary"
+                onClick={() => {
+                  setLoginType('choice');
+                  setPhone('');
+                  setError('');
+                }}
+                style="margin-top: 12px; width: 100%;"
+              >
+                Back to Login Options
               </button>
             </form>
           )}
@@ -317,6 +496,14 @@ export default function Login() {
                 Back
               </button>
             </form>
+          )}
+
+          {message && !error && (
+            <div style="background: #e3f2fd; border-radius: 8px; padding: 16px; margin-top: 16px;">
+              <p style="margin: 0; color: #1565c0; font-weight: 500;">
+                {message}
+              </p>
+            </div>
           )}
 
           {error && <p class="message error">{error}</p>}
