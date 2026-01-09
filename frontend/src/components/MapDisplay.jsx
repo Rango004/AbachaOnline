@@ -3,6 +3,9 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import '../styles/MapDisplay.css';
 
+// Get API base URL for tiles - must use full URL for map tiles
+const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://abachaonline.up.railway.app' : 'http://localhost:3000');
+
 // Njala Campus bounds from UPDATED OSM file (103 buildings)
 // Format: [longitude, latitude]
 const NJALA_BOUNDS = [
@@ -85,7 +88,7 @@ export default function MapDisplay({ routes = [], depotCoordinates = null, onSto
           sources: {
             'raster-tiles': {
               type: 'raster',
-              tiles: ['/api/v1/tiles/{z}/{x}/{y}'],
+              tiles: [`${API_BASE}/api/v1/tiles/{z}/{x}/{y}`],
               tileSize: 256
             }
           },
