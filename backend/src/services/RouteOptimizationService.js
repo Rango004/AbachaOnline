@@ -583,8 +583,8 @@ class RouteOptimizationService {
       const assignedResult = await db.query(
         `SELECT o.id, o.merchant_id, o.student_id, o.delivery_address, o.total_amount,
                 o.created_at, o.tracking_number,
-                COALESCE(l.latitude, l2.latitude, u.latitude) as latitude,
-                COALESCE(l.longitude, l2.longitude, u.longitude) as longitude,
+                COALESCE(sa.latitude, l.latitude, l2.latitude, u.latitude) as latitude,
+                COALESCE(sa.longitude, l.longitude, l2.longitude, u.longitude) as longitude,
                 COALESCE(l.name, l2.name, '') as location_name,
                 u.name as customer_name, u.phone as customer_phone
          FROM orders o
@@ -595,8 +595,8 @@ class RouteOptimizationService {
          LEFT JOIN locations l2 ON sa.location_id = l2.id
          WHERE o.rider_id = $1
            AND o.order_status = 'ready'
-           AND (COALESCE(l.latitude, l2.latitude, u.latitude) IS NOT NULL)
-           AND (COALESCE(l.longitude, l2.longitude, u.longitude) IS NOT NULL)
+           AND (COALESCE(sa.latitude, l.latitude, l2.latitude, u.latitude) IS NOT NULL)
+           AND (COALESCE(sa.longitude, l.longitude, l2.longitude, u.longitude) IS NOT NULL)
          ORDER BY o.created_at ASC`,
         [riderId]
       );
@@ -611,8 +611,8 @@ class RouteOptimizationService {
         const unassignedResult = await db.query(
           `SELECT o.id, o.merchant_id, o.student_id, o.delivery_address, o.total_amount,
                   o.created_at, o.tracking_number,
-                  COALESCE(l.latitude, l2.latitude, u.latitude) as latitude,
-                  COALESCE(l.longitude, l2.longitude, u.longitude) as longitude,
+                  COALESCE(sa.latitude, l.latitude, l2.latitude, u.latitude) as latitude,
+                  COALESCE(sa.longitude, l.longitude, l2.longitude, u.longitude) as longitude,
                   COALESCE(l.name, l2.name, '') as location_name,
                   u.name as customer_name, u.phone as customer_phone
            FROM orders o
@@ -623,8 +623,8 @@ class RouteOptimizationService {
            LEFT JOIN locations l2 ON sa.location_id = l2.id
            WHERE o.rider_id IS NULL
              AND o.order_status = 'ready'
-             AND (COALESCE(l.latitude, l2.latitude, u.latitude) IS NOT NULL)
-             AND (COALESCE(l.longitude, l2.longitude, u.longitude) IS NOT NULL)
+             AND (COALESCE(sa.latitude, l.latitude, l2.latitude, u.latitude) IS NOT NULL)
+             AND (COALESCE(sa.longitude, l.longitude, l2.longitude, u.longitude) IS NOT NULL)
            ORDER BY o.created_at ASC
            LIMIT $1`,
           [availableCapacity]
