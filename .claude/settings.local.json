@@ -3,7 +3,22 @@
     "allow": [
       "Bash(node scripts/populate-hostel-locations.js:*)",
       "Bash(npm install:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(node scripts/test-db-connection.js:*)",
+      "Bash(node scripts/run-migration-fixed.js:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npm run build:*)",
+      "Bash(node scripts/fix-delivery-routes-schema.js:*)",
+      "Bash(node scripts/add-missing-route-columns.js:*)",
+      "Bash(node scripts/add-updated-at-column.js:*)",
+      "Bash(node scripts/check-ready-orders.js:*)",
+      "Bash(node scripts/check-addresses-coordinates.js:*)",
+      "Bash(node scripts/debug-address-join.js:*)",
+      "Bash(node scripts/check-fallback-locations.js:*)",
+      "Bash(node scripts/add-coordinates-to-orders.js:*)",
+      "Bash(node:*)"
     ]
   }
 }
