@@ -57,6 +57,32 @@ UPDATE delivery_routes
 SET optimized_at = created_at
 WHERE optimized_at IS NULL AND created_at IS NOT NULL;
 
+-- Add updated_at column (standard for all tables)
+ALTER TABLE delivery_routes
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+-- Set updated_at to created_at for existing rows
+UPDATE delivery_routes
+SET updated_at = created_at
+WHERE updated_at IS NULL AND created_at IS NOT NULL;
+
+-- Create or replace the trigger function for updated_at
+CREATE OR REPLACE FUNCTION update_delivery_routes_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Drop trigger if exists and recreate
+DROP TRIGGER IF EXISTS trigger_update_delivery_routes_timestamp ON delivery_routes;
+
+CREATE TRIGGER trigger_update_delivery_routes_timestamp
+  BEFORE UPDATE ON delivery_routes
+  FOR EACH ROW
+  EXECUTE FUNCTION update_delivery_routes_updated_at();
+
 -- Add comments
 COMMENT ON COLUMN delivery_routes.order_ids IS 'Array of order IDs assigned to this route';
 COMMENT ON COLUMN delivery_routes.merchant_id IS 'Merchant who owns the orders in this route';
