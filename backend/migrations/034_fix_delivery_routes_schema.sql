@@ -83,6 +83,10 @@ CREATE TRIGGER trigger_update_delivery_routes_timestamp
   FOR EACH ROW
   EXECUTE FUNCTION update_delivery_routes_updated_at();
 
+-- Add is_selected column for rider route selection
+ALTER TABLE delivery_routes
+ADD COLUMN IF NOT EXISTS is_selected BOOLEAN DEFAULT FALSE;
+
 -- Add comments
 COMMENT ON COLUMN delivery_routes.order_ids IS 'Array of order IDs assigned to this route';
 COMMENT ON COLUMN delivery_routes.merchant_id IS 'Merchant who owns the orders in this route';
@@ -90,3 +94,4 @@ COMMENT ON COLUMN delivery_routes.route_coordinates IS 'JSONB array of coordinat
 COMMENT ON COLUMN delivery_routes.optimization_source IS 'Source of the route optimization (osrm, google, fallback)';
 COMMENT ON COLUMN delivery_routes.optimization_algorithm IS 'Algorithm used for optimization (clarke-wright, etc)';
 COMMENT ON COLUMN delivery_routes.optimized_at IS 'Timestamp when route was optimized';
+COMMENT ON COLUMN delivery_routes.is_selected IS 'Whether this route has been selected by the rider';

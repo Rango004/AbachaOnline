@@ -155,7 +155,7 @@ export default function MapDisplay({ routes = [], depotCoordinates = null, onSto
   const loadAndAddMarkers = async (map) => {
     try {
       // Fetch location markers from API
-      const response = await fetch('/api/v1/locations/geojson');
+      const response = await fetch(`${API_BASE}/api/v1/locations/geojson`);
       if (!response.ok) throw new Error('API error');
 
       const geojson = await response.json();
