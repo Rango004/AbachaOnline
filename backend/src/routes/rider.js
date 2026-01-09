@@ -762,11 +762,27 @@ router.get('/routes/:id/itinerary', authenticate, authorize('rider'), async (req
 
     const itinerary = await RouteOptimizationService.getRouteItinerary(routeId);
 
+    // Fetch route details to enrich with ETA
+    const routeResult = await db.query('SELECT * FROM delivery_routes WHERE id = $1', [routeId]);
+    if (routeResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Route not found'
+      });
+    }
+
+    const route = routeResult.rows[0];
+
+    // Enrich itinerary with ETA calculations
+    const enrichedRoute = RouteOptimizationService.enrichRouteWithETA(route, itinerary);
+
     res.json({
       success: true,
       route_id: routeId,
-      itinerary,
-      total_stops: itinerary.length
+      itinerary: enrichedRoute.itinerary,
+      total_stops: enrichedRoute.itinerary.length,
+      distance_info: enrichedRoute.distance_info,
+      time_estimate: enrichedRoute.time_estimate
     });
   } catch (error) {
     console.error('[Rider Routes Itinerary] Error:', error);

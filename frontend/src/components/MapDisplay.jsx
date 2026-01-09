@@ -506,17 +506,18 @@ export default function MapDisplay({ routes = [], depotCoordinates = null, onSto
             source: `${routeId}-stops`,
             layout: {
               'text-field': ['get', 'eta_label'],
-              'text-size': 11,
+              'text-size': 12,
               'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
               'text-anchor': 'bottom',
-              'text-offset': [0, -2.5],
-              'text-allow-overlap': true
+              'text-offset': [0, -3.2],
+              'text-allow-overlap': true,
+              'text-ignore-placement': true
             },
             paint: {
-              'text-color': '#fff',
-              'text-halo-color': '#333',
-              'text-halo-width': 2,
-              'text-opacity': 0.95
+              'text-color': '#FF6B6B',
+              'text-halo-color': '#fff',
+              'text-halo-width': 2.5,
+              'text-opacity': 1
             }
           });
 

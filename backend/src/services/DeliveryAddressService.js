@@ -348,13 +348,24 @@ class DeliveryAddressService {
 
   /**
    * Get all locations (for dropdown/selection)
+   * Filters to only show delivery-relevant locations (hostels, dormitories, buildings, landmarks, staff_quarters)
+   * Excludes internal locations (merchants, depot, offices)
    */
   static async getAllLocations() {
     try {
       const result = await db.query(
         `SELECT id, name, latitude, longitude, type
          FROM locations
-         ORDER BY name ASC`
+         WHERE type IN ('hostel', 'dormitory', 'building', 'landmark', 'staff_quarters')
+         ORDER BY
+           CASE type
+             WHEN 'hostel' THEN 1
+             WHEN 'dormitory' THEN 2
+             WHEN 'building' THEN 3
+             WHEN 'staff_quarters' THEN 4
+             WHEN 'landmark' THEN 5
+           END,
+           name ASC`
       );
 
       return result.rows;

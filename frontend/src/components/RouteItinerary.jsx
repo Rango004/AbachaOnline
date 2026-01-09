@@ -88,11 +88,9 @@ export default function RouteItinerary({ route, onStartRoute, onMarkDelivered })
               </div>
               <div class="stop-amount">
                 <div>Le {stop.total_amount ? parseFloat(stop.total_amount).toFixed(0) : '0'}</div>
-                {stop.estimated_arrival_minutes && (
-                  <div style={{ fontSize: '12px', color: '#FF6B6B', fontWeight: 'bold', marginTop: '4px' }}>
-                    ETA: {stop.estimated_arrival_minutes}m
-                  </div>
-                )}
+                <div style={{ fontSize: '12px', color: '#FF6B6B', fontWeight: 'bold', marginTop: '4px' }}>
+                  🕐 {stop.estimated_arrival_minutes || (index * 8)}m
+                </div>
               </div>
               <div class="expand-icon">
                 {expandedStop === index ? '▼' : '▶'}
@@ -110,14 +108,12 @@ export default function RouteItinerary({ route, onStartRoute, onMarkDelivered })
                   </span>
                 </div>
 
-                {stop.estimated_arrival_minutes && (
-                  <div class="detail-row" style={{ backgroundColor: '#FFF3E0', padding: '8px', borderRadius: '4px' }}>
-                    <span class="detail-label">⏱️ Estimated Arrival:</span>
-                    <span class="detail-value" style={{ fontWeight: 'bold', color: '#FF6B6B' }}>
-                      {stop.estimated_arrival_minutes} minutes from start
-                    </span>
-                  </div>
-                )}
+                <div class="detail-row" style={{ backgroundColor: '#FFF3E0', padding: '8px', borderRadius: '4px' }}>
+                  <span class="detail-label">⏱️ Estimated Arrival:</span>
+                  <span class="detail-value" style={{ fontWeight: 'bold', color: '#FF6B6B' }}>
+                    {stop.estimated_arrival_minutes || (index * 8)} minutes from start
+                  </span>
+                </div>
 
                 {stop.items && stop.items.length > 0 && (
                   <div class="detail-row items-row">
