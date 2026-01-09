@@ -59,13 +59,11 @@ app.use(cors({
       allowedOrigins.push(...frontendUrls);
     }
 
-    // SECURITY: In production, only allow whitelisted origins
+    // SECURITY: In production, allow no-origin for health checks and server-to-server calls
     // In development, allow no-origin for testing with curl/Postman
-    if (!origin && process.env.NODE_ENV !== 'production') {
+    if (!origin) {
+      // Allow requests without origin header (health checks, server-to-server, monitoring tools)
       callback(null, true);
-    } else if (!origin) {
-      // Production: reject requests with no origin header
-      callback(new Error('Not allowed by CORS - Origin header required'));
     } else if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
