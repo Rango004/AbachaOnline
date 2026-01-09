@@ -12,12 +12,52 @@ class RouteOptimizationService {
       cacheSize: 10000
     });
 
+    // Default depot location: Hospital Junction Car Park, Freetown
+    this.defaultDepotLocation = [8.4657, -13.2317];
+
     this.optimizer = new RouteOptimizer({
-      depotLocation: [8.1129, -12.0710], // Njala University Depot [lat, lon]
+      depotLocation: this.defaultDepotLocation,
       roadMultiplier: 1.3,
       osrmService: this.osrmService,
       useOSRM: true
     });
+  }
+
+  /**
+   * Get rider's current location or fallback to depot
+   * Priority: rider's current GPS > rider's home location > default depot
+   */
+  async getRiderStartLocation(riderId) {
+    try {
+      const result = await db.query(`
+        SELECT
+          latitude as current_lat,
+          longitude as current_lng,
+          COALESCE(latitude, $2) as start_lat,
+          COALESCE(longitude, $3) as start_lng
+        FROM users
+        WHERE id = $1 AND role = 'rider';
+      `, [riderId, this.defaultDepotLocation[0], this.defaultDepotLocation[1]]);
+
+      if (result.rows.length > 0) {
+        const rider = result.rows[0];
+        const location = [parseFloat(rider.start_lat), parseFloat(rider.start_lng)];
+
+        if (rider.current_lat && rider.current_lng) {
+          console.log(`[RouteOptimization] Using rider ${riderId} current GPS location: ${location}`);
+        } else {
+          console.log(`[RouteOptimization] Using default depot location for rider ${riderId}: ${location}`);
+        }
+
+        return location;
+      }
+
+      console.log(`[RouteOptimization] Rider ${riderId} not found, using default depot: ${this.defaultDepotLocation}`);
+      return this.defaultDepotLocation;
+    } catch (error) {
+      console.error(`[RouteOptimization] Error getting rider location for ${riderId}:`, error.message);
+      return this.defaultDepotLocation;
+    }
   }
 
   /**
@@ -26,9 +66,12 @@ class RouteOptimizationService {
    * @param {Array} orders - Array of orders with customer locations
    * @param {Array} riders - Array of available riders with capacity
    * @param {string} method - Optimization method: 'clarke_wright' (default) or 'nearest_neighbor'
+   * @param {Array} depotLocation - [latitude, longitude] of starting point (rider location or depot)
    * @returns {Promise<Object>} - Optimization results
    */
-  async optimizeRoutes(orders, riders, method = 'clarke_wright') {
+  async optimizeRoutes(orders, riders, method = 'clarke_wright', depotLocation = null) {
+    // Use provided depot location or default
+    const startLocation = depotLocation || this.defaultDepotLocation;
     try {
       // Format orders for optimizer
       const formattedOrders = orders.map(order => ({
@@ -47,6 +90,10 @@ class RouteOptimizationService {
         id: rider.id,
         capacity: rider.capacity || 5
       }));
+
+      // Update optimizer's depot location for this optimization
+      this.optimizer.depotLocation = startLocation;
+      console.log(`[optimizeRoutes] Using start location: ${startLocation}`);
 
       // Run JavaScript optimizer with OSRM distance calculations
       const result = await this.optimizer.optimize(formattedOrders, formattedRiders, method);
@@ -68,9 +115,10 @@ class RouteOptimizationService {
    * This matches the output format of route_optimizer_v2.py
    * @param {Array} orders - Orders to assign
    * @param {Array} riders - Available riders
+   * @param {Array} depotLocation - Starting location [lat, lon]
    * @returns {Object} - Simple assignment results in route_optimizer_v2 format
    */
-  fallbackRouteAssignment(orders, riders) {
+  fallbackRouteAssignment(orders, riders, depotLocation = null) {
     console.log('Using fallback route assignment (nearest-neighbor round-robin)');
 
     if (!riders || riders.length === 0) {
@@ -82,7 +130,7 @@ class RouteOptimizationService {
       };
     }
 
-    const depotLocation = [8.465, -11.780];
+    const startLocation = depotLocation || this.defaultDepotLocation;
     const routes = [];
     const routeMap = new Map();
 
@@ -90,7 +138,7 @@ class RouteOptimizationService {
     for (const rider of riders) {
       routeMap.set(rider.id, {
         rider_id: rider.id,
-        route_coords: [depotLocation],
+        route_coords: [startLocation],
         order_ids: [],
         distance_m: 0,
         num_deliveries: 0,
@@ -120,7 +168,7 @@ class RouteOptimizationService {
     // Add depot return to each route
     let totalDistance = 0;
     for (const route of routeMap.values()) {
-      route.route_coords.push(depotLocation);
+      route.route_coords.push(startLocation);
       totalDistance += route.distance_m;
 
       // Remove internal properties not in output format
@@ -409,8 +457,17 @@ class RouteOptimizationService {
         };
       }
 
-      // Run optimization (JavaScript implementation)
-      const optimizationResult = await this.optimizeRoutes(orders, riders, method);
+      // Get rider's starting location (current GPS or depot fallback)
+      let riderStartLocation = this.defaultDepotLocation;
+      if (riderId) {
+        riderStartLocation = await this.getRiderStartLocation(riderId);
+      } else if (riders && riders.length > 0) {
+        // For auto-generated optimization, use first rider's location
+        riderStartLocation = await this.getRiderStartLocation(riders[0].id);
+      }
+
+      // Run optimization (JavaScript implementation) with rider's start location
+      const optimizationResult = await this.optimizeRoutes(orders, riders, method, riderStartLocation);
 
       // DEBUG: Log what optimizer returned
       console.log('[Optimize] Result:', {
