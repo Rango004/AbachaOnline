@@ -12,8 +12,9 @@ class RouteOptimizationService {
       cacheSize: 10000
     });
 
-    // Default depot location: Hospital Junction Car Park, Freetown
-    this.defaultDepotLocation = [8.4657, -13.2317];
+    // Default depot location: Mobile Money, Njala University Campus
+    // This is a central location from the imported business locations
+    this.defaultDepotLocation = [8.11263730, -12.07158430];
 
     this.optimizer = new RouteOptimizer({
       depotLocation: this.defaultDepotLocation,
