@@ -324,8 +324,10 @@ export default function MapDisplay({ routes = [], depotCoordinates = null, onSto
       }
 
     // Define all layer and source IDs to clean up
-    const layerIds = ['primary-route-line', 'alternate-route-line', 'primary-stops', 'primary-stops-text', 'primary-stops-eta',
-                      'primary-distances', 'alternate-stops', 'alternate-stops-text', 'alternate-stops-eta',
+    const layerIds = ['primary-route-line', 'alternate-route-line',
+                      'primary-stops', 'primary-stops-text', 'primary-stops-eta', 'primary-stops-glow', 'primary-stops-address',
+                      'primary-distances',
+                      'alternate-stops', 'alternate-stops-text', 'alternate-stops-eta', 'alternate-stops-glow', 'alternate-stops-address',
                       'alternate-distances', 'depot-marker', 'depot-label'];
     const sourceIds = ['primary-route-line', 'alternate-route-line', 'primary-stops', 'primary-distances',
                        'alternate-stops', 'alternate-distances', 'depot-marker'];
@@ -465,15 +467,28 @@ export default function MapDisplay({ routes = [], depotCoordinates = null, onSto
             }
           });
 
-          // Add stop marker circles with numbers - LARGE and VISIBLE
+          // Add outer glow/shadow for visibility
+          map.addLayer({
+            id: `${routeId}-stops-glow`,
+            type: 'circle',
+            source: `${routeId}-stops`,
+            paint: {
+              'circle-radius': 32,
+              'circle-color': '#000000',
+              'circle-opacity': 0.3,
+              'circle-blur': 0.5
+            }
+          });
+
+          // Add large stop marker circles - VERY PROMINENT
           map.addLayer({
             id: `${routeId}-stops`,
             type: 'circle',
             source: `${routeId}-stops`,
             paint: {
-              'circle-radius': 22,
-              'circle-color': routeColor,
-              'circle-stroke-width': 3,
+              'circle-radius': 26,
+              'circle-color': '#E53935',  // Bright red for delivery stops
+              'circle-stroke-width': 4,
               'circle-stroke-color': '#FFFFFF',
               'circle-opacity': 1
             }
@@ -486,7 +501,7 @@ export default function MapDisplay({ routes = [], depotCoordinates = null, onSto
             source: `${routeId}-stops`,
             layout: {
               'text-field': ['get', 'stop_number'],
-              'text-size': 16,
+              'text-size': 20,
               'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
               'text-anchor': 'center',
               'text-allow-overlap': true,
@@ -495,33 +510,56 @@ export default function MapDisplay({ routes = [], depotCoordinates = null, onSto
             paint: {
               'text-color': '#FFFFFF',
               'text-halo-color': '#000000',
-              'text-halo-width': 1.5
+              'text-halo-width': 2
             }
           });
 
-          // Add ETA label layer (above stop markers)
+          // Add ETA label layer (ABOVE stop markers) - prominent red badge
           map.addLayer({
             id: `${routeId}-stops-eta`,
             type: 'symbol',
             source: `${routeId}-stops`,
             layout: {
               'text-field': ['get', 'eta_label'],
-              'text-size': 12,
-              'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+              'text-size': 13,
+              'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
               'text-anchor': 'bottom',
-              'text-offset': [0, -3.2],
+              'text-offset': [0, -3.8],
               'text-allow-overlap': true,
               'text-ignore-placement': true
             },
             paint: {
-              'text-color': '#FF6B6B',
-              'text-halo-color': '#fff',
-              'text-halo-width': 2.5,
+              'text-color': '#D32F2F',
+              'text-halo-color': '#FFFFFF',
+              'text-halo-width': 3,
               'text-opacity': 1
             }
           });
 
-          console.log(`[MapDisplay] ✅ Added ${stopMarkers.length} numbered stop markers to map`);
+          // Add delivery address label BELOW the marker
+          map.addLayer({
+            id: `${routeId}-stops-address`,
+            type: 'symbol',
+            source: `${routeId}-stops`,
+            layout: {
+              'text-field': ['get', 'delivery_address'],
+              'text-size': 11,
+              'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+              'text-anchor': 'top',
+              'text-offset': [0, 2.8],
+              'text-max-width': 12,
+              'text-allow-overlap': false,
+              'text-ignore-placement': false
+            },
+            paint: {
+              'text-color': '#1565C0',
+              'text-halo-color': '#FFFFFF',
+              'text-halo-width': 2,
+              'text-opacity': 0.95
+            }
+          });
+
+          console.log(`[MapDisplay] ✅ Added ${stopMarkers.length} PROMINENT delivery markers with numbers, ETA, and addresses`);
         } else {
           console.warn(`[MapDisplay] ⚠️ No valid stop markers to add for route ${routeId}`);
         }
