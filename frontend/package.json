@@ -6,9 +6,25 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:init": "cap init AbachaOnline com.abachaonline.app --web-dir dist",
+    "cap:add:android": "cap add android",
+    "cap:sync": "npm run build && cap sync",
+    "cap:open:android": "cap open android",
+    "cap:build": "npm run build && cap sync && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/camera": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/geolocation": "^6.0.0",
+    "@capacitor/network": "^6.0.0",
+    "@capacitor/haptics": "^6.0.0",
+    "@capacitor/keyboard": "^6.0.0",
+    "@capacitor/push-notifications": "^6.0.0",
+    "@capacitor/splash-screen": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0",
     "chart.js": "^4.5.1",
     "idb": "^8.0.0",
     "leaflet": "^1.9.4",
@@ -18,7 +34,9 @@
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
     "@preact/preset-vite": "^2.8.1",
+    "typescript": "^5.9.3",
     "vite": "^7.2.7",
     "vite-plugin-pwa": "^1.2.0",
     "workbox-window": "^7.0.0"

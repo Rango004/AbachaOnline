@@ -1,0 +1,101 @@
+# Codemagic CI/CD configuration for AbachaOnline
+# Build Android APK in the cloud without local Android Studio
+
+workflows:
+  android-capacitor:
+    name: Android Capacitor Build
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+
+    environment:
+      groups:
+        - android_credentials # Add your keystore credentials in Codemagic UI
+      node: 18
+      java: 17
+
+    triggering:
+      events:
+        - push
+        - pull_request
+      branch_patterns:
+        - pattern: main
+          include: true
+        - pattern: develop
+          include: true
+
+    scripts:
+      # Install dependencies
+      - name: Install frontend dependencies
+        script: |
+          cd frontend
+          npm install
+
+      # Build web app
+      - name: Build web app
+        script: |
+          cd frontend
+          npm run build
+
+      # Add Android platform if not exists
+      - name: Setup Capacitor Android
+        script: |
+          cd frontend
+          npx cap add android || true
+          npx cap sync android
+
+      # Build Android APK
+      - name: Build Android Debug APK
+        script: |
+          cd frontend/android
+          ./gradlew assembleDebug
+
+      # Build Release APK (requires signing)
+      - name: Build Android Release APK
+        script: |
+          cd frontend/android
+          ./gradlew assembleRelease
+        # Uncomment when you have signing configured:
+        # environment:
+        #   CM_KEYSTORE: $CM_KEYSTORE
+        #   CM_KEYSTORE_PASSWORD: $CM_KEYSTORE_PASSWORD
+        #   CM_KEY_ALIAS: $CM_KEY_ALIAS
+        #   CM_KEY_PASSWORD: $CM_KEY_PASSWORD
+
+    artifacts:
+      - frontend/android/app/build/outputs/**/*.apk
+      - frontend/android/app/build/outputs/**/*.aab
+
+    publishing:
+      email:
+        recipients:
+          - your-email@example.com # Change to your email
+        notify:
+          success: true
+          failure: true
+
+  # Quick debug build workflow
+  android-debug:
+    name: Android Debug Build (Quick)
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+
+    environment:
+      node: 18
+      java: 17
+
+    scripts:
+      - name: Install and build
+        script: |
+          cd frontend
+          npm install
+          npm run build
+          npx cap add android || true
+          npx cap sync android
+
+      - name: Build Debug APK
+        script: |
+          cd frontend/android
+          ./gradlew assembleDebug
+
+    artifacts:
+      - frontend/android/app/build/outputs/apk/debug/*.apk
