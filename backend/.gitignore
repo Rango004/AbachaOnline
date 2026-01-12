@@ -9,6 +9,10 @@ __pycache__/
 .env.local
 .env.production
 
+# Firebase credentials (NEVER commit these!)
+firebase-admin-key.json
+*-firebase-adminsdk-*.json
+
 # Logs
 logs/
 *.log
