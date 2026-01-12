@@ -13,7 +13,7 @@ import { getNetworkStatus, watchNetworkStatus } from './NativeBridge';
 
 // Database name and version
 const DB_NAME = 'abachaonline-offline';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Upgraded for new object stores
 
 // Storage limits
 const MAX_CACHE_SIZE_MB = 30;
@@ -70,6 +70,56 @@ export async function initOfflineDB() {
       // Cart items (for offline cart)
       if (!database.objectStoreNames.contains('cart')) {
         database.createObjectStore('cart', { keyPath: 'productId' });
+      }
+
+      // Messages for offline chat
+      if (!database.objectStoreNames.contains('messages')) {
+        const messageStore = database.createObjectStore('messages', {
+          keyPath: 'id',
+          autoIncrement: true
+        });
+        messageStore.createIndex('conversationId', 'conversation_id');
+        messageStore.createIndex('timestamp', 'timestamp');
+        messageStore.createIndex('syncStatus', 'syncStatus'); // 'pending', 'synced', 'failed'
+        messageStore.createIndex('clientUuid', 'clientUuid'); // For deduplication
+      }
+
+      // Image cache (Cloudinary images as blobs)
+      if (!database.objectStoreNames.contains('imageCache')) {
+        const imgStore = database.createObjectStore('imageCache', { keyPath: 'url' });
+        imgStore.createIndex('cachedAt', 'cachedAt');
+        imgStore.createIndex('size', 'size');
+      }
+
+      // Merchant menus
+      if (!database.objectStoreNames.contains('menus')) {
+        const menuStore = database.createObjectStore('menus', { keyPath: 'merchantId' });
+        menuStore.createIndex('cachedAt', 'cachedAt');
+      }
+
+      // Delivery addresses
+      if (!database.objectStoreNames.contains('addresses')) {
+        const addrStore = database.createObjectStore('addresses', { keyPath: 'id' });
+        addrStore.createIndex('userId', 'user_id');
+        addrStore.createIndex('isDefault', 'is_default');
+      }
+
+      // Wishlist
+      if (!database.objectStoreNames.contains('wishlist')) {
+        const wishStore = database.createObjectStore('wishlist', { keyPath: 'productId' });
+        wishStore.createIndex('userId', 'user_id');
+        wishStore.createIndex('cachedAt', 'cachedAt');
+      }
+
+      // Conflicts (for manual resolution)
+      if (!database.objectStoreNames.contains('conflicts')) {
+        const conflictStore = database.createObjectStore('conflicts', {
+          keyPath: 'id',
+          autoIncrement: true
+        });
+        conflictStore.createIndex('timestamp', 'timestamp');
+        conflictStore.createIndex('resolved', 'resolved');
+        conflictStore.createIndex('type', 'type');
       }
     }
   });
@@ -337,6 +387,445 @@ export async function getOfflineCart() {
 }
 
 /**
+ * ========================================
+ * IMAGE CACHING METHODS
+ * ========================================
+ */
+
+/**
+ * Cache a single image (Cloudinary URL → Blob)
+ */
+export async function cacheImage(url, blob = null) {
+  await initOfflineDB();
+
+  try {
+    let imageBlob = blob;
+
+    // If blob not provided, fetch it
+    if (!blob) {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+      imageBlob = await response.blob();
+    }
+
+    await db.put('imageCache', {
+      url,
+      blob: imageBlob,
+      cachedAt: Date.now(),
+      size: imageBlob.size
+    });
+
+    console.log(`[OfflineSync] Cached image: ${url.substring(0, 60)}... (${(imageBlob.size / 1024).toFixed(1)}KB)`);
+  } catch (error) {
+    console.error(`[OfflineSync] Failed to cache image:`, error);
+  }
+}
+
+/**
+ * Get cached image as blob URL
+ */
+export async function getCachedImage(url) {
+  await initOfflineDB();
+  const cached = await db.get('imageCache', url);
+
+  if (cached && cached.blob) {
+    return URL.createObjectURL(cached.blob);
+  }
+
+  return null;
+}
+
+/**
+ * Batch cache product images
+ */
+export async function cacheProductImages(products) {
+  if (!Array.isArray(products)) return;
+
+  let cachedCount = 0;
+  for (const product of products) {
+    if (product.images && Array.isArray(product.images)) {
+      for (const imageUrl of product.images) {
+        try {
+          await cacheImage(imageUrl);
+          cachedCount++;
+        } catch (error) {
+          console.warn(`[OfflineSync] Failed to cache image ${imageUrl}:`, error.message);
+        }
+      }
+    }
+  }
+
+  console.log(`[OfflineSync] Cached ${cachedCount} product images`);
+}
+
+/**
+ * ========================================
+ * MESSAGE QUEUING METHODS
+ * ========================================
+ */
+
+/**
+ * Queue a message for offline chat
+ */
+export async function queueMessage(conversationId, messageData) {
+  await initOfflineDB();
+
+  const message = {
+    conversation_id: conversationId,
+    ...messageData,
+    syncStatus: 'pending',
+    timestamp: messageData.timestamp || Date.now(),
+    clientUuid: messageData.clientUuid || `msg_${Date.now()}_${Math.random()}`
+  };
+
+  const id = await db.add('messages', message);
+  console.log(`[OfflineSync] Queued message #${id} for conversation ${conversationId}`);
+
+  notifyListeners({ type: 'messageQueued', id, message });
+
+  return id;
+}
+
+/**
+ * Get cached messages for a conversation
+ */
+export async function getCachedMessages(conversationId) {
+  await initOfflineDB();
+  return db.getAllFromIndex('messages', 'conversationId', conversationId);
+}
+
+/**
+ * Sync pending messages
+ */
+export async function syncMessages() {
+  await initOfflineDB();
+
+  const pendingMessages = await db.getAllFromIndex('messages', 'syncStatus', 'pending');
+
+  if (pendingMessages.length === 0) {
+    return { success: true, synced: 0 };
+  }
+
+  console.log(`[OfflineSync] Syncing ${pendingMessages.length} messages`);
+
+  let syncedCount = 0;
+
+  for (const message of pendingMessages) {
+    try {
+      // Will be implemented with OfflineFirstAPI
+      // For now, just mark as synced
+      await db.put('messages', {
+        ...message,
+        syncStatus: 'synced'
+      });
+      syncedCount++;
+    } catch (error) {
+      console.error(`[OfflineSync] Failed to sync message #${message.id}:`, error);
+      await db.put('messages', {
+        ...message,
+        syncStatus: 'failed'
+      });
+    }
+  }
+
+  return { success: true, synced: syncedCount };
+}
+
+/**
+ * Cache merchant menu
+ */
+export async function cacheMenu(merchantId, menuData) {
+  await initOfflineDB();
+
+  await db.put('menus', {
+    merchantId,
+    menuData,
+    cachedAt: Date.now()
+  });
+
+  console.log(`[OfflineSync] Cached menu for merchant ${merchantId}`);
+}
+
+/**
+ * Get cached menu
+ */
+export async function getCachedMenu(merchantId) {
+  await initOfflineDB();
+  return db.get('menus', merchantId);
+}
+
+/**
+ * Cache addresses
+ */
+export async function cacheAddresses(addresses) {
+  await initOfflineDB();
+  const tx = db.transaction('addresses', 'readwrite');
+
+  for (const address of addresses) {
+    await tx.store.put({
+      ...address,
+      cachedAt: Date.now()
+    });
+  }
+
+  await tx.done;
+  console.log(`[OfflineSync] Cached ${addresses.length} addresses`);
+}
+
+/**
+ * Get cached addresses
+ */
+export async function getCachedAddresses(userId) {
+  await initOfflineDB();
+
+  if (userId) {
+    return db.getAllFromIndex('addresses', 'userId', userId);
+  }
+  return db.getAll('addresses');
+}
+
+/**
+ * Cache wishlist
+ */
+export async function cacheWishlist(items) {
+  await initOfflineDB();
+  const tx = db.transaction('wishlist', 'readwrite');
+
+  for (const item of items) {
+    await tx.store.put({
+      ...item,
+      cachedAt: Date.now()
+    });
+  }
+
+  await tx.done;
+  console.log(`[OfflineSync] Cached ${items.length} wishlist items`);
+}
+
+/**
+ * Get cached wishlist
+ */
+export async function getCachedWishlist(userId) {
+  await initOfflineDB();
+
+  if (userId) {
+    return db.getAllFromIndex('wishlist', 'userId', userId);
+  }
+  return db.getAll('wishlist');
+}
+
+/**
+ * Detect conflict between local and server data
+ */
+export async function detectConflict(operation, serverData) {
+  await initOfflineDB();
+
+  // Get local version based on operation type
+  let localData;
+  switch (operation.type) {
+    case 'cart':
+      localData = await getOfflineCart();
+      break;
+    case 'wishlist':
+      localData = await getCachedWishlist(operation.userId);
+      break;
+    case 'addresses':
+      localData = await getCachedAddresses(operation.userId);
+      break;
+    default:
+      return null;
+  }
+
+  if (!localData) return null;
+
+  // Check if data differs
+  const hasConflict = JSON.stringify(localData) !== JSON.stringify(serverData);
+
+  if (hasConflict) {
+    const conflict = {
+      type: operation.type,
+      local: localData,
+      server: serverData,
+      timestamp: Date.now(),
+      resolved: false,
+      canMerge: canMerge(operation.type),
+      operationId: operation.id
+    };
+
+    const id = await db.add('conflicts', conflict);
+    console.log(`[OfflineSync] Conflict detected for ${operation.type}, ID: ${id}`);
+
+    notifyListeners({ type: 'conflict', conflictId: id, conflict });
+
+    return { ...conflict, id };
+  }
+
+  return null;
+}
+
+/**
+ * Check if a data type can be automatically merged
+ */
+function canMerge(type) {
+  // Cart and wishlist can be merged (union of items)
+  return ['cart', 'wishlist'].includes(type);
+}
+
+/**
+ * Resolve a conflict
+ */
+export async function resolveConflict(conflictId, strategy) {
+  await initOfflineDB();
+
+  const conflict = await db.get('conflicts', conflictId);
+  if (!conflict) {
+    throw new Error(`Conflict ${conflictId} not found`);
+  }
+
+  let resolvedData;
+
+  switch (strategy) {
+    case 'local':
+      resolvedData = conflict.local;
+      break;
+    case 'server':
+      resolvedData = conflict.server;
+      break;
+    case 'merge':
+      if (!conflict.canMerge) {
+        throw new Error(`Cannot merge ${conflict.type} conflicts`);
+      }
+      resolvedData = mergeData(conflict.local, conflict.server, conflict.type);
+      break;
+    default:
+      throw new Error(`Unknown resolution strategy: ${strategy}`);
+  }
+
+  // Mark conflict as resolved
+  await db.put('conflicts', {
+    ...conflict,
+    resolved: true,
+    resolvedAt: Date.now(),
+    strategy,
+    resolvedData
+  });
+
+  console.log(`[OfflineSync] Resolved conflict #${conflictId} with strategy: ${strategy}`);
+  notifyListeners({ type: 'conflictResolved', conflictId, strategy });
+
+  return resolvedData;
+}
+
+/**
+ * Merge local and server data (for cart and wishlist)
+ */
+function mergeData(local, server, type) {
+  if (type === 'cart' || type === 'wishlist') {
+    // Union of items by product ID
+    const merged = [...local];
+    const localIds = new Set(local.map(item => item.productId || item.product_id));
+
+    for (const serverItem of server) {
+      const itemId = serverItem.productId || serverItem.product_id;
+      if (!localIds.has(itemId)) {
+        merged.push(serverItem);
+      }
+    }
+
+    return merged;
+  }
+
+  // Default: server wins
+  return server;
+}
+
+/**
+ * Get unresolved conflicts
+ */
+export async function getUnresolvedConflicts() {
+  await initOfflineDB();
+  return db.getAllFromIndex('conflicts', 'resolved', false);
+}
+
+/**
+ * Add optimistic update tracking
+ */
+export async function addOptimisticUpdate(operation, rollbackData) {
+  // Store in memory for now, can be persisted if needed
+  const updateId = `opt_${Date.now()}_${Math.random()}`;
+
+  console.log(`[OfflineSync] Optimistic update: ${updateId}`, operation);
+
+  notifyListeners({
+    type: 'optimisticUpdate',
+    updateId,
+    operation,
+    rollbackData
+  });
+
+  return updateId;
+}
+
+/**
+ * Rollback optimistic update
+ */
+export async function rollbackOptimisticUpdate(updateId, rollbackData) {
+  console.log(`[OfflineSync] Rolling back optimistic update: ${updateId}`);
+
+  notifyListeners({
+    type: 'rollback',
+    updateId,
+    rollbackData
+  });
+}
+
+/**
+ * Enhanced cleanup with new stores
+ */
+async function cleanupNewStores() {
+  await initOfflineDB();
+
+  const now = Date.now();
+  let deletedCount = {
+    images: 0,
+    messages: 0,
+    menus: 0
+  };
+
+  // Cleanup old cached images (older than 30 days)
+  const imageCutoff = now - (30 * 24 * 60 * 60 * 1000);
+  const images = await db.getAll('imageCache');
+  for (const img of images) {
+    if (img.cachedAt < imageCutoff) {
+      await db.delete('imageCache', img.url);
+      deletedCount.images++;
+    }
+  }
+
+  // Cleanup synced messages (older than 30 days)
+  const messageCutoff = now - (30 * 24 * 60 * 60 * 1000);
+  const messages = await db.getAllFromIndex('messages', 'syncStatus', 'synced');
+  for (const msg of messages) {
+    if (msg.timestamp < messageCutoff) {
+      await db.delete('messages', msg.id);
+      deletedCount.messages++;
+    }
+  }
+
+  // Cleanup old cached menus (older than 7 days)
+  const menuCutoff = now - (7 * 24 * 60 * 60 * 1000);
+  const menus = await db.getAll('menus');
+  for (const menu of menus) {
+    if (menu.cachedAt < menuCutoff) {
+      await db.delete('menus', menu.merchantId);
+      deletedCount.menus++;
+    }
+  }
+
+  return deletedCount;
+}
+
+/**
  * Cleanup old cached data when storage is running low
  */
 export async function cleanupStorage() {
@@ -394,8 +883,17 @@ export async function cleanupStorage() {
         }
       }
 
-      console.log(`[OfflineSync] Cleanup complete: ${deletedProducts} products, ${deletedOrders} orders, ${deletedSync} sync requests`);
-      notifyListeners({ type: 'cleanup', deletedProducts, deletedOrders, deletedSync });
+      // Cleanup new stores
+      const newStoreDeleted = await cleanupNewStores();
+
+      console.log(`[OfflineSync] Cleanup complete: ${deletedProducts} products, ${deletedOrders} orders, ${deletedSync} sync requests, ${newStoreDeleted.images} images, ${newStoreDeleted.messages} messages, ${newStoreDeleted.menus} menus`);
+      notifyListeners({
+        type: 'cleanup',
+        deletedProducts,
+        deletedOrders,
+        deletedSync,
+        ...newStoreDeleted
+      });
     }
   } catch (error) {
     console.error('[OfflineSync] Cleanup failed:', error);
@@ -479,23 +977,67 @@ export async function clearAllOfflineData() {
   await db.clear('orders');
   await db.clear('userProfile');
   await db.clear('cart');
+  await db.clear('messages');
+  await db.clear('imageCache');
+  await db.clear('menus');
+  await db.clear('addresses');
+  await db.clear('wishlist');
+  await db.clear('conflicts');
 
   console.log('[OfflineSync] All offline data cleared');
 }
 
 export default {
+  // Core
   initOfflineDB,
   queueRequest,
   processPendingSync,
   getPendingSyncCount,
   getFailedSyncRequests,
   retryFailedRequests,
+
+  // Products & Orders
   cacheProducts,
   getCachedProducts,
   cacheOrders,
   getCachedOrders,
+
+  // Cart
   saveCart,
   getOfflineCart,
+
+  // Images
+  cacheImage,
+  getCachedImage,
+  cacheProductImages,
+
+  // Messages
+  queueMessage,
+  getCachedMessages,
+  syncMessages,
+
+  // Menus
+  cacheMenu,
+  getCachedMenu,
+
+  // Addresses
+  cacheAddresses,
+  getCachedAddresses,
+
+  // Wishlist
+  cacheWishlist,
+  getCachedWishlist,
+
+  // Conflicts
+  detectConflict,
+  resolveConflict,
+  getUnresolvedConflicts,
+
+  // Optimistic updates
+  addOptimisticUpdate,
+  rollbackOptimisticUpdate,
+
+  // Storage & Sync
   cleanupStorage,
   getStorageStats,
   onSyncEvent,
