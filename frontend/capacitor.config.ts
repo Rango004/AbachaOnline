@@ -5,14 +5,13 @@ const config: CapacitorConfig = {
   appName: 'AbachaOnline',
   webDir: 'dist',
 
-  // Server configuration for live reload during development
+  // Server configuration
+  // Note: No server.url means app loads from local bundled assets (offline-first)
+  // API calls will still go to the Railway backend via fetch()
   server: {
-    // Use your Railway backend URL in production
-    url: 'https://abachaonline.up.railway.app',
-    cleartext: true,
-    // For local development, uncomment below:
-    // url: 'http://localhost:8080',
-    // androidScheme: 'http'
+    androidScheme: 'https',
+    // For live reload during development, uncomment:
+    // url: 'http://192.168.x.x:8080',
   },
 
   // Android-specific configuration

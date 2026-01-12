@@ -18,7 +18,13 @@
       "Bash(node scripts/debug-address-join.js:*)",
       "Bash(node scripts/check-fallback-locations.js:*)",
       "Bash(node scripts/add-coordinates-to-orders.js:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npx cap:*)",
+      "Bash(cmd /c:*)",
+      "Bash(.gradlew.bat:*)",
+      "Bash(powershell -Command \"cd ''c:\\\\Users\\\\lamso\\\\OneDrive\\\\Desktop\\\\MSc thesis\\\\Project\\\\AbachaOL\\\\frontend\\\\android''; .\\\\gradlew.bat assembleDebug\")",
+      "Bash(powershell:*)",
+      "Bash(curl:*)"
     ]
   }
 }

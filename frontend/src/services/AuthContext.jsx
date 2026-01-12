@@ -2,11 +2,18 @@ import { createContext } from 'preact';
 import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
 import { route } from 'preact-router';
 import api from './api';
+import { Capacitor } from '@capacitor/core';
+import PushNotificationService from './PushNotificationService';
 
 export const AuthContext = createContext();
 
-// Inactivity timeout in milliseconds (10 minutes)
-const INACTIVITY_TIMEOUT = 10 * 60 * 1000;
+// Detect if running on mobile platform
+const isMobilePlatform = Capacitor.isNativePlatform();
+
+// Inactivity timeout in milliseconds
+// Mobile: 7 days (more convenient for users)
+// Web: 10 minutes (more secure)
+const INACTIVITY_TIMEOUT = isMobilePlatform ? 7 * 24 * 60 * 60 * 1000 : 10 * 60 * 1000;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -127,6 +134,16 @@ export function AuthProvider({ children }) {
     if (storedToken) {
       setToken(storedToken);
     }
+
+    // Initialize push notifications for mobile platforms
+    if (isMobilePlatform) {
+      try {
+        await PushNotificationService.initialize();
+      } catch (error) {
+        console.error('[Auth] Failed to initialize push notifications:', error);
+      }
+    }
+
     return data;
   };
 
@@ -134,7 +151,16 @@ export function AuthProvider({ children }) {
     return await api.register(phone, name, role);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Clean up push notifications for mobile platforms
+    if (isMobilePlatform) {
+      try {
+        await PushNotificationService.cleanup();
+      } catch (error) {
+        console.error('[Auth] Failed to cleanup push notifications:', error);
+      }
+    }
+
     api.setToken(null);
     setUser(null);
     setToken(null);

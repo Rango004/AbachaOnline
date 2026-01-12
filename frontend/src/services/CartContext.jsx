@@ -37,6 +37,20 @@ export function CartProvider({ children }) {
   }, [cart, user]);
 
   const addToCart = (product, quantity = 1) => {
+    // Require user to be logged in before adding to cart
+    if (!user) {
+      // Show alert and redirect to login
+      if (confirm('Please login to add items to cart. Would you like to login now?')) {
+        // Use Capacitor's router or preact-router to navigate
+        if (typeof window !== 'undefined' && window.route) {
+          window.route('/login');
+        } else {
+          window.location.href = '/login';
+        }
+      }
+      return;
+    }
+
     // Normalize product ID - handle both 'id' and 'product_id' fields
     const productId = product.id || product.product_id;
 

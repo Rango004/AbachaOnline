@@ -148,3 +148,5 @@ backend/osrm-data/
 # package-lock.json
 # yarn.lock
 *.osm
+#firebase.json
+firebase-admin-key.json
