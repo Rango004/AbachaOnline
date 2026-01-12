@@ -3,6 +3,7 @@ const rateLimit = require('express-rate-limit');
 /**
  * Rate Limiter for Authentication Endpoints
  * Prevents brute force attacks on login, registration, and OTP verification
+ * Note: express-rate-limit v8.x requires proper IPv6 handling
  */
 
 // Strict rate limiter for OTP verification (prevents brute force)
@@ -16,9 +17,9 @@ const otpVerificationLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Use phone number as key instead of IP for better security
-  keyGenerator: (req, res) => {
-    return req.body.phone || req.ip; // Use phone number if available, fallback to IP
+  // Use phone number as key (no IP fallback to avoid IPv6 issues)
+  keyGenerator: (req) => {
+    return req.body.phone || `anonymous-${Date.now()}`; // Use phone number, no IP fallback
   },
   skipSuccessfulRequests: true, // Don't count successful verifications
   skipFailedRequests: false
@@ -35,8 +36,8 @@ const pinLoginLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req, res) => {
-    return req.body.phone || req.ip; // Use phone number if available, fallback to IP
+  keyGenerator: (req) => {
+    return req.body.phone || `anonymous-${Date.now()}`; // Use phone number, no IP fallback
   },
   skipSuccessfulRequests: true,
   skipFailedRequests: false
@@ -66,8 +67,8 @@ const otpRequestLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req, res) => {
-    return req.body.phone || req.ip; // Use phone number if available, fallback to IP
+  keyGenerator: (req) => {
+    return req.body.phone || `anonymous-${Date.now()}`; // Use phone number, no IP fallback
   }
 });
 
