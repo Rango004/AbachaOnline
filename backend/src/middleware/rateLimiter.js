@@ -17,8 +17,8 @@ const otpVerificationLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   // Use phone number as key instead of IP for better security
-  keyGenerator: (req) => {
-    return req.body.phone || req.ip;
+  keyGenerator: (req, res) => {
+    return req.body.phone || req.ip; // Use phone number if available, fallback to IP
   },
   skipSuccessfulRequests: true, // Don't count successful verifications
   skipFailedRequests: false
@@ -35,8 +35,8 @@ const pinLoginLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.body.phone || req.ip;
+  keyGenerator: (req, res) => {
+    return req.body.phone || req.ip; // Use phone number if available, fallback to IP
   },
   skipSuccessfulRequests: true,
   skipFailedRequests: false
@@ -66,8 +66,8 @@ const otpRequestLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.body.phone || req.ip;
+  keyGenerator: (req, res) => {
+    return req.body.phone || req.ip; // Use phone number if available, fallback to IP
   }
 });
 
