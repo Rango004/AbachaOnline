@@ -2,6 +2,8 @@ import { h, createContext } from 'preact';
 import { useState, useEffect, useContext, useCallback } from 'preact/hooks';
 import { WebSocketContext } from './WebSocketContext';
 import api from './api';
+import OfflineSync from './OfflineSyncService';
+import { getNetworkStatus } from './NativeBridge';
 
 export const ChatContext = createContext(null);
 
@@ -162,25 +164,62 @@ export function ChatProvider({ children }) {
   // =====================================================
 
   /**
-   * Load messages for a conversation
+   * Load messages for a conversation (with offline cache support)
    */
   const loadMessages = useCallback(async (conversationId, limit = 50, offset = 0) => {
     try {
       setLoading(true);
       setError(null);
 
+      const { connected } = await getNetworkStatus();
+
+      if (!connected) {
+        // Load from cache when offline
+        console.log('[Chat] Offline - loading cached messages');
+        const cachedMessages = await OfflineSync.getCachedMessages(conversationId);
+
+        if (cachedMessages && cachedMessages.length > 0) {
+          setMessages(prev => ({
+            ...prev,
+            [conversationId]: cachedMessages
+          }));
+        }
+
+        return;
+      }
+
+      // Load from server when online
       const response = await api.get(
         `/chat/conversations/${conversationId}/messages?limit=${limit}&offset=${offset}`
       );
 
       if (response.data.success) {
+        const serverMessages = response.data.messages;
+
+        // Cache messages for offline access
+        // Note: Individual messages are cached by queueMessage, this caches the full conversation
         setMessages(prev => ({
           ...prev,
-          [conversationId]: response.data.messages
+          [conversationId]: serverMessages
         }));
       }
     } catch (err) {
       console.error('[Chat] Error loading messages:', err);
+
+      // Try loading from cache on error
+      try {
+        const cachedMessages = await OfflineSync.getCachedMessages(conversationId);
+        if (cachedMessages && cachedMessages.length > 0) {
+          console.log('[Chat] Loading from cache after error');
+          setMessages(prev => ({
+            ...prev,
+            [conversationId]: cachedMessages
+          }));
+        }
+      } catch (cacheErr) {
+        console.error('[Chat] Failed to load from cache:', cacheErr);
+      }
+
       setError(err.response?.data?.message || 'Failed to load messages');
     } finally {
       setLoading(false);
@@ -188,32 +227,99 @@ export function ChatProvider({ children }) {
   }, []);
 
   /**
-   * Send a message in a conversation
+   * Send a message in a conversation (with offline support)
    */
   const sendMessage = useCallback(async (conversationId, messageText, messageType = 'text', metadata = {}) => {
     if (!messageText || messageText.trim().length === 0) {
       return;
     }
 
+    // Check network status
+    const { connected } = await getNetworkStatus();
+
+    // Generate client-side UUID for deduplication
+    const clientUuid = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    const messageData = {
+      message_text: messageText.trim(),
+      message_type: messageType,
+      metadata,
+      clientUuid,
+      timestamp: Date.now(),
+      status: connected ? 'sending' : 'queued'
+    };
+
+    // Optimistic update - add to UI immediately
+    const tempMessage = {
+      id: clientUuid, // Temporary ID
+      conversation_id: conversationId,
+      message_text: messageText.trim(),
+      message_type: messageType,
+      metadata,
+      clientUuid,
+      created_at: new Date().toISOString(),
+      status: messageData.status,
+      sender_id: 'current_user' // Will be updated with real sender_id from server
+    };
+
+    setMessages(prev => {
+      const existing = prev[conversationId] || [];
+      return {
+        ...prev,
+        [conversationId]: [...existing, tempMessage]
+      };
+    });
+
+    if (!connected) {
+      // Queue for sync when back online
+      console.log('[Chat] Offline - queuing message');
+      await OfflineSync.queueMessage(conversationId, messageData);
+
+      // Update conversation's last message
+      setConversations(prev => prev.map(conv => {
+        if (conv.id === conversationId) {
+          return {
+            ...conv,
+            last_message: {
+              message_text: tempMessage.message_text,
+              message_type: tempMessage.message_type,
+              created_at: tempMessage.created_at,
+              sender_id: tempMessage.sender_id
+            },
+            last_message_at: tempMessage.created_at
+          };
+        }
+        return conv;
+      }));
+
+      return { ...tempMessage, queued: true };
+    }
+
+    // Send immediately if online
     try {
       const response = await api.post(
         `/chat/conversations/${conversationId}/messages`,
         {
           messageText: messageText.trim(),
           messageType,
-          metadata
+          metadata,
+          clientUuid // Send UUID to prevent duplicates
         }
       );
 
       if (response.data.success) {
         const message = response.data.message;
 
-        // Add message to local state immediately (optimistic update)
+        // Update message with server ID and status
         setMessages(prev => {
           const existing = prev[conversationId] || [];
           return {
             ...prev,
-            [conversationId]: [...existing, message]
+            [conversationId]: existing.map(msg =>
+              msg.clientUuid === clientUuid
+                ? { ...message, status: 'sent' }
+                : msg
+            )
           };
         });
 
@@ -238,6 +344,41 @@ export function ChatProvider({ children }) {
       }
     } catch (err) {
       console.error('[Chat] Error sending message:', err);
+
+      // If network error, queue the message
+      if (err.message.includes('Network') || err.message.includes('Failed to fetch')) {
+        console.log('[Chat] Network error - queuing message');
+        await OfflineSync.queueMessage(conversationId, messageData);
+
+        // Update message status to 'queued'
+        setMessages(prev => {
+          const existing = prev[conversationId] || [];
+          return {
+            ...prev,
+            [conversationId]: existing.map(msg =>
+              msg.clientUuid === clientUuid
+                ? { ...msg, status: 'queued' }
+                : msg
+            )
+          };
+        });
+
+        return { ...tempMessage, queued: true };
+      }
+
+      // Mark message as failed
+      setMessages(prev => {
+        const existing = prev[conversationId] || [];
+        return {
+          ...prev,
+          [conversationId]: existing.map(msg =>
+            msg.clientUuid === clientUuid
+              ? { ...msg, status: 'failed' }
+              : msg
+          )
+        };
+      });
+
       setError(err.response?.data?.message || 'Failed to send message');
       throw err;
     }
@@ -322,6 +463,122 @@ export function ChatProvider({ children }) {
     }
   }, []);
 
+  /**
+   * Retry a failed message
+   */
+  const retryMessage = useCallback(async (conversationId, clientUuid) => {
+    try {
+      // Find the failed message
+      const conversationMessages = messages[conversationId] || [];
+      const failedMessage = conversationMessages.find(msg => msg.clientUuid === clientUuid);
+
+      if (!failedMessage) {
+        console.error('[Chat] Failed message not found:', clientUuid);
+        return;
+      }
+
+      // Update status to 'sending'
+      setMessages(prev => {
+        const existing = prev[conversationId] || [];
+        return {
+          ...prev,
+          [conversationId]: existing.map(msg =>
+            msg.clientUuid === clientUuid
+              ? { ...msg, status: 'sending' }
+              : msg
+          )
+        };
+      });
+
+      // Try sending again
+      const response = await api.post(
+        `/chat/conversations/${conversationId}/messages`,
+        {
+          messageText: failedMessage.message_text,
+          messageType: failedMessage.message_type,
+          metadata: failedMessage.metadata || {},
+          clientUuid
+        }
+      );
+
+      if (response.data.success) {
+        const message = response.data.message;
+
+        // Update with server response
+        setMessages(prev => {
+          const existing = prev[conversationId] || [];
+          return {
+            ...prev,
+            [conversationId]: existing.map(msg =>
+              msg.clientUuid === clientUuid
+                ? { ...message, status: 'sent' }
+                : msg
+            )
+          };
+        });
+
+        return message;
+      }
+    } catch (err) {
+      console.error('[Chat] Error retrying message:', err);
+
+      // Mark as failed again
+      setMessages(prev => {
+        const existing = prev[conversationId] || [];
+        return {
+          ...prev,
+          [conversationId]: existing.map(msg =>
+            msg.clientUuid === clientUuid
+              ? { ...msg, status: 'failed' }
+              : msg
+          )
+        };
+      });
+
+      throw err;
+    }
+  }, [messages]);
+
+  /**
+   * Sync pending messages when back online
+   */
+  const syncPendingMessages = useCallback(async () => {
+    try {
+      console.log('[Chat] Syncing pending messages...');
+      const result = await OfflineSync.syncMessages();
+
+      if (result.success && result.synced > 0) {
+        console.log(`[Chat] Synced ${result.synced} messages`);
+
+        // Reload all conversations to get fresh data
+        await loadConversations();
+
+        // Reload active conversation messages
+        if (activeConversation) {
+          await loadMessages(activeConversation.id);
+        }
+      }
+
+      return result;
+    } catch (err) {
+      console.error('[Chat] Error syncing messages:', err);
+      throw err;
+    }
+  }, [loadConversations, activeConversation, loadMessages]);
+
+  /**
+   * Get pending message count
+   */
+  const getPendingMessageCount = useCallback(async () => {
+    try {
+      const pendingMessages = await OfflineSync.getCachedMessages();
+      return pendingMessages.filter(msg => msg.syncStatus === 'pending').length;
+    } catch (err) {
+      console.error('[Chat] Error getting pending count:', err);
+      return 0;
+    }
+  }, []);
+
   // =====================================================
   // CHAT PANEL CONTROL - For integration with chatbot
   // =====================================================
@@ -399,6 +656,30 @@ export function ChatProvider({ children }) {
     }
   }, [activeConversation, messages, loadMessages]);
 
+  // Auto-sync pending messages when coming back online
+  useEffect(() => {
+    let networkStatusUnsubscribe;
+
+    const setupNetworkListener = async () => {
+      networkStatusUnsubscribe = await OfflineSync.onSyncEvent((event) => {
+        if (event.type === 'networkChange' && event.connected) {
+          console.log('[Chat] Back online - syncing pending messages');
+          syncPendingMessages().catch(err => {
+            console.error('[Chat] Auto-sync failed:', err);
+          });
+        }
+      });
+    };
+
+    setupNetworkListener();
+
+    return () => {
+      if (networkStatusUnsubscribe) {
+        networkStatusUnsubscribe();
+      }
+    };
+  }, [syncPendingMessages]);
+
   // =====================================================
   // CONTEXT VALUE
   // =====================================================
@@ -425,6 +706,11 @@ export function ChatProvider({ children }) {
     markAsRead,
     deleteMessage,
     sendTypingIndicator,
+
+    // Offline support methods
+    retryMessage,
+    syncPendingMessages,
+    getPendingMessageCount,
 
     // Unread count
     loadUnreadCount,

@@ -107,6 +107,21 @@ export default defineConfig({
             }
           },
           {
+            // Cache Cloudinary images (product photos)
+            urlPattern: /^https:\/\/res\.cloudinary\.com/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'cloudinary-images',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
             // Cache map tiles
             urlPattern: /^https:\/\/.*tile.*|.*openstreetmap.*/,
             handler: 'CacheFirst',
