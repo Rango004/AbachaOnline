@@ -2,11 +2,15 @@ import { useState, useContext, useEffect } from 'preact/hooks';
 import { route } from 'preact-router';
 import { CartContext } from '../services/CartContext';
 import { AddressContext } from '../services/AddressContext';
+import { AuthContext } from '../services/AuthContext';
 import api from '../services/api';
+import OfflineSync from '../services/OfflineSyncService';
+import { getNetworkStatus } from '../services/NativeBridge';
 
 export default function Checkout() {
   const { cart, getTotal, clearCart } = useContext(CartContext);
   const { addresses, defaultAddress, locations, loadAddresses } = useContext(AddressContext);
+  const { user } = useContext(AuthContext);
 
   const [addressMode, setAddressMode] = useState('saved'); // 'saved' or 'new'
   const [selectedAddressId, setSelectedAddressId] = useState(null);
@@ -18,13 +22,32 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState('orange_money');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
     loadAddresses();
     if (defaultAddress?.id) {
       setSelectedAddressId(defaultAddress.id);
     }
+
+    // Check network status
+    checkNetworkStatus();
   }, [defaultAddress]);
+
+  const checkNetworkStatus = async () => {
+    try {
+      const { connected } = await getNetworkStatus();
+      setIsOffline(!connected);
+
+      // Force Cash on Delivery when offline
+      if (!connected) {
+        setPaymentMethod('cash');
+        console.log('[Checkout] Offline mode - payment restricted to Cash on Delivery');
+      }
+    } catch (err) {
+      console.error('[Checkout] Failed to check network status:', err);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,6 +55,9 @@ export default function Checkout() {
     setError('');
 
     try {
+      // Check network status before proceeding
+      const { connected } = await getNetworkStatus();
+
       let finalDeliveryAddress = '';
       let finalNotes = notes;
 
@@ -49,8 +75,8 @@ export default function Checkout() {
         }
         finalDeliveryAddress = deliveryAddress;
 
-        // Save new address if checkbox is checked
-        if (saveNewAddress) {
+        // Save new address if checkbox is checked (only when online)
+        if (saveNewAddress && connected) {
           try {
             await api.createAddress({
               address_label: addressLabel || 'Checkout Address',
@@ -74,16 +100,48 @@ export default function Checkout() {
         throw new Error('Please select or enter a delivery address');
       }
 
-      // Create order
+      // Prepare order data
       const orderData = {
         items: cart.map(item => ({
           product_id: item.id,
           quantity: item.quantity
         })),
         delivery_address: finalDeliveryAddress,
-        notes: finalNotes
+        notes: finalNotes,
+        payment_method: paymentMethod
       };
 
+      // OFFLINE MODE - Queue order for later sync
+      if (!connected) {
+        // Generate client-side order ID
+        const offlineOrderId = `offline_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+        console.log('[Checkout] Offline mode - queueing order:', offlineOrderId);
+
+        // Queue the order creation request
+        await OfflineSync.queueRequest('POST', '/api/orders', orderData, {
+          priority: 1, // High priority for orders
+          metadata: {
+            orderId: offlineOrderId,
+            userId: user?.id,
+            timestamp: new Date().toISOString(),
+            totalAmount: getTotal(),
+            itemCount: cart.length
+          }
+        });
+
+        // Clear cart immediately
+        await clearCart();
+
+        // Show offline success message
+        alert(`Order queued for submission!\n\nYour order will be placed automatically when you're back online.\n\nOrder ID: ${offlineOrderId}\nTotal: Le ${getTotal().toFixed(2)}\nPayment: Cash on Delivery`);
+
+        // Navigate to orders page with queued parameter
+        route('/orders?queued=true');
+        return;
+      }
+
+      // ONLINE MODE - Normal order flow
       const orderResponse = await api.createOrder(orderData);
       const orderId = orderResponse.order.id;
 
@@ -99,7 +157,8 @@ export default function Checkout() {
       // Redirect to orders page
       route('/orders');
     } catch (err) {
-      setError(err.message);
+      console.error('[Checkout] Order placement failed:', err);
+      setError(err.message || 'Failed to place order');
     } finally {
       setLoading(false);
     }
@@ -236,6 +295,12 @@ export default function Checkout() {
           <div class="checkout-section">
             <h3>Payment Method</h3>
 
+            {isOffline && (
+              <p class="message warning" style="margin-bottom: 1rem;">
+                You're offline. Only Cash on Delivery is available. Your order will be queued and placed when you're back online.
+              </p>
+            )}
+
             <div class="payment-options">
               <label class="radio-label">
                 <input
@@ -244,8 +309,9 @@ export default function Checkout() {
                   value="orange_money"
                   checked={paymentMethod === 'orange_money'}
                   onChange={(e) => setPaymentMethod(e.target.value)}
+                  disabled={isOffline}
                 />
-                <span>Orange Money</span>
+                <span>Orange Money {isOffline && '(Unavailable offline)'}</span>
               </label>
 
               <label class="radio-label">
@@ -255,8 +321,9 @@ export default function Checkout() {
                   value="token_credits"
                   checked={paymentMethod === 'token_credits'}
                   onChange={(e) => setPaymentMethod(e.target.value)}
+                  disabled={isOffline}
                 />
-                <span>Token Credits</span>
+                <span>Token Credits {isOffline && '(Unavailable offline)'}</span>
               </label>
 
               <label class="radio-label">
@@ -267,13 +334,15 @@ export default function Checkout() {
                   checked={paymentMethod === 'cash'}
                   onChange={(e) => setPaymentMethod(e.target.value)}
                 />
-                <span>Cash on Delivery</span>
+                <span>Cash on Delivery {isOffline && '(Only option offline)'}</span>
               </label>
             </div>
 
-            <p class="payment-info">
-              Payment will fall back to next method if selected method fails.
-            </p>
+            {!isOffline && (
+              <p class="payment-info">
+                Payment will fall back to next method if selected method fails.
+              </p>
+            )}
           </div>
 
           <div class="checkout-section">
@@ -296,7 +365,7 @@ export default function Checkout() {
           {error && <p class="message error">{error}</p>}
 
           <button type="submit" class="btn-primary" disabled={loading}>
-            {loading ? 'Processing...' : 'Place Order'}
+            {loading ? 'Processing...' : isOffline ? 'Queue Order (Offline)' : 'Place Order'}
           </button>
         </form>
       </div>
