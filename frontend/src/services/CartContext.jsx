@@ -1,40 +1,63 @@
 import { createContext } from 'preact';
-import { useState, useEffect, useContext } from 'preact/hooks';
+import { useState, useEffect, useContext, useCallback } from 'preact/hooks';
 import { AuthContext } from './AuthContext';
+import OfflineSync from './OfflineSyncService';
+import { getNetworkStatus } from './NativeBridge';
 
 export const CartContext = createContext();
 
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
+  const [loading, setLoading] = useState(false);
   const { user } = useContext(AuthContext);
 
-  // Get user-specific cart key
-  const getCartKey = () => {
-    return user ? `cart_${user.id}` : 'cart_guest';
-  };
-
-  // Load cart from localStorage when user changes
+  // Load cart from IndexedDB when user changes
   useEffect(() => {
     if (user) {
-      const cartKey = getCartKey();
-      const savedCart = localStorage.getItem(cartKey);
-      if (savedCart) {
-        setCart(JSON.parse(savedCart));
-      } else {
-        setCart([]); // Clear cart if no saved cart for this user
-      }
+      loadCart();
     } else {
       setCart([]); // Clear cart when logged out
     }
   }, [user]);
 
-  // Save cart to localStorage whenever it changes
+  // Load cart from IndexedDB
+  const loadCart = useCallback(async () => {
+    try {
+      setLoading(true);
+      await OfflineSync.initOfflineDB();
+      const cachedCart = await OfflineSync.getOfflineCart();
+
+      if (cachedCart && cachedCart.length > 0) {
+        // Filter cart items for current user
+        const userCart = cachedCart.filter(item => item.userId === user?.id || !item.userId);
+        setCart(userCart);
+        console.log(`[CartContext] Loaded ${userCart.length} items from cache`);
+      } else {
+        setCart([]);
+      }
+    } catch (err) {
+      console.error('[CartContext] Failed to load cart:', err);
+      setCart([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Save cart to IndexedDB whenever it changes
   useEffect(() => {
-    if (user) {
-      const cartKey = getCartKey();
-      localStorage.setItem(cartKey, JSON.stringify(cart));
+    if (user && cart.length >= 0) {
+      saveCart();
     }
   }, [cart, user]);
+
+  const saveCart = async () => {
+    try {
+      await OfflineSync.initOfflineDB();
+      await OfflineSync.saveCart(cart);
+    } catch (err) {
+      console.error('[CartContext] Failed to save cart:', err);
+    }
+  };
 
   const addToCart = (product, quantity = 1) => {
     // Require user to be logged in before adding to cart
@@ -70,8 +93,14 @@ export function CartProvider({ children }) {
         );
       }
 
-      // Normalize the product object to always have 'id' field
-      const normalizedProduct = { ...product, id: productId, quantity };
+      // Normalize the product object to always have 'id' field and add userId
+      const normalizedProduct = {
+        ...product,
+        id: productId,
+        productId: productId, // For IndexedDB key
+        quantity,
+        userId: user?.id
+      };
       return [...prevCart, normalizedProduct];
     });
   };
@@ -93,12 +122,20 @@ export function CartProvider({ children }) {
     );
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
     setCart([]);
-    // Also clear from localStorage
-    if (user) {
-      const cartKey = getCartKey();
-      localStorage.removeItem(cartKey);
+    // Clear from IndexedDB
+    try {
+      await OfflineSync.initOfflineDB();
+      const allCart = await OfflineSync.getOfflineCart();
+      // Delete only this user's cart items
+      for (const item of allCart) {
+        if (item.userId === user?.id || !item.userId) {
+          await OfflineSync.db.delete('cart', item.productId);
+        }
+      }
+    } catch (err) {
+      console.error('[CartContext] Failed to clear cart:', err);
     }
   };
 
@@ -116,6 +153,7 @@ export function CartProvider({ children }) {
     <CartContext.Provider
       value={{
         cart,
+        loading,
         addToCart,
         removeFromCart,
         updateQuantity,

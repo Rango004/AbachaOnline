@@ -7,6 +7,8 @@ import { AuthContext } from '../services/AuthContext';
 import api from '../services/api';
 import { getOptimizedImageUrl } from '../services/imageService';
 import ImageCarousel from '../components/ImageCarousel';
+import OfflineSync from '../services/OfflineSyncService';
+import { getNetworkStatus } from '../services/NativeBridge';
 
 export default function Products() {
   const { addToCart } = useContext(CartContext);
@@ -75,12 +77,49 @@ export default function Products() {
 
     try {
       setLoading(true);
+      const { connected } = await getNetworkStatus();
+
+      if (!connected) {
+        // Search locally in cached products
+        console.log('[Products] Offline - searching cached products');
+        const cachedProducts = await OfflineSync.getCachedProducts();
+
+        const searchLower = query.toLowerCase();
+        const results = cachedProducts.filter(p =>
+          p.name?.toLowerCase().includes(searchLower) ||
+          p.description?.toLowerCase().includes(searchLower) ||
+          p.category?.toLowerCase().includes(searchLower)
+        );
+
+        setAllProducts(results);
+        setBrowsing(true);
+        console.log(`[Products] Found ${results.length} offline search results`);
+        return;
+      }
+
+      // Online search
       const data = await api.searchProducts(query);
       setAllProducts(data.products || []);
       setBrowsing(true);
     } catch (err) {
       console.error('Search error:', err);
-      setError('Search failed');
+
+      // Try offline search as fallback
+      try {
+        const cachedProducts = await OfflineSync.getCachedProducts();
+        const searchLower = query.toLowerCase();
+        const results = cachedProducts.filter(p =>
+          p.name?.toLowerCase().includes(searchLower) ||
+          p.description?.toLowerCase().includes(searchLower) ||
+          p.category?.toLowerCase().includes(searchLower)
+        );
+
+        setAllProducts(results);
+        setBrowsing(true);
+        setError(`Offline search: found ${results.length} results`);
+      } catch (cacheErr) {
+        setError('Search failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -91,6 +130,31 @@ export default function Products() {
       setLoading(true);
       setError(null);
 
+      const { connected } = await getNetworkStatus();
+
+      // If offline, load from cache
+      if (!connected) {
+        console.log('[Products] Offline - loading from cache');
+        const cachedProducts = await OfflineSync.getCachedProducts();
+
+        if (cachedProducts && cachedProducts.length > 0) {
+          setAllProducts(cachedProducts);
+
+          // Extract unique categories from cached products
+          const uniqueCategories = [...new Set(cachedProducts.map(p => p.category).filter(Boolean))];
+          setCategories(uniqueCategories);
+
+          console.log(`[Products] Loaded ${cachedProducts.length} products from cache`);
+          setError('Browsing in offline mode');
+        } else {
+          setError('No cached products available offline');
+        }
+
+        setLoading(false);
+        return;
+      }
+
+      // Online - load from server
       // Load recommendations only for customers/students
       if (!user || user.role === 'student' || user.role === 'customer') {
         try {
@@ -107,6 +171,9 @@ export default function Products() {
       const productsData = await api.getProducts({ limit: 999999 });
       const products = productsData.products || [];
       setAllProducts(products);
+
+      // Cache products for offline access
+      await OfflineSync.cacheProducts(products);
 
       // Preload optimized image URLs for all product images
       const urls = {};
@@ -135,6 +202,20 @@ export default function Products() {
     } catch (err) {
       console.error('Error loading data:', err);
       setError('Failed to load products');
+
+      // Try cache as fallback
+      try {
+        const cachedProducts = await OfflineSync.getCachedProducts();
+        if (cachedProducts && cachedProducts.length > 0) {
+          setAllProducts(cachedProducts);
+          const uniqueCategories = [...new Set(cachedProducts.map(p => p.category).filter(Boolean))];
+          setCategories(uniqueCategories);
+          console.log('[Products] Using cached products after error');
+          setError('Using cached data - unable to connect to server');
+        }
+      } catch (cacheErr) {
+        console.error('[Products] Cache fallback failed:', cacheErr);
+      }
     } finally {
       setLoading(false);
     }
