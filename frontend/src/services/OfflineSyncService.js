@@ -989,6 +989,7 @@ export async function clearAllOfflineData() {
 
 export default {
   // Core
+  get db() { return db; }, // Export db as getter for live reference
   initOfflineDB,
   queueRequest,
   processPendingSync,
