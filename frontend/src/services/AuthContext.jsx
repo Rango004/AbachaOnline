@@ -11,9 +11,10 @@ export const AuthContext = createContext();
 const isMobilePlatform = Capacitor.isNativePlatform();
 
 // Inactivity timeout in milliseconds
-// Mobile: 7 days (more convenient for users)
-// Web: 10 minutes (more secure)
-const INACTIVITY_TIMEOUT = isMobilePlatform ? 7 * 24 * 60 * 60 * 1000 : 10 * 60 * 1000;
+// Mobile: DISABLED (users expect to stay logged in like other mobile apps)
+// Web: 30 minutes (reasonable for web security)
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // Only applies to web
+const ENABLE_INACTIVITY_TIMEOUT = !isMobilePlatform; // Disabled on mobile
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -41,6 +42,9 @@ export function AuthProvider({ children }) {
 
   // Function to reset the inactivity timer
   const resetInactivityTimer = useCallback(() => {
+    // Skip inactivity timeout on mobile platforms
+    if (!ENABLE_INACTIVITY_TIMEOUT) return;
+
     // Only run if user is logged in
     if (!localStorage.getItem('token')) return;
 
@@ -57,6 +61,12 @@ export function AuthProvider({ children }) {
 
   // Set up activity listeners when user is logged in
   useEffect(() => {
+    // Skip inactivity timeout on mobile platforms - users stay logged in
+    if (!ENABLE_INACTIVITY_TIMEOUT) {
+      console.log('[Auth] Inactivity timeout disabled on mobile - user will stay logged in');
+      return;
+    }
+
     if (!token) {
       // Clear timer when logged out
       if (inactivityTimerRef.current) {
@@ -94,6 +104,8 @@ export function AuthProvider({ children }) {
 
     // Start the initial timer
     resetInactivityTimer();
+
+    console.log(`[Auth] Inactivity timeout enabled: ${INACTIVITY_TIMEOUT / 60 / 1000} minutes`);
 
     // Cleanup
     return () => {
