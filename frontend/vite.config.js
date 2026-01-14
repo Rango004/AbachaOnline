@@ -89,38 +89,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
-          {
-            // Cache API responses with network-first strategy
-            urlPattern: /^https:\/\/abachaonline\.up\.railway\.app\/api/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              networkTimeoutSeconds: 10,
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 300 // 5 minutes
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            // Cache Cloudinary images (product photos)
-            urlPattern: /^https:\/\/res\.cloudinary\.com/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'cloudinary-images',
-              expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
+          // Note: We intentionally don't cache API or Cloudinary requests here
+          // They're handled by our IndexedDB cache (OfflineSync) to avoid ServiceWorker errors
           {
             // Cache map tiles
             urlPattern: /^https:\/\/.*tile.*|.*openstreetmap.*/,
