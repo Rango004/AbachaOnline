@@ -4,6 +4,7 @@ import { AuthContext } from '../services/AuthContext';
 import { WebSocketContext } from '../services/WebSocketContext';
 import { ChatContext } from '../services/ChatContext';
 import api from '../services/api';
+import { getNetworkStatus } from '../services/NativeBridge';
 
 export default function ChatbotWidget() {
   const { user } = useContext(AuthContext);
@@ -17,6 +18,7 @@ export default function ChatbotWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isConnectingToHuman, setIsConnectingToHuman] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
 
   const messagesEndRef = useRef(null);
 
@@ -121,6 +123,23 @@ export default function ChatbotWidget() {
   const initializeSession = async () => {
     try {
       setIsLoading(true);
+
+      // Check network status
+      const { connected } = await getNetworkStatus();
+      setIsOffline(!connected);
+
+      if (!connected) {
+        // Offline mode - show offline message
+        setMessages([{
+          sender: 'bot',
+          text: '📵 You\'re currently offline.\n\nThe AI chatbot requires an internet connection to function. Please connect to the internet and try again.',
+          timestamp: new Date(),
+          intent: 'offline'
+        }]);
+        setIsLoading(false);
+        return;
+      }
+
       const response = await api.post('/chatbot/sessions');
 
       if (response.data.success) {
@@ -160,11 +179,24 @@ export default function ChatbotWidget() {
       }
     } catch (error) {
       console.error('[Chatbot] Error initializing session:', error);
-      setMessages([{
-        sender: 'bot',
-        text: 'Sorry, I\'m having trouble connecting. Please try again later.',
-        timestamp: new Date()
-      }]);
+
+      // Check if it's a network error
+      const { connected } = await getNetworkStatus();
+      if (!connected) {
+        setIsOffline(true);
+        setMessages([{
+          sender: 'bot',
+          text: '📵 You\'re currently offline.\n\nThe AI chatbot requires an internet connection. Please connect to the internet and try again.',
+          timestamp: new Date(),
+          intent: 'offline'
+        }]);
+      } else {
+        setMessages([{
+          sender: 'bot',
+          text: 'Sorry, I\'m having trouble connecting. Please try again later.',
+          timestamp: new Date()
+        }]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -173,7 +205,7 @@ export default function ChatbotWidget() {
   const sendMessage = async (e) => {
     e.preventDefault();
 
-    if (!inputText.trim() || isSending || !sessionId) {
+    if (!inputText.trim() || isSending || !sessionId || isOffline) {
       return;
     }
 
@@ -189,6 +221,20 @@ export default function ChatbotWidget() {
     }]);
 
     try {
+      // Check network status before sending
+      const { connected } = await getNetworkStatus();
+      if (!connected) {
+        setIsOffline(true);
+        setMessages(prev => [...prev, {
+          sender: 'bot',
+          text: '📵 You\'re offline. Please reconnect to the internet to chat with me.',
+          timestamp: new Date(),
+          intent: 'offline'
+        }]);
+        setIsSending(false);
+        return;
+      }
+
       const response = await api.post(`/chatbot/sessions/${sessionId}/messages`, {
         messageText: userMessage
       });
@@ -198,11 +244,24 @@ export default function ChatbotWidget() {
 
     } catch (error) {
       console.error('[Chatbot] Error sending message:', error);
-      setMessages(prev => [...prev, {
-        sender: 'bot',
-        text: 'Sorry, I encountered an error. Please try again.',
-        timestamp: new Date()
-      }]);
+
+      // Check if it's a network error
+      const { connected } = await getNetworkStatus();
+      if (!connected) {
+        setIsOffline(true);
+        setMessages(prev => [...prev, {
+          sender: 'bot',
+          text: '📵 You\'re offline. Please reconnect to the internet to continue chatting.',
+          timestamp: new Date(),
+          intent: 'offline'
+        }]);
+      } else {
+        setMessages(prev => [...prev, {
+          sender: 'bot',
+          text: 'Sorry, I encountered an error. Please try again.',
+          timestamp: new Date()
+        }]);
+      }
     } finally {
       setIsSending(false);
     }
@@ -384,35 +443,35 @@ export default function ChatbotWidget() {
           </div>
 
           {/* Quick Actions */}
-          {messages.length <= 1 && (
+          {messages.length <= 1 && !isOffline && (
             <div style={styles.quickActions}>
               <p style={styles.quickActionsTitle}>Quick Actions:</p>
               <div style={styles.quickButtonsContainer}>
                 <button
                   onClick={() => handleQuickAction('Check my order status')}
                   style={styles.quickButton}
-                  disabled={isSending}
+                  disabled={isSending || isOffline}
                 >
                   📦 Check Order
                 </button>
                 <button
                   onClick={() => handleQuickAction('Search for products')}
                   style={styles.quickButton}
-                  disabled={isSending}
+                  disabled={isSending || isOffline}
                 >
                   🔍 Find Products
                 </button>
                 <button
                   onClick={() => handleQuickAction('How long is delivery?')}
                   style={styles.quickButton}
-                  disabled={isSending}
+                  disabled={isSending || isOffline}
                 >
                   🚚 Delivery Time
                 </button>
                 <button
                   onClick={() => handleQuickAction('Talk to a human')}
                   style={styles.quickButton}
-                  disabled={isSending}
+                  disabled={isSending || isOffline}
                 >
                   💬 Human Support
                 </button>
@@ -472,17 +531,17 @@ export default function ChatbotWidget() {
               type="text"
               value={inputText}
               onInput={(e) => setInputText(e.target.value)}
-              placeholder="Type your message..."
+              placeholder={isOffline ? "Offline - Connect to internet..." : "Type your message..."}
               style={styles.input}
-              disabled={isSending || isLoading || !sessionId}
+              disabled={isSending || isLoading || !sessionId || isOffline}
               maxLength={500}
             />
             <button
               type="submit"
-              disabled={!inputText.trim() || isSending || isLoading || !sessionId}
+              disabled={!inputText.trim() || isSending || isLoading || !sessionId || isOffline}
               style={{
                 ...styles.sendButton,
-                ...((!inputText.trim() || isSending || isLoading || !sessionId) && styles.sendButtonDisabled)
+                ...((!inputText.trim() || isSending || isLoading || !sessionId || isOffline) && styles.sendButtonDisabled)
               }}
             >
               {isSending ? '...' : '➤'}

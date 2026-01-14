@@ -125,6 +125,29 @@ export default function Products() {
     }
   };
 
+  // Helper function to load image URLs for products
+  const loadImageUrls = async (products) => {
+    const urls = {};
+    const imagePromises = [];
+
+    products.forEach((p) => {
+      if (p.all_images && Array.isArray(p.all_images)) {
+        p.all_images.forEach((img) => {
+          if (img && img.publicId && !urls[img.publicId]) {
+            imagePromises.push(
+              getOptimizedImageUrl(img.publicId)
+                .then(u => { urls[img.publicId] = u; })
+                .catch(() => {}) // ignore per-image failures
+            );
+          }
+        });
+      }
+    });
+
+    await Promise.all(imagePromises);
+    setImageUrls(urls);
+  };
+
   const loadInitialData = async () => {
     try {
       setLoading(true);
@@ -139,6 +162,9 @@ export default function Products() {
 
         if (cachedProducts && cachedProducts.length > 0) {
           setAllProducts(cachedProducts);
+
+          // Load image URLs for cached products
+          await loadImageUrls(cachedProducts);
 
           // Extract unique categories from cached products
           const uniqueCategories = [...new Set(cachedProducts.map(p => p.category).filter(Boolean))];
@@ -175,26 +201,8 @@ export default function Products() {
       // Cache products for offline access
       await OfflineSync.cacheProducts(products);
 
-      // Preload optimized image URLs for all product images
-      const urls = {};
-      const imagePromises = [];
-
-      products.forEach((p) => {
-        if (p.all_images && Array.isArray(p.all_images)) {
-          p.all_images.forEach((img) => {
-            if (img && img.publicId && !urls[img.publicId]) {
-              imagePromises.push(
-                getOptimizedImageUrl(img.publicId)
-                  .then(u => { urls[img.publicId] = u; })
-                  .catch(() => {}) // ignore per-image failures
-              );
-            }
-          });
-        }
-      });
-
-      await Promise.all(imagePromises);
-      setImageUrls(urls);
+      // Load image URLs for products
+      await loadImageUrls(products);
 
       // Extract unique categories
       const uniqueCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
@@ -208,6 +216,10 @@ export default function Products() {
         const cachedProducts = await OfflineSync.getCachedProducts();
         if (cachedProducts && cachedProducts.length > 0) {
           setAllProducts(cachedProducts);
+
+          // Load image URLs for cached products
+          await loadImageUrls(cachedProducts);
+
           const uniqueCategories = [...new Set(cachedProducts.map(p => p.category).filter(Boolean))];
           setCategories(uniqueCategories);
           console.log('[Products] Using cached products after error');
@@ -286,6 +298,17 @@ export default function Products() {
       return;
     }
 
+    // Check network status
+    try {
+      const { connected } = await getNetworkStatus();
+      if (!connected) {
+        alert('You\'re offline. Chat requires an internet connection. Please connect and try again.');
+        return;
+      }
+    } catch (err) {
+      console.error('[Products] Failed to check network status:', err);
+    }
+
     try {
       // Opens conversation and chat panel directly
       await openChatWithMerchant(
@@ -295,7 +318,18 @@ export default function Products() {
       // Chat panel opens automatically - no alert needed
     } catch (error) {
       console.error('Error starting conversation:', error);
-      alert('Failed to start conversation. Please try again.');
+
+      // Check if it's a network error
+      try {
+        const { connected } = await getNetworkStatus();
+        if (!connected) {
+          alert('You\'re offline. Chat requires an internet connection.');
+        } else {
+          alert('Failed to start conversation. Please try again.');
+        }
+      } catch (err) {
+        alert('Failed to start conversation. Please try again.');
+      }
     }
   };
 
