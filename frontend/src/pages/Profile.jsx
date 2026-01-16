@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'preact/hooks';
 import { AuthContext } from '../services/AuthContext';
 import { AddressContext } from '../services/AddressContext';
 import ChangePassword from '../components/ChangePassword';
+import StorageManager from '../components/StorageManager';
 import api from '../services/api';
 import OfflineSync from '../services/OfflineSyncService';
 import { getNetworkStatus } from '../services/NativeBridge';
@@ -34,6 +35,7 @@ export default function Profile() {
     is_default: false
   });
   const [addressError, setAddressError] = useState(null);
+  const [showStorageManager, setShowStorageManager] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -572,6 +574,12 @@ export default function Profile() {
               <p>Get help with your orders and account</p>
               <button class="btn-link" onClick={() => openChatSupport()}>Contact Support →</button>
             </div>
+
+            <div class="settings-card">
+              <h3>💾 Offline Storage</h3>
+              <p>Manage cached data and storage space</p>
+              <button class="btn-link" onClick={() => setShowStorageManager(true)}>Manage Storage →</button>
+            </div>
           </div>
 
           <div class="profile-card security-settings">
@@ -723,6 +731,11 @@ export default function Profile() {
               setTimeout(() => setSuccess(null), 3000);
             }}
           />
+        )}
+
+        {/* Storage Manager Modal */}
+        {showStorageManager && (
+          <StorageManager onClose={() => setShowStorageManager(false)} />
         )}
       </div>
     </div>
