@@ -1,15 +1,39 @@
-import { useContext } from 'preact/hooks';
+import { useContext, useState, useEffect } from 'preact/hooks';
 import { route } from 'preact-router';
 import { CartContext } from '../services/CartContext';
+import { getNetworkStatus } from '../services/NativeBridge';
 
 export default function Cart() {
   const { cart, updateQuantity, removeFromCart, getTotal } = useContext(CartContext);
+  const [isOffline, setIsOffline] = useState(false);
 
-  const handleCheckout = () => {
+  useEffect(() => {
+    checkNetworkStatus();
+    window.addEventListener('online', checkNetworkStatus);
+    window.addEventListener('offline', checkNetworkStatus);
+    return () => {
+      window.removeEventListener('online', checkNetworkStatus);
+      window.removeEventListener('offline', checkNetworkStatus);
+    };
+  }, []);
+
+  const checkNetworkStatus = async () => {
+    const { connected } = await getNetworkStatus();
+    setIsOffline(!connected);
+  };
+
+  const handleCheckout = async () => {
     if (cart.length === 0) {
       alert('Your cart is empty!');
       return;
     }
+
+    const { connected } = await getNetworkStatus();
+    if (!connected) {
+      alert('You are offline. Please connect to the internet to complete your order.');
+      return;
+    }
+
     route('/checkout');
   };
 
@@ -30,6 +54,25 @@ export default function Cart() {
   return (
     <div class="page cart-page">
       <div class="container">
+        {/* Offline Mode Banner */}
+        {isOffline && (
+          <div style={{
+            backgroundColor: '#fff3e0',
+            border: '1px solid #ff9800',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{ fontSize: '18px' }}>📡</span>
+            <span style={{ color: '#e65100', fontWeight: '500' }}>
+              Offline mode - Cart saved locally. Connect to internet to checkout.
+            </span>
+          </div>
+        )}
+
         <h2>Shopping Cart ({cart.length} items)</h2>
 
         <div class="cart-items">

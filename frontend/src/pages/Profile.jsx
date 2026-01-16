@@ -3,6 +3,8 @@ import { AuthContext } from '../services/AuthContext';
 import { AddressContext } from '../services/AddressContext';
 import ChangePassword from '../components/ChangePassword';
 import api from '../services/api';
+import OfflineSync from '../services/OfflineSyncService';
+import { getNetworkStatus } from '../services/NativeBridge';
 import './Profile.css';
 
 export default function Profile() {
@@ -17,6 +19,8 @@ export default function Profile() {
   });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [offlineMessage, setOfflineMessage] = useState(null);
+  const [isOffline, setIsOffline] = useState(false);
 
   // Address management states
   const [showAddressModal, setShowAddressModal] = useState(false);
@@ -36,20 +40,111 @@ export default function Profile() {
     loadLocations();
     // Debug: Check if locations are loaded
     console.log('Profile loaded, locations:', locations);
+
+    // Listen for network changes
+    const handleOnline = () => {
+      setIsOffline(false);
+      setOfflineMessage(null);
+      loadProfile(); // Refresh when back online
+    };
+    const handleOffline = () => {
+      setIsOffline(true);
+      setOfflineMessage('You are offline - some features are limited');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   const loadProfile = async () => {
     try {
       setLoading(true);
+      setOfflineMessage(null);
+      const { connected } = await getNetworkStatus();
+
+      if (!connected) {
+        // Load from cache when offline
+        console.log('[Profile] Offline - loading from cache');
+        setIsOffline(true);
+
+        const cachedProfile = await OfflineSync.getCachedUserProfile(user?.id);
+        const cachedAddresses = await OfflineSync.getCachedAddresses(user?.id);
+
+        if (cachedProfile) {
+          setFormData({
+            name: cachedProfile.name || '',
+            phone: cachedProfile.phone || '',
+            email: cachedProfile.email || ''
+          });
+          setOfflineMessage('Viewing cached profile - offline mode');
+          console.log('[Profile] Loaded profile from cache');
+        } else if (user) {
+          // Use user from AuthContext as fallback
+          setFormData({
+            name: user.name || '',
+            phone: user.phone || '',
+            email: user.email || ''
+          });
+          setOfflineMessage('Viewing profile - offline mode');
+        } else {
+          setOfflineMessage('No cached profile available offline');
+        }
+
+        setLoading(false);
+        return;
+      }
+
+      // Online - fetch from server
+      setIsOffline(false);
       const data = await api.getProfile();
       setFormData({
         name: data.name || '',
         phone: data.phone || '',
         email: data.email || ''
       });
+
+      // Cache profile for offline access
+      if (data && data.id) {
+        await OfflineSync.cacheUserProfile(data);
+      }
+
+      // Cache addresses if available
+      if (addresses && addresses.length > 0) {
+        await OfflineSync.cacheAddresses(addresses);
+      }
     } catch (err) {
       console.error('Error loading profile:', err);
-      setError('Failed to load profile');
+
+      // Try cache as fallback
+      try {
+        const cachedProfile = await OfflineSync.getCachedUserProfile(user?.id);
+        if (cachedProfile) {
+          setFormData({
+            name: cachedProfile.name || '',
+            phone: cachedProfile.phone || '',
+            email: cachedProfile.email || ''
+          });
+          setOfflineMessage('Using cached profile - connection failed');
+          console.log('[Profile] Using cached profile after error');
+        } else if (user) {
+          setFormData({
+            name: user.name || '',
+            phone: user.phone || '',
+            email: user.email || ''
+          });
+          setOfflineMessage('Using local profile data - connection failed');
+        } else {
+          setError('Failed to load profile');
+        }
+      } catch (cacheErr) {
+        console.error('[Profile] Cache fallback failed:', cacheErr);
+        setError('Failed to load profile');
+      }
     } finally {
       setLoading(false);
     }
@@ -68,6 +163,13 @@ export default function Profile() {
     setError(null);
     setSuccess(null);
 
+    // Check network status
+    const { connected } = await getNetworkStatus();
+    if (!connected) {
+      setError('Cannot update profile while offline. Please connect to the internet.');
+      return;
+    }
+
     try {
       setLoading(true);
       await api.request('/auth/profile', {
@@ -76,6 +178,9 @@ export default function Profile() {
       });
       setSuccess('Profile updated successfully!');
       setEditing(false);
+
+      // Update cache with new profile data
+      await OfflineSync.cacheUserProfile({ ...user, ...formData });
     } catch (err) {
       setError(err.message || 'Failed to update profile');
     } finally {
@@ -142,6 +247,14 @@ export default function Profile() {
   const handleSaveAddress = async (e) => {
     e.preventDefault();
     setAddressError(null);
+
+    // Check network status
+    const { connected } = await getNetworkStatus();
+    if (!connected) {
+      setAddressError('Cannot save address while offline. Please connect to the internet.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -155,6 +268,11 @@ export default function Profile() {
       } else {
         await createAddress(addressFormData);
         setSuccess('Address added successfully!');
+      }
+
+      // Update address cache
+      if (addresses && addresses.length > 0) {
+        await OfflineSync.cacheAddresses(addresses);
       }
 
       closeAddressModal();
@@ -226,6 +344,23 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Offline Mode Banner */}
+        {offlineMessage && (
+          <div style={{
+            backgroundColor: '#fff3e0',
+            border: '1px solid #ff9800',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{ fontSize: '18px' }}>📡</span>
+            <span style={{ color: '#e65100', fontWeight: '500' }}>{offlineMessage}</span>
+          </div>
+        )}
+
         {error && <div class="alert alert-error">{error}</div>}
         {success && <div class="alert alert-success">{success}</div>}
 
@@ -234,7 +369,12 @@ export default function Profile() {
             <div class="card-header">
               <h2>Personal Information</h2>
               {!editing && (
-                <button class="btn-secondary btn-sm" onClick={() => setEditing(true)}>
+                <button
+                  class="btn-secondary btn-sm"
+                  onClick={() => setEditing(true)}
+                  disabled={isOffline}
+                  title={isOffline ? 'Cannot edit while offline' : 'Edit profile'}
+                >
                   ✎ Edit
                 </button>
               )}
@@ -330,7 +470,8 @@ export default function Profile() {
               <button
                 class="btn-secondary btn-sm"
                 onClick={() => openAddressModal()}
-                disabled={loading}
+                disabled={loading || isOffline}
+                title={isOffline ? 'Cannot add address while offline' : 'Add new address'}
               >
                 + Add Address
               </button>
@@ -443,7 +584,12 @@ export default function Profile() {
                   <h4>Change PIN</h4>
                   <p>Update your 6-digit login PIN</p>
                 </div>
-                <button class="btn-secondary btn-sm" onClick={() => setShowPasswordModal(true)}>
+                <button
+                  class="btn-secondary btn-sm"
+                  onClick={() => setShowPasswordModal(true)}
+                  disabled={isOffline}
+                  title={isOffline ? 'Cannot change PIN while offline' : 'Change PIN'}
+                >
                   Change PIN
                 </button>
               </div>

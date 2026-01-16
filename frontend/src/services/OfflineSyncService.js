@@ -618,6 +618,93 @@ export async function getCachedAddresses(userId) {
 }
 
 /**
+ * Cache user profile for offline access
+ */
+export async function cacheUserProfile(profile) {
+  try {
+    await initOfflineDB();
+
+    if (!profile || !profile.id) {
+      console.log('[OfflineSync] No profile to cache or missing id');
+      return;
+    }
+
+    await db.put('userProfile', {
+      ...profile,
+      cachedAt: Date.now()
+    });
+
+    console.log(`[OfflineSync] Cached user profile for user ${profile.id}`);
+  } catch (error) {
+    console.error('[OfflineSync] Failed to cache user profile:', error.message);
+  }
+}
+
+/**
+ * Get cached user profile
+ */
+export async function getCachedUserProfile(userId) {
+  try {
+    await initOfflineDB();
+
+    if (userId) {
+      return db.get('userProfile', userId);
+    }
+
+    // If no userId provided, get the first (and likely only) cached profile
+    const profiles = await db.getAll('userProfile');
+    return profiles.length > 0 ? profiles[0] : null;
+  } catch (error) {
+    console.error('[OfflineSync] Failed to get cached profile:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Cache dashboard stats for offline access (merchant, rider, etc.)
+ */
+export async function cacheDashboardStats(role, stats) {
+  try {
+    await initOfflineDB();
+
+    // Store in userProfile store with a special key pattern
+    const statsKey = `dashboard_${role}`;
+    await db.put('userProfile', {
+      id: statsKey,
+      role,
+      stats,
+      cachedAt: Date.now()
+    });
+
+    console.log(`[OfflineSync] Cached ${role} dashboard stats`);
+  } catch (error) {
+    console.error('[OfflineSync] Failed to cache dashboard stats:', error.message);
+  }
+}
+
+/**
+ * Get cached dashboard stats
+ */
+export async function getCachedDashboardStats(role) {
+  try {
+    await initOfflineDB();
+
+    const statsKey = `dashboard_${role}`;
+    const cached = await db.get('userProfile', statsKey);
+
+    if (cached && cached.stats) {
+      console.log(`[OfflineSync] Retrieved ${role} dashboard stats from cache`);
+      return cached.stats;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[OfflineSync] Failed to get cached dashboard stats:', error.message);
+    return null;
+  }
+}
+
+/**
  * Cache wishlist
  */
 export async function cacheWishlist(items) {
@@ -1057,6 +1144,14 @@ export default {
   // Addresses
   cacheAddresses,
   getCachedAddresses,
+
+  // User Profile
+  cacheUserProfile,
+  getCachedUserProfile,
+
+  // Dashboard Stats
+  cacheDashboardStats,
+  getCachedDashboardStats,
 
   // Wishlist
   cacheWishlist,

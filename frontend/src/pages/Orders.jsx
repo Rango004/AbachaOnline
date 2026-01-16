@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'preact/hooks';
 import api from '../services/api';
 import { useWebSocket } from '../services/WebSocketContext';
+import OfflineSync from '../services/OfflineSyncService';
+import { getNetworkStatus } from '../services/NativeBridge';
 
 export default function Orders() {
   const { isConnected, joinOrderRoom, leaveOrderRoom } = useWebSocket();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [joinedRooms, setJoinedRooms] = useState([]);
+  const [offlineMessage, setOfflineMessage] = useState(null);
 
   useEffect(() => {
     loadOrders();
@@ -63,10 +66,48 @@ export default function Orders() {
 
   const loadOrders = async () => {
     try {
+      setOfflineMessage(null);
+      const { connected } = await getNetworkStatus();
+
+      if (!connected) {
+        // Load from cache when offline
+        console.log('[Orders] Offline - loading from cache');
+        const cachedOrders = await OfflineSync.getCachedOrders();
+
+        if (cachedOrders && cachedOrders.length > 0) {
+          setOrders(cachedOrders);
+          setOfflineMessage('Viewing cached orders - offline mode');
+          console.log(`[Orders] Loaded ${cachedOrders.length} orders from cache`);
+        } else {
+          setOfflineMessage('No cached orders available offline');
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Online - fetch from server
       const data = await api.getOrders();
-      setOrders(data.orders || []);
+      const ordersList = data.orders || [];
+      setOrders(ordersList);
+
+      // Cache orders for offline access
+      if (ordersList.length > 0) {
+        await OfflineSync.cacheOrders(ordersList);
+      }
     } catch (err) {
       console.error('Error loading orders:', err);
+
+      // Try cache as fallback
+      try {
+        const cachedOrders = await OfflineSync.getCachedOrders();
+        if (cachedOrders && cachedOrders.length > 0) {
+          setOrders(cachedOrders);
+          setOfflineMessage('Using cached orders - connection failed');
+          console.log('[Orders] Using cached orders after error');
+        }
+      } catch (cacheErr) {
+        console.error('[Orders] Cache fallback failed:', cacheErr);
+      }
     } finally {
       setLoading(false);
     }
@@ -79,9 +120,26 @@ export default function Orders() {
   return (
     <div class="page orders-page">
       <div class="container">
+        {/* Offline Mode Banner */}
+        {offlineMessage && (
+          <div style={{
+            backgroundColor: '#fff3e0',
+            border: '1px solid #ff9800',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{ fontSize: '18px' }}>📡</span>
+            <span style={{ color: '#e65100', fontWeight: '500' }}>{offlineMessage}</span>
+          </div>
+        )}
+
         <h2>My Orders</h2>
 
-        {orders.length === 0 ? (
+        {orders.length === 0 && !offlineMessage ? (
           <div class="empty-state">
             <p>No orders yet</p>
             <a href="/products" class="btn-primary">Start Shopping</a>

@@ -2,6 +2,8 @@ import { useState, useEffect, useContext } from 'preact/hooks';
 import { route } from 'preact-router';
 import { AuthContext } from '../../services/AuthContext';
 import api from '../../services/api';
+import OfflineSync from '../../services/OfflineSyncService';
+import { getNetworkStatus } from '../../services/NativeBridge';
 
 export default function MerchantDashboard() {
   const { user } = useContext(AuthContext);
@@ -12,6 +14,8 @@ export default function MerchantDashboard() {
     totalOrders: 0
   });
   const [loading, setLoading] = useState(true);
+  const [offlineMessage, setOfflineMessage] = useState(null);
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
     if (user?.role !== 'merchant') {
@@ -19,11 +23,53 @@ export default function MerchantDashboard() {
       return;
     }
     loadStats();
+
+    // Listen for network changes
+    const handleOnline = () => {
+      setIsOffline(false);
+      setOfflineMessage(null);
+      loadStats(); // Refresh when back online
+    };
+    const handleOffline = () => {
+      setIsOffline(true);
+      setOfflineMessage('You are offline - some features are limited');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, [user]);
 
   const loadStats = async () => {
     try {
       setLoading(true);
+      setOfflineMessage(null);
+      const { connected } = await getNetworkStatus();
+
+      if (!connected) {
+        // Load from cache when offline
+        console.log('[MerchantDashboard] Offline - loading from cache');
+        setIsOffline(true);
+
+        const cachedStats = await OfflineSync.getCachedDashboardStats('merchant');
+        if (cachedStats) {
+          setStats(cachedStats);
+          setOfflineMessage('Viewing cached data - offline mode');
+          console.log('[MerchantDashboard] Loaded stats from cache');
+        } else {
+          setOfflineMessage('No cached data available offline');
+        }
+
+        setLoading(false);
+        return;
+      }
+
+      // Online - fetch from server
+      setIsOffline(false);
 
       // Load products
       const productsResponse = await api.getMerchantProducts();
@@ -37,14 +83,36 @@ export default function MerchantDashboard() {
         ['pending', 'confirmed', 'preparing'].includes(o.order_status)
       ).length;
 
-      setStats({
+      const newStats = {
         totalProducts: productsData.length,
         activeProducts: activeProducts,
         pendingOrders: pendingOrders,
         totalOrders: ordersData.length
-      });
+      };
+
+      setStats(newStats);
+
+      // Cache stats for offline access
+      await OfflineSync.cacheDashboardStats('merchant', newStats);
+
+      // Also cache orders for offline viewing
+      if (ordersData.length > 0) {
+        await OfflineSync.cacheOrders(ordersData);
+      }
     } catch (err) {
       console.error('Error loading stats:', err);
+
+      // Try cache as fallback
+      try {
+        const cachedStats = await OfflineSync.getCachedDashboardStats('merchant');
+        if (cachedStats) {
+          setStats(cachedStats);
+          setOfflineMessage('Using cached data - connection failed');
+          console.log('[MerchantDashboard] Using cached stats after error');
+        }
+      } catch (cacheErr) {
+        console.error('[MerchantDashboard] Cache fallback failed:', cacheErr);
+      }
     } finally {
       setLoading(false);
     }
@@ -72,6 +140,23 @@ export default function MerchantDashboard() {
   return (
     <div class="page merchant-dashboard">
       <div class="container">
+        {/* Offline Mode Banner */}
+        {offlineMessage && (
+          <div style={{
+            backgroundColor: '#fff3e0',
+            border: '1px solid #ff9800',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{ fontSize: '18px' }}>📡</span>
+            <span style={{ color: '#e65100', fontWeight: '500' }}>{offlineMessage}</span>
+          </div>
+        )}
+
         <h2>Merchant Dashboard</h2>
         <p class="welcome-text">Welcome back, {user?.name}!</p>
 

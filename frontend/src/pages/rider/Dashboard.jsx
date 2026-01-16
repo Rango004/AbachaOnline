@@ -6,6 +6,8 @@ import MapDisplay from '../../components/MapDisplay';
 import RouteItinerary from '../../components/RouteItinerary';
 import RouteProgress from '../../components/RouteProgress';
 import RouteLegend from '../../components/RouteLegend';
+import OfflineSync from '../../services/OfflineSyncService';
+import { getNetworkStatus } from '../../services/NativeBridge';
 
 export default function RiderDashboard() {
   const { user } = useContext(AuthContext);
@@ -26,6 +28,8 @@ export default function RiderDashboard() {
   const [showComparisonModal, setShowComparisonModal] = useState(false);
   const [selectedRouteChoice, setSelectedRouteChoice] = useState(null);
   const [activeRoute, setActiveRoute] = useState(null);
+  const [offlineMessage, setOfflineMessage] = useState(null);
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
     if (user?.role !== 'rider') {
@@ -34,12 +38,72 @@ export default function RiderDashboard() {
     }
     loadDashboard(true);
     const interval = setInterval(() => loadDashboard(false), 10000);
-    return () => clearInterval(interval);
+
+    // Listen for network changes
+    const handleOnline = () => {
+      setIsOffline(false);
+      setOfflineMessage(null);
+      loadDashboard(true); // Refresh when back online
+    };
+    const handleOffline = () => {
+      setIsOffline(true);
+      setOfflineMessage('You are offline - some features are limited');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, [user]);
 
   const loadDashboard = async (showLoading = false) => {
     try {
       if (showLoading) setLoading(true);
+      setOfflineMessage(null);
+      const { connected } = await getNetworkStatus();
+
+      if (!connected) {
+        // Load from cache when offline
+        console.log('[RiderDashboard] Offline - loading from cache');
+        setIsOffline(true);
+
+        const cachedStats = await OfflineSync.getCachedDashboardStats('rider');
+        const cachedOrders = await OfflineSync.getCachedOrders();
+
+        if (cachedStats) {
+          setStatistics(cachedStats.statistics || null);
+          setEarnings(cachedStats.earnings || null);
+          setOptimizedRoutes(cachedStats.optimizedRoutes || []);
+          setTodayMetrics(cachedStats.todayMetrics || null);
+          setAvailableOrders(cachedStats.availableOrders || []);
+          setActiveOrders(cachedStats.activeOrders || []);
+
+          const active_route = cachedStats.optimizedRoutes?.find(r =>
+            r.status === 'pending' || r.status === 'active'
+          );
+          setActiveRoute(active_route || null);
+
+          setOfflineMessage('Viewing cached data - offline mode');
+          console.log('[RiderDashboard] Loaded stats from cache');
+        } else if (cachedOrders && cachedOrders.length > 0) {
+          // Fallback: use cached orders if available
+          setActiveOrders(cachedOrders.filter(o => ['ready', 'in_delivery'].includes(o.order_status)));
+          setOfflineMessage('Limited data available offline');
+        } else {
+          setOfflineMessage('No cached data available offline');
+        }
+
+        if (showLoading) setLoading(false);
+        return;
+      }
+
+      // Online - fetch from server
+      setIsOffline(false);
+
       const [available, active, stats, earningsData, dashboard] = await Promise.all([
         api.getRiderAvailableOrders().catch(() => ({ orders: [] })),
         api.getRiderActiveOrders().catch(() => ({ orders: [] })),
@@ -64,8 +128,41 @@ export default function RiderDashboard() {
         );
         setActiveRoute(active_route || null);
       }
+
+      // Cache dashboard data for offline access
+      await OfflineSync.cacheDashboardStats('rider', {
+        statistics: stats?.statistics || null,
+        earnings: earningsData?.earnings || null,
+        optimizedRoutes: dashboard.data?.optimized_routes || [],
+        todayMetrics: dashboard.data?.today_metrics || null,
+        availableOrders: available.orders || [],
+        activeOrders: active.orders || []
+      });
+
+      // Also cache active orders for offline reference
+      const allOrders = [...(available.orders || []), ...(active.orders || [])];
+      if (allOrders.length > 0) {
+        await OfflineSync.cacheOrders(allOrders);
+      }
     } catch (err) {
       console.error('Error loading dashboard:', err);
+
+      // Try cache as fallback
+      try {
+        const cachedStats = await OfflineSync.getCachedDashboardStats('rider');
+        if (cachedStats) {
+          setStatistics(cachedStats.statistics || null);
+          setEarnings(cachedStats.earnings || null);
+          setOptimizedRoutes(cachedStats.optimizedRoutes || []);
+          setTodayMetrics(cachedStats.todayMetrics || null);
+          setAvailableOrders(cachedStats.availableOrders || []);
+          setActiveOrders(cachedStats.activeOrders || []);
+          setOfflineMessage('Using cached data - connection failed');
+          console.log('[RiderDashboard] Using cached stats after error');
+        }
+      } catch (cacheErr) {
+        console.error('[RiderDashboard] Cache fallback failed:', cacheErr);
+      }
     } finally {
       if (showLoading) setLoading(false);
     }
@@ -259,6 +356,23 @@ export default function RiderDashboard() {
   return (
     <div class="page rider-dashboard">
       <div class="container">
+        {/* Offline Mode Banner */}
+        {offlineMessage && (
+          <div style={{
+            backgroundColor: '#fff3e0',
+            border: '1px solid #ff9800',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{ fontSize: '18px' }}>📡</span>
+            <span style={{ color: '#e65100', fontWeight: '500' }}>{offlineMessage}</span>
+          </div>
+        )}
+
         <h2>🚚 Rider Dashboard</h2>
         
         <div class="tabs" role="tablist" aria-label="Dashboard sections">
@@ -373,9 +487,10 @@ export default function RiderDashboard() {
               <button
                 class="btn-prepare-batch"
                 onClick={handlePrepareNextBatch}
-                disabled={optimizingRoutes || !!activeRoute}
+                disabled={optimizingRoutes || !!activeRoute || isOffline}
+                title={isOffline ? 'Cannot prepare routes while offline' : ''}
               >
-                {optimizingRoutes ? '⏳ Preparing Routes...' : '📦 Prepare Next Batch'}
+                {optimizingRoutes ? '⏳ Preparing Routes...' : isOffline ? '📡 Offline' : '📦 Prepare Next Batch'}
               </button>
               <p class="batch-info">Click when you're ready for pickup. System will optimize your next batch of orders.</p>
             </div>
