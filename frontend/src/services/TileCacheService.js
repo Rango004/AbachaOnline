@@ -1,7 +1,31 @@
 /**
  * Tile Cache Service - Manages offline caching of map tiles using IndexedDB
  * Stores OpenStreetMap tiles for offline rendering
+ *
+ * Enhanced Features:
+ * - Intelligent preloading for user's delivery addresses
+ * - Route-based tile preloading for riders
+ * - Background preloading on WiFi only
+ * - Campus area preloading
  */
+
+import { getNetworkStatus } from './NativeBridge';
+
+// Njala University campus bounds (approximate)
+const NJALA_CAMPUS_BOUNDS = {
+  north: 8.12094,
+  south: 8.10478,
+  east: -12.06219,
+  west: -12.07981
+};
+
+// Default zoom levels for different use cases
+const ZOOM_LEVELS = {
+  overview: 14,
+  navigation: 16,
+  detail: 17,
+  max: 18
+};
 
 class TileCacheService {
   constructor(dbName = 'wego-tiles', storeName = 'tiles', maxSize = 50 * 1024 * 1024) {
@@ -11,6 +35,8 @@ class TileCacheService {
     this.maxSize = maxSize;
     this.db = null;
     this.currentSize = 0;
+    this.isPreloading = false;
+    this.preloadProgress = { current: 0, total: 0 };
   }
 
   /**
@@ -327,6 +353,323 @@ class TileCacheService {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
+
+  // ============================================
+  // ENHANCED PRELOADING METHODS
+  // ============================================
+
+  /**
+   * Preload tiles for user's saved delivery addresses
+   * @param {Array} addresses - Array of address objects with latitude/longitude
+   */
+  async preloadUserArea(addresses) {
+    if (!addresses || addresses.length === 0) {
+      console.log('[TileCache] No addresses to preload');
+      return { success: false, reason: 'no_addresses' };
+    }
+
+    // Check network - only preload on WiFi
+    try {
+      const { connected, connectionType } = await getNetworkStatus();
+      if (!connected) {
+        console.log('[TileCache] Skipping preload - offline');
+        return { success: false, reason: 'offline' };
+      }
+      if (connectionType !== 'wifi' && connectionType !== 'ethernet') {
+        console.log('[TileCache] Skipping preload - not on WiFi');
+        return { success: false, reason: 'not_wifi' };
+      }
+    } catch (err) {
+      console.warn('[TileCache] Network check failed, proceeding with preload');
+    }
+
+    // Calculate bounds that encompass all addresses
+    const bounds = this.calculateBoundsFromAddresses(addresses);
+    if (!bounds) {
+      console.log('[TileCache] Could not calculate bounds from addresses');
+      return { success: false, reason: 'invalid_bounds' };
+    }
+
+    console.log('[TileCache] Preloading tiles for user addresses area');
+    this.isPreloading = true;
+
+    try {
+      // Preload at multiple zoom levels for different use cases
+      for (const zoom of [ZOOM_LEVELS.overview, ZOOM_LEVELS.navigation, ZOOM_LEVELS.detail]) {
+        await this.cacheTilesForRegion(bounds, zoom);
+      }
+
+      return { success: true, bounds };
+    } finally {
+      this.isPreloading = false;
+    }
+  }
+
+  /**
+   * Calculate bounds from array of addresses with coordinates
+   * @private
+   */
+  calculateBoundsFromAddresses(addresses) {
+    const validAddresses = addresses.filter(
+      a => a.latitude && a.longitude &&
+           !isNaN(parseFloat(a.latitude)) &&
+           !isNaN(parseFloat(a.longitude))
+    );
+
+    if (validAddresses.length === 0) return null;
+
+    let north = -90, south = 90, east = -180, west = 180;
+
+    for (const addr of validAddresses) {
+      const lat = parseFloat(addr.latitude);
+      const lon = parseFloat(addr.longitude);
+
+      north = Math.max(north, lat);
+      south = Math.min(south, lat);
+      east = Math.max(east, lon);
+      west = Math.min(west, lon);
+    }
+
+    // Add padding around the bounds (approximately 500 meters)
+    const padding = 0.005;
+    return {
+      north: north + padding,
+      south: south - padding,
+      east: east + padding,
+      west: west - padding
+    };
+  }
+
+  /**
+   * Preload tiles along a delivery route
+   * @param {Object} route - Route object with coordinates array
+   */
+  async preloadDeliveryRoute(route) {
+    if (!route || !route.coordinates || route.coordinates.length < 2) {
+      console.log('[TileCache] Invalid route for preloading');
+      return { success: false, reason: 'invalid_route' };
+    }
+
+    // Check network
+    try {
+      const { connected } = await getNetworkStatus();
+      if (!connected) {
+        return { success: false, reason: 'offline' };
+      }
+    } catch (err) {
+      // Continue anyway
+    }
+
+    const bounds = this.calculateRouteBounds(route.coordinates);
+    if (!bounds) {
+      return { success: false, reason: 'invalid_bounds' };
+    }
+
+    console.log('[TileCache] Preloading tiles for delivery route');
+    this.isPreloading = true;
+
+    try {
+      // For routes, we primarily need navigation-level zoom
+      await this.cacheTilesForRegion(bounds, ZOOM_LEVELS.navigation);
+      return { success: true, bounds };
+    } finally {
+      this.isPreloading = false;
+    }
+  }
+
+  /**
+   * Calculate bounds from route coordinates
+   * @private
+   */
+  calculateRouteBounds(coordinates) {
+    if (!coordinates || coordinates.length === 0) return null;
+
+    let north = -90, south = 90, east = -180, west = 180;
+
+    for (const coord of coordinates) {
+      // Handle different coordinate formats: [lat, lon], [lon, lat], or {lat, lon}
+      let lat, lon;
+      if (Array.isArray(coord)) {
+        // Assume [lat, lon] format (Leaflet style)
+        lat = coord[0];
+        lon = coord[1];
+      } else if (coord.lat !== undefined && coord.lng !== undefined) {
+        lat = coord.lat;
+        lon = coord.lng;
+      } else if (coord.latitude !== undefined && coord.longitude !== undefined) {
+        lat = coord.latitude;
+        lon = coord.longitude;
+      } else {
+        continue;
+      }
+
+      if (isNaN(lat) || isNaN(lon)) continue;
+
+      north = Math.max(north, lat);
+      south = Math.min(south, lat);
+      east = Math.max(east, lon);
+      west = Math.min(west, lon);
+    }
+
+    // Add padding for route context
+    const padding = 0.002;
+    return {
+      north: north + padding,
+      south: south - padding,
+      east: east + padding,
+      west: west - padding
+    };
+  }
+
+  /**
+   * Background preload of the entire campus area
+   * Only runs on WiFi to conserve mobile data
+   * @param {Function} onProgress - Optional callback for progress updates
+   */
+  async backgroundPreloadCampus(onProgress = null) {
+    // Check network - only on WiFi
+    try {
+      const { connected, connectionType } = await getNetworkStatus();
+      if (!connected) {
+        console.log('[TileCache] Skipping campus preload - offline');
+        return { success: false, reason: 'offline' };
+      }
+      if (connectionType !== 'wifi' && connectionType !== 'ethernet') {
+        console.log('[TileCache] Skipping campus preload - not on WiFi (using ' + connectionType + ')');
+        return { success: false, reason: 'not_wifi' };
+      }
+    } catch (err) {
+      console.warn('[TileCache] Network check failed');
+      return { success: false, reason: 'network_error' };
+    }
+
+    // Check battery level if available
+    try {
+      if (navigator.getBattery) {
+        const battery = await navigator.getBattery();
+        if (battery.level < 0.2 && !battery.charging) {
+          console.log('[TileCache] Skipping campus preload - low battery');
+          return { success: false, reason: 'low_battery' };
+        }
+      }
+    } catch (err) {
+      // Battery API not available, continue anyway
+    }
+
+    console.log('[TileCache] Starting background campus preload...');
+    this.isPreloading = true;
+
+    try {
+      // Calculate total tiles for progress tracking
+      let totalTiles = 0;
+      const zoomLevels = [ZOOM_LEVELS.overview, 15, ZOOM_LEVELS.navigation];
+
+      for (const zoom of zoomLevels) {
+        const tiles = this.getTilesInBounds(NJALA_CAMPUS_BOUNDS, zoom);
+        totalTiles += tiles.length;
+      }
+
+      this.preloadProgress = { current: 0, total: totalTiles };
+
+      // Preload at multiple zoom levels
+      for (const zoom of zoomLevels) {
+        await this.cacheTilesForRegionWithProgress(NJALA_CAMPUS_BOUNDS, zoom, (current, total) => {
+          this.preloadProgress.current++;
+          if (onProgress) {
+            onProgress(this.preloadProgress.current, this.preloadProgress.total);
+          }
+        });
+      }
+
+      const stats = await this.getStats();
+      console.log(`[TileCache] Campus preload complete: ${stats.tileCount} tiles, ${stats.formattedSize}`);
+
+      return {
+        success: true,
+        tilesLoaded: totalTiles,
+        cacheSize: stats.formattedSize
+      };
+    } finally {
+      this.isPreloading = false;
+    }
+  }
+
+  /**
+   * Cache tiles with progress callback
+   * @private
+   */
+  async cacheTilesForRegionWithProgress(bounds, zoomLevel, onTileProgress, tileServerUrl = 'https://a.tile.openstreetmap.org') {
+    const tilesNeeded = this.getTilesInBounds(bounds, zoomLevel);
+    console.log(`[TileCache] Caching ${tilesNeeded.length} tiles for zoom ${zoomLevel}`);
+
+    let cached = 0;
+    for (const tile of tilesNeeded) {
+      const { x, y, z } = tile;
+      const tileUrl = `${tileServerUrl}/${z}/${x}/${y}.png`;
+
+      // Check if already cached
+      const existing = await this.getTile(tileUrl);
+      if (existing) {
+        cached++;
+        if (onTileProgress) onTileProgress(cached, tilesNeeded.length);
+        continue;
+      }
+
+      try {
+        const response = await fetch(tileUrl);
+        if (response.ok) {
+          const blob = await response.blob();
+          await this.cacheTile(tileUrl, blob, { x, y, z });
+        }
+      } catch (error) {
+        console.warn(`[TileCache] Error fetching tile ${x},${y},${z}:`, error);
+      }
+
+      cached++;
+      if (onTileProgress) onTileProgress(cached, tilesNeeded.length);
+
+      // Small delay to prevent server overload
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+  }
+
+  /**
+   * Get preload progress
+   */
+  getPreloadProgress() {
+    return {
+      isPreloading: this.isPreloading,
+      ...this.preloadProgress
+    };
+  }
+
+  /**
+   * Cancel ongoing preload (sets flag, actual cancellation is graceful)
+   */
+  cancelPreload() {
+    if (this.isPreloading) {
+      this.isPreloading = false;
+      console.log('[TileCache] Preload cancelled');
+    }
+  }
+
+  /**
+   * Check if a location is within the cached campus area
+   */
+  isLocationInCampus(lat, lon) {
+    return (
+      lat >= NJALA_CAMPUS_BOUNDS.south &&
+      lat <= NJALA_CAMPUS_BOUNDS.north &&
+      lon >= NJALA_CAMPUS_BOUNDS.west &&
+      lon <= NJALA_CAMPUS_BOUNDS.east
+    );
+  }
 }
 
-export default TileCacheService;
+// Export singleton instance for easy use
+const tileCacheService = new TileCacheService();
+
+export default tileCacheService;
+
+// Also export the class for testing or custom instances
+export { TileCacheService, NJALA_CAMPUS_BOUNDS, ZOOM_LEVELS };

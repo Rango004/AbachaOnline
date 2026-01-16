@@ -183,7 +183,43 @@ export default function RiderDashboard() {
       alert('Enter tracking number');
       return;
     }
+
     try {
+      // Check network status
+      const { connected } = await getNetworkStatus();
+
+      if (!connected) {
+        // OFFLINE MODE - Queue the pickup verification
+        console.log('[RiderDashboard] Offline - queuing pickup verification for order', orderId);
+
+        await OfflineSync.queueRequest(
+          `/api/orders/${orderId}/pickup`,
+          'POST',
+          { tracking_number: trackingNumber.trim() },
+          {
+            priority: 'high',
+            type: 'delivery_status',
+            metadata: {
+              orderId,
+              action: 'verify_pickup',
+              trackingNumber: trackingNumber.trim()
+            }
+          }
+        );
+
+        // Optimistic UI update - update local order status
+        setActiveOrders(prev => prev.map(order =>
+          order.id === orderId
+            ? { ...order, order_status: 'in_delivery', _pendingSync: true }
+            : order
+        ));
+
+        setInputs({ ...inputs, [`tracking_${orderId}`]: '' });
+        alert('Pickup verification queued! It will sync when you\'re back online.');
+        return;
+      }
+
+      // ONLINE MODE
       await api.verifyPickup(orderId, trackingNumber.trim());
       alert('Pickup verified! Order is in transit.');
       setInputs({ ...inputs, [`tracking_${orderId}`]: '' });
@@ -198,7 +234,43 @@ export default function RiderDashboard() {
       alert('Enter customer pickup code');
       return;
     }
+
     try {
+      // Check network status
+      const { connected } = await getNetworkStatus();
+
+      if (!connected) {
+        // OFFLINE MODE - Queue the delivery verification
+        console.log('[RiderDashboard] Offline - queuing delivery verification for order', orderId);
+
+        await OfflineSync.queueRequest(
+          `/api/orders/${orderId}/deliver`,
+          'POST',
+          { pickup_code: pickupCode.trim() },
+          {
+            priority: 'high',
+            type: 'delivery_status',
+            metadata: {
+              orderId,
+              action: 'verify_delivery',
+              pickupCode: pickupCode.trim()
+            }
+          }
+        );
+
+        // Optimistic UI update - update local order status
+        setActiveOrders(prev => prev.map(order =>
+          order.id === orderId
+            ? { ...order, order_status: 'delivered', _pendingSync: true }
+            : order
+        ));
+
+        setInputs({ ...inputs, [`pickup_${orderId}`]: '' });
+        alert('Delivery confirmation queued! It will sync when you\'re back online.\n\nNote: Customer will receive confirmation once synced.');
+        return;
+      }
+
+      // ONLINE MODE
       await api.verifyDelivery(orderId, pickupCode.trim());
       alert('Delivery confirmed!');
       setInputs({ ...inputs, [`pickup_${orderId}`]: '' });
@@ -305,6 +377,60 @@ export default function RiderDashboard() {
 
   const handleMarkDelivered = async (orderId, routeId) => {
     try {
+      // Check network status
+      const { connected } = await getNetworkStatus();
+
+      if (!connected) {
+        // OFFLINE MODE - Queue the mark delivered action
+        console.log('[RiderDashboard] Offline - queuing mark delivered for order', orderId);
+
+        await OfflineSync.queueRequest(
+          `/api/rider/routes/${routeId}/orders/${orderId}/mark-delivered`,
+          'POST',
+          {},
+          {
+            priority: 'high',
+            type: 'delivery_status',
+            metadata: {
+              orderId,
+              routeId,
+              action: 'mark_delivered'
+            }
+          }
+        );
+
+        // Optimistic UI update - update local route data
+        setOptimizedRoutes(prev => prev.map(route => {
+          if (route.id === routeId) {
+            return {
+              ...route,
+              completed_count: (route.completed_count || 0) + 1,
+              completion_percentage: ((route.completed_count || 0) + 1) / route.order_count * 100,
+              _pendingSync: true
+            };
+          }
+          return route;
+        }));
+
+        // Update selected route if it's the one being modified
+        if (selectedRoute && selectedRoute.id === routeId) {
+          setSelectedRoute(prev => ({
+            ...prev,
+            completed_count: (prev.completed_count || 0) + 1,
+            completion_percentage: ((prev.completed_count || 0) + 1) / prev.order_count * 100,
+            itinerary: prev.itinerary?.map(stop =>
+              stop.order_id === orderId
+                ? { ...stop, status: 'delivered', _pendingSync: true }
+                : stop
+            )
+          }));
+        }
+
+        alert('Delivery marked as completed (queued)!\n\nIt will sync when you\'re back online.');
+        return;
+      }
+
+      // ONLINE MODE
       const result = await api.request(`/rider/routes/${routeId}/orders/${orderId}/mark-delivered`, {
         method: 'POST'
       });
@@ -869,11 +995,27 @@ export default function RiderDashboard() {
                 <div key={order.id} class="order-card">
                   <div class="order-header">
                     <h3>Order #{order.id}</h3>
-                    <span class={`status ${order.order_status}`}>
-                      {order.order_status === 'ready' ? '📦 READY' : 
-                       order.order_status === 'in_delivery' ? '🚚 IN DELIVERY' : 
-                       order.order_status.toUpperCase()}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {/* Pending Sync Badge */}
+                      {order._pendingSync && (
+                        <span style={{
+                          backgroundColor: '#ff9800',
+                          color: 'white',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.75em',
+                          fontWeight: 'bold'
+                        }}>
+                          🔄 Syncing...
+                        </span>
+                      )}
+                      <span class={`status ${order.order_status}`}>
+                        {order.order_status === 'ready' ? '📦 READY' :
+                         order.order_status === 'in_delivery' ? '🚚 IN DELIVERY' :
+                         order.order_status === 'delivered' ? '✅ DELIVERED' :
+                         order.order_status.toUpperCase()}
+                      </span>
+                    </div>
                   </div>
                   <p><strong>Customer:</strong> {order.customer_name}</p>
                   <p><strong>Phone:</strong> {order.customer_phone}</p>

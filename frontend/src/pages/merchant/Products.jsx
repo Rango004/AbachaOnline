@@ -3,6 +3,8 @@ import { route } from 'preact-router';
 import { AuthContext } from '../../services/AuthContext';
 import api from '../../services/api';
 import ImageUpload from '../../components/ImageUpload';
+import OfflineSync from '../../services/OfflineSyncService';
+import { getNetworkStatus } from '../../services/NativeBridge';
 import './Products.css';
 
 export default function MerchantProducts() {
@@ -14,6 +16,8 @@ export default function MerchantProducts() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [bulkUploadResult, setBulkUploadResult] = useState(null);
   const [bulkUploading, setBulkUploading] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const [offlineProducts, setOfflineProducts] = useState([]); // Products queued offline
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -28,20 +32,99 @@ export default function MerchantProducts() {
       route('/products');
       return;
     }
-    loadProducts();
+    checkNetworkAndLoad();
   }, [user]);
 
-  const loadProducts = async () => {
+  const checkNetworkAndLoad = async () => {
+    try {
+      const { connected } = await getNetworkStatus();
+      setIsOffline(!connected);
+      await loadProducts(!connected);
+    } catch (err) {
+      console.error('[MerchantProducts] Network check failed:', err);
+      await loadProducts(false);
+    }
+  };
+
+  const loadProducts = async (offline = false) => {
     try {
       setLoading(true);
+
+      // Load offline queued products from IndexedDB
+      const queuedProducts = await loadOfflineQueuedProducts();
+      setOfflineProducts(queuedProducts);
+
+      if (offline) {
+        console.log('[MerchantProducts] Offline - loading from cache');
+        const cachedProducts = await OfflineSync.getCachedProducts(user?.id);
+
+        if (cachedProducts && cachedProducts.length > 0) {
+          // Combine cached + offline queued products
+          setProducts(cachedProducts);
+          console.log(`[MerchantProducts] Loaded ${cachedProducts.length} cached products`);
+        } else {
+          // Try loading all cached products (merchant's products might be there)
+          const allCached = await OfflineSync.getCachedProducts();
+          const merchantProducts = allCached.filter(p => p.merchant_id === user?.id);
+          setProducts(merchantProducts);
+          console.log(`[MerchantProducts] Loaded ${merchantProducts.length} merchant products from cache`);
+        }
+        return;
+      }
+
+      // Online - load from server
       const response = await api.getMerchantProducts();
       const data = response.products || response;
       setProducts(data);
+
+      // Cache merchant's products for offline access
+      if (data && data.length > 0) {
+        await OfflineSync.cacheProducts(data);
+        console.log(`[MerchantProducts] Cached ${data.length} products for offline`);
+      }
     } catch (err) {
       console.error('Error loading products:', err);
-      alert(err.message);
+
+      // Try loading from cache as fallback
+      try {
+        const cachedProducts = await OfflineSync.getCachedProducts(user?.id);
+        if (cachedProducts && cachedProducts.length > 0) {
+          setProducts(cachedProducts);
+          console.log('[MerchantProducts] Using cached products after error');
+        } else {
+          alert(err.message);
+        }
+      } catch (cacheErr) {
+        alert(err.message);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Load products that were created offline and are queued for sync
+  const loadOfflineQueuedProducts = async () => {
+    try {
+      await OfflineSync.initOfflineDB();
+      const db = OfflineSync.db;
+      if (!db) return [];
+
+      const allQueued = await db.getAll('syncQueue');
+      const productQueued = allQueued.filter(
+        q => q.status === 'pending' &&
+             q.type === 'product' &&
+             q.method === 'POST'
+      );
+
+      return productQueued.map(q => ({
+        ...q.data,
+        id: q.id, // Use queue ID as temporary ID
+        _isOffline: true,
+        _queueId: q.id
+      }));
+    } catch (err) {
+      console.error('[MerchantProducts] Failed to load offline queued products:', err);
+      return [];
     }
   };
 
@@ -52,7 +135,74 @@ export default function MerchantProducts() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
+      // Check network status
+      const { connected } = await getNetworkStatus();
+
+      if (!connected) {
+        // OFFLINE MODE - Queue product creation
+        console.log('[MerchantProducts] Offline - queuing product creation');
+
+        if (editingProduct && !editingProduct._isOffline) {
+          // Cannot edit existing online products while offline
+          alert('You cannot edit existing products while offline. Please connect to the internet and try again.');
+          return;
+        }
+
+        // Generate offline product ID
+        const offlineProductId = `offline_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+        const productData = {
+          ...formData,
+          merchant_id: user?.id,
+          offline_id: offlineProductId,
+          created_at: new Date().toISOString(),
+          is_active: true,
+          // Note: Images will need to be uploaded when back online
+          _pendingImageUpload: formData.images.length > 0
+        };
+
+        // Queue the product creation request
+        await OfflineSync.queueRequest(
+          '/api/products',
+          'POST',
+          productData,
+          {
+            priority: 'normal',
+            type: 'product',
+            metadata: {
+              offlineProductId,
+              merchantId: user?.id,
+              productName: formData.name
+            }
+          }
+        );
+
+        // Add to local offline products list for immediate UI feedback
+        setOfflineProducts(prev => [...prev, {
+          ...productData,
+          id: offlineProductId,
+          _isOffline: true
+        }]);
+
+        alert(`Product "${formData.name}" saved as draft!\n\nIt will be published automatically when you're back online.`);
+
+        setShowForm(false);
+        setEditingProduct(null);
+        setFormData({
+          name: '',
+          description: '',
+          price: '',
+          category: 'food',
+          stock_quantity: '',
+          images: []
+        });
+
+        return;
+      }
+
+      // ONLINE MODE - Normal product creation/update
       if (editingProduct) {
         await api.updateProduct(editingProduct.id, formData);
         alert('Product updated successfully!');
@@ -60,6 +210,7 @@ export default function MerchantProducts() {
         await api.createProduct(formData);
         alert('Product created successfully!');
       }
+
       setShowForm(false);
       setEditingProduct(null);
       setFormData({
@@ -70,8 +221,9 @@ export default function MerchantProducts() {
         stock_quantity: '',
         images: []
       });
-      loadProducts();
+      await checkNetworkAndLoad();
     } catch (err) {
+      console.error('[MerchantProducts] Submit error:', err);
       alert(err.message);
     }
   };
@@ -141,6 +293,12 @@ export default function MerchantProducts() {
     }
   };
 
+  // Combine online products with offline queued products for display
+  const allProductsToDisplay = [
+    ...offlineProducts, // Offline products first (draft status)
+    ...products.filter(p => !offlineProducts.some(op => op.offline_id === p.offline_id))
+  ];
+
   if (loading) {
     return <div class="page"><div class="loading">Loading products...</div></div>;
   }
@@ -148,12 +306,59 @@ export default function MerchantProducts() {
   return (
     <div class="page merchant-products">
       <div class="container">
+        {/* Offline Mode Banner */}
+        {isOffline && (
+          <div style={{
+            backgroundColor: '#fff3e0',
+            border: '1px solid #ff9800',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{ fontSize: '18px' }}>📡</span>
+            <div>
+              <strong style={{ color: '#e65100' }}>You're offline</strong>
+              <p style={{ margin: '4px 0 0 0', color: '#666', fontSize: '14px' }}>
+                You can still add new products. They'll be published when you're back online.
+                {offlineProducts.length > 0 && ` (${offlineProducts.length} pending)`}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Pending Offline Products Notice */}
+        {!isOffline && offlineProducts.length > 0 && (
+          <div style={{
+            backgroundColor: '#e3f2fd',
+            border: '1px solid #2196f3',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{ fontSize: '18px' }}>🔄</span>
+            <div>
+              <strong style={{ color: '#1565c0' }}>Syncing offline products...</strong>
+              <p style={{ margin: '4px 0 0 0', color: '#666', fontSize: '14px' }}>
+                {offlineProducts.length} product(s) created offline are being uploaded.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div class="page-header">
           <h2>My Products</h2>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
               class="btn-primary"
               onClick={() => setShowBulkUpload(true)}
+              disabled={isOffline}
+              title={isOffline ? 'Bulk upload requires internet connection' : ''}
             >
               📤 Bulk Upload
             </button>
@@ -181,6 +386,25 @@ export default function MerchantProducts() {
           <div class="product-form-modal">
             <div class="modal-content">
               <h3>{editingProduct ? 'Edit Product' : 'Add New Product'}</h3>
+
+              {/* Offline Notice in Form */}
+              {isOffline && (
+                <div style={{
+                  backgroundColor: '#fff3e0',
+                  border: '1px solid #ff9800',
+                  borderRadius: '6px',
+                  padding: '10px 12px',
+                  marginBottom: '16px',
+                  fontSize: '13px'
+                }}>
+                  <strong style={{ color: '#e65100' }}>📡 You're offline</strong>
+                  <p style={{ margin: '4px 0 0 0', color: '#666' }}>
+                    Product will be saved as a draft and published when you're back online.
+                    Image uploads are not available offline.
+                  </p>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit}>
                 <div class="form-group">
                   <label>Product Name *</label>
@@ -380,13 +604,43 @@ export default function MerchantProducts() {
         )}
 
         <div class="products-list">
-          {products.length === 0 ? (
+          {allProductsToDisplay.length === 0 ? (
             <p class="no-products">No products yet. Add your first product!</p>
           ) : (
-            products.map(product => (
-              <div key={product.id} class={`product-card ${!product.is_active ? 'inactive' : ''}`}>
+            allProductsToDisplay.map(product => (
+              <div key={product.id || product.offline_id} class={`product-card ${!product.is_active ? 'inactive' : ''} ${product._isOffline ? 'offline-draft' : ''}`}>
+                {/* Draft Badge for Offline Products */}
+                {product._isOffline && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '8px',
+                    left: '8px',
+                    backgroundColor: '#ff9800',
+                    color: 'white',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    zIndex: 10
+                  }}>
+                    📋 DRAFT
+                  </div>
+                )}
+
                 {product.images && product.images.length > 0 && (
                   <img src={product.images[0].url} alt={product.name} class="product-image" />
+                )}
+                {product._isOffline && (!product.images || product.images.length === 0) && (
+                  <div class="product-image" style={{
+                    backgroundColor: '#f5f5f5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#999',
+                    fontSize: '12px'
+                  }}>
+                    No image (offline)
+                  </div>
                 )}
                 <div class="product-info">
                   <h3>{product.name}</h3>
@@ -398,28 +652,45 @@ export default function MerchantProducts() {
                       <span class="stock">Stock: {product.stock_quantity}</span>
                     )}
                   </div>
-                  <span class={`status-badge ${product.is_active ? 'active' : 'inactive'}`}>
-                    {product.is_active ? '✅ Active' : '⏸️ Inactive'}
-                  </span>
+                  {product._isOffline ? (
+                    <span class="status-badge" style={{ backgroundColor: '#fff3e0', color: '#e65100' }}>
+                      📋 Queued for upload
+                    </span>
+                  ) : (
+                    <span class={`status-badge ${product.is_active ? 'active' : 'inactive'}`}>
+                      {product.is_active ? '✅ Active' : '⏸️ Inactive'}
+                    </span>
+                  )}
                 </div>
                 <div class="product-actions">
-                  <button class="btn-icon" onClick={() => handleEdit(product)} title="Edit">
-                    ✏️
-                  </button>
-                  <button
-                    class="btn-icon"
-                    onClick={() => handleToggleActive(product.id, product.is_active)}
-                    title={product.is_active ? 'Deactivate' : 'Activate'}
-                  >
-                    {product.is_active ? '⏸️' : '▶️'}
-                  </button>
-                  <button
-                    class="btn-icon delete"
-                    onClick={() => handleDelete(product.id)}
-                    title="Delete"
-                  >
-                    🗑️
-                  </button>
+                  {!product._isOffline && (
+                    <>
+                      <button class="btn-icon" onClick={() => handleEdit(product)} title="Edit" disabled={isOffline}>
+                        ✏️
+                      </button>
+                      <button
+                        class="btn-icon"
+                        onClick={() => handleToggleActive(product.id, product.is_active)}
+                        title={product.is_active ? 'Deactivate' : 'Activate'}
+                        disabled={isOffline}
+                      >
+                        {product.is_active ? '⏸️' : '▶️'}
+                      </button>
+                      <button
+                        class="btn-icon delete"
+                        onClick={() => handleDelete(product.id)}
+                        title="Delete"
+                        disabled={isOffline}
+                      >
+                        🗑️
+                      </button>
+                    </>
+                  )}
+                  {product._isOffline && (
+                    <span style={{ fontSize: '12px', color: '#666', padding: '8px' }}>
+                      Pending sync...
+                    </span>
+                  )}
                 </div>
               </div>
             ))
