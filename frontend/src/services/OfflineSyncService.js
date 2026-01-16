@@ -310,30 +310,63 @@ export async function retryFailedRequests() {
  * Cache products for offline access
  */
 export async function cacheProducts(products) {
-  await initOfflineDB();
-  const tx = db.transaction('products', 'readwrite');
+  try {
+    await initOfflineDB();
 
-  for (const product of products) {
-    await tx.store.put({
-      ...product,
-      cachedAt: Date.now()
-    });
+    if (!products || products.length === 0) {
+      console.log('[OfflineSync] No products to cache');
+      return;
+    }
+
+    const tx = db.transaction('products', 'readwrite');
+    let cachedCount = 0;
+
+    for (const product of products) {
+      try {
+        // Ensure product has an id (required by keyPath)
+        if (!product.id) {
+          console.warn('[OfflineSync] Skipping product without id:', product.name || 'unknown');
+          continue;
+        }
+
+        await tx.store.put({
+          ...product,
+          id: product.id, // Ensure id is explicitly set
+          cachedAt: Date.now()
+        });
+        cachedCount++;
+      } catch (productError) {
+        console.error('[OfflineSync] Failed to cache product:', product.id, productError.message);
+      }
+    }
+
+    await tx.done;
+    console.log(`[OfflineSync] Cached ${cachedCount}/${products.length} products`);
+  } catch (error) {
+    console.error('[OfflineSync] Failed to cache products:', error.message);
   }
-
-  await tx.done;
-  console.log(`[OfflineSync] Cached ${products.length} products`);
 }
 
 /**
  * Get cached products
  */
 export async function getCachedProducts(merchantId = null) {
-  await initOfflineDB();
+  try {
+    await initOfflineDB();
 
-  if (merchantId) {
-    return db.getAllFromIndex('products', 'merchantId', merchantId);
+    let products;
+    if (merchantId) {
+      products = await db.getAllFromIndex('products', 'merchantId', merchantId);
+    } else {
+      products = await db.getAll('products');
+    }
+
+    console.log(`[OfflineSync] Retrieved ${products?.length || 0} cached products`);
+    return products || [];
+  } catch (error) {
+    console.error('[OfflineSync] Failed to get cached products:', error.message);
+    return [];
   }
-  return db.getAll('products');
 }
 
 /**

@@ -335,7 +335,14 @@ export async function getNetworkStatus() {
         connectionType: status.connectionType // 'wifi', 'cellular', 'none', 'unknown'
       };
     } catch (error) {
-      return { success: false, error: error.message };
+      console.warn('[NativeBridge] Network status error, falling back to navigator.onLine:', error.message);
+      // Fall back to navigator.onLine on error
+      return {
+        success: false,
+        connected: navigator.onLine,
+        connectionType: navigator.onLine ? 'unknown' : 'none',
+        error: error.message
+      };
     }
   }
 

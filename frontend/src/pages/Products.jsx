@@ -21,6 +21,7 @@ export default function Products() {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [offlineMessage, setOfflineMessage] = useState(null);
   const [search, setSearch] = useState('');
   const [browsing, setBrowsing] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -116,7 +117,7 @@ export default function Products() {
 
         setAllProducts(results);
         setBrowsing(true);
-        setError(`Offline search: found ${results.length} results`);
+        setOfflineMessage(`Offline search: found ${results.length} results`);
       } catch (cacheErr) {
         setError('Search failed');
       }
@@ -152,6 +153,7 @@ export default function Products() {
     try {
       setLoading(true);
       setError(null);
+      setOfflineMessage(null);
 
       const { connected } = await getNetworkStatus();
 
@@ -171,7 +173,7 @@ export default function Products() {
           setCategories(uniqueCategories);
 
           console.log(`[Products] Loaded ${cachedProducts.length} products from cache`);
-          setError('Browsing in offline mode');
+          setOfflineMessage('Browsing in offline mode');
         } else {
           setError('No cached products available offline');
         }
@@ -223,7 +225,7 @@ export default function Products() {
           const uniqueCategories = [...new Set(cachedProducts.map(p => p.category).filter(Boolean))];
           setCategories(uniqueCategories);
           console.log('[Products] Using cached products after error');
-          setError('Using cached data - unable to connect to server');
+          setOfflineMessage('Using cached data - unable to connect to server');
         }
       } catch (cacheErr) {
         console.error('[Products] Cache fallback failed:', cacheErr);
@@ -442,7 +444,8 @@ export default function Products() {
     );
   }
 
-  if (error) {
+  // Only show full-page error if there's an error AND no products loaded
+  if (error && allProducts.length === 0) {
     return (
       <div style={{ padding: '20px', textAlign: 'center', color: '#d32f2f', marginTop: '20px' }}>
         <p>{error}</p>
@@ -457,6 +460,23 @@ export default function Products() {
 
   return (
     <div className="page products-page" style={{ padding: '20px', minHeight: 'calc(100vh - 120px)' }}>
+      {/* Offline Mode Banner */}
+      {offlineMessage && (
+        <div style={{
+          backgroundColor: '#fff3e0',
+          border: '1px solid #ff9800',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <span style={{ fontSize: '18px' }}>📡</span>
+          <span style={{ color: '#e65100', fontWeight: '500' }}>{offlineMessage}</span>
+        </div>
+      )}
+
       {/* Recommended Section */}
       {!browsing && recommendations.length > 0 && (
         <div style={{ marginBottom: '40px' }}>
