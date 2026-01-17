@@ -65,10 +65,13 @@ class SyncManager {
     this.isSyncing = false;
     this.pendingCount = 0;
     this.pendingOperations = [];
+    this.checkInterval = null;
 
-    // Initialize offline DB
-    OfflineSync.initOfflineDB().then(() => {
+    // Initialize offline DB and do initial connectivity check
+    OfflineSync.initOfflineDB().then(async () => {
       this.refreshStatus();
+      // Do an initial connectivity check
+      await this.checkConnectivity();
     });
 
     // Subscribe to OfflineSync events
@@ -76,11 +79,57 @@ class SyncManager {
       this.handleSyncEvent(event);
     });
 
-    // Watch network status
+    // Watch network status changes
     watchNetworkStatus(({ connected }) => {
+      const wasOnline = this.isOnline;
       this.isOnline = connected;
-      this.notifyListeners({ type: connected ? 'online' : 'offline' });
+      if (wasOnline !== connected) {
+        console.log(`[SyncManager] Network status changed: ${connected ? 'ONLINE' : 'OFFLINE'}`);
+        this.notifyListeners({ type: connected ? 'online' : 'offline' });
+      }
     });
+
+    // Start periodic connectivity checks (every 30 seconds)
+    // This catches network changes that browser events might miss
+    this.startPeriodicCheck();
+  }
+
+  /**
+   * Perform an actual connectivity check
+   */
+  async checkConnectivity() {
+    try {
+      const status = await getNetworkStatus();
+      const wasOnline = this.isOnline;
+      this.isOnline = status.connected;
+
+      if (wasOnline !== status.connected) {
+        console.log(`[SyncManager] Connectivity check: ${status.connected ? 'ONLINE' : 'OFFLINE'}`);
+        this.notifyListeners({ type: status.connected ? 'online' : 'offline' });
+      }
+    } catch (error) {
+      console.error('[SyncManager] Connectivity check failed:', error);
+    }
+  }
+
+  /**
+   * Start periodic connectivity checks
+   */
+  startPeriodicCheck() {
+    // Check every 30 seconds
+    this.checkInterval = setInterval(() => {
+      this.checkConnectivity();
+    }, 30000);
+  }
+
+  /**
+   * Stop periodic checks (for cleanup)
+   */
+  stopPeriodicCheck() {
+    if (this.checkInterval) {
+      clearInterval(this.checkInterval);
+      this.checkInterval = null;
+    }
   }
 
   handleSyncEvent(event) {

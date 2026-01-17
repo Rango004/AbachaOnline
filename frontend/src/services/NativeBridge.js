@@ -324,25 +324,46 @@ export async function vibrate(type = 'medium') {
 
 /**
  * Network Status - Get current connectivity
- * Uses actual connectivity test since navigator.onLine is unreliable
+ * Uses Capacitor Network plugin for native apps, actual connectivity test for web
+ *
+ * IMPORTANT: navigator.onLine is UNRELIABLE on Android WebView - it returns true
+ * even when connected to WiFi without internet. We must test actual connectivity.
  */
 export async function getNetworkStatus() {
-  if (isNative && Network) {
+  // For native apps, try Capacitor Network plugin first
+  if (isNative) {
     try {
-      const status = await Network.getStatus();
+      // If Network plugin is already loaded from initializeNative()
+      if (Network) {
+        const status = await Network.getStatus();
+        console.log('[NativeBridge] Native network status:', status);
+        return {
+          success: true,
+          connected: status.connected,
+          connectionType: status.connectionType // 'wifi', 'cellular', 'none', 'unknown'
+        };
+      }
+
+      // Try to dynamically import Network plugin if not loaded yet
+      const { Network: NetworkPlugin } = await import('@capacitor/network');
+      const status = await NetworkPlugin.getStatus();
+      console.log('[NativeBridge] Native network status (dynamic):', status);
       return {
         success: true,
         connected: status.connected,
-        connectionType: status.connectionType // 'wifi', 'cellular', 'none', 'unknown'
+        connectionType: status.connectionType
       };
     } catch (error) {
-      console.warn('[NativeBridge] Network status error, falling back to connectivity test:', error.message);
+      console.warn('[NativeBridge] Native network check failed, falling back to connectivity test:', error.message);
     }
   }
 
-  // Web fallback - navigator.onLine is unreliable, test actual connectivity
+  // Web/PWA fallback - must test ACTUAL connectivity
+  // navigator.onLine is unreliable - returns true when connected to WiFi without internet
+
+  // Quick check: if browser says offline, it's definitely offline
   if (!navigator.onLine) {
-    // Definitely offline if browser says so
+    console.log('[NativeBridge] navigator.onLine is false - definitely offline');
     return {
       success: true,
       connected: false,
@@ -350,30 +371,56 @@ export async function getNetworkStatus() {
     };
   }
 
-  // Browser says online, but verify with actual connectivity test
+  // Browser says online, but we MUST verify with actual connectivity test
+  // Use the backend /health endpoint which is NOT cached by service worker
   try {
-    // Use a lightweight request to check real connectivity
-    // Try to load a small file from our own domain to avoid CORS/403 issues
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-    await fetch('/manifest.webmanifest', {
+    // Get API base URL
+    const API_BASE = import.meta.env.VITE_API_URL ||
+      (import.meta.env.PROD ? window.location.origin : 'http://localhost:3000');
+
+    // Add timestamp to prevent ANY caching (URL-based, service worker, browser)
+    const timestamp = Date.now();
+    const healthUrl = `${API_BASE}/health?_t=${timestamp}`;
+
+    console.log('[NativeBridge] Testing connectivity to:', healthUrl);
+
+    const response = await fetch(healthUrl, {
       method: 'HEAD',
-      cache: 'no-cache',
-      signal: controller.signal
+      // 'no-store' is stronger than 'no-cache' - completely bypasses cache
+      cache: 'no-store',
+      signal: controller.signal,
+      // Set mode to avoid CORS issues
+      mode: 'cors',
+      // Don't send credentials for simple health check
+      credentials: 'omit'
     });
 
     clearTimeout(timeoutId);
 
-    // Successfully connected
-    return {
-      success: true,
-      connected: true,
-      connectionType: 'unknown'
-    };
+    // Check if response is actually successful
+    if (response.ok || response.status === 200) {
+      console.log('[NativeBridge] Connectivity test PASSED - online');
+      return {
+        success: true,
+        connected: true,
+        connectionType: 'unknown'
+      };
+    } else {
+      // Got a response but it's an error (server might be having issues)
+      console.log('[NativeBridge] Connectivity test got error response:', response.status);
+      return {
+        success: true,
+        connected: true, // Network is available, just server issue
+        connectionType: 'unknown'
+      };
+    }
   } catch (error) {
     // Fetch failed - we're offline or having connectivity issues
-    console.log('[NativeBridge] Connectivity test failed:', error.message);
+    const errorMsg = error.name === 'AbortError' ? 'timeout' : error.message;
+    console.log('[NativeBridge] Connectivity test FAILED - offline. Error:', errorMsg);
     return {
       success: true,
       connected: false,
@@ -388,9 +435,25 @@ export async function getNetworkStatus() {
  * @returns {Function} - Cleanup function to stop watching
  */
 export async function watchNetworkStatus(callback) {
-  if (isNative && Network) {
+  // For native apps, use Capacitor Network plugin
+  if (isNative) {
     try {
-      const handle = await Network.addListener('networkStatusChange', (status) => {
+      // If Network plugin is already loaded
+      if (Network) {
+        const handle = await Network.addListener('networkStatusChange', (status) => {
+          console.log('[NativeBridge] Native network change:', status);
+          callback({
+            connected: status.connected,
+            connectionType: status.connectionType
+          });
+        });
+        return () => handle.remove();
+      }
+
+      // Try dynamic import
+      const { Network: NetworkPlugin } = await import('@capacitor/network');
+      const handle = await NetworkPlugin.addListener('networkStatusChange', (status) => {
+        console.log('[NativeBridge] Native network change (dynamic):', status);
         callback({
           connected: status.connected,
           connectionType: status.connectionType
@@ -398,13 +461,25 @@ export async function watchNetworkStatus(callback) {
       });
       return () => handle.remove();
     } catch (error) {
-      console.warn('[NativeBridge] Failed to watch network:', error);
+      console.warn('[NativeBridge] Failed to watch native network:', error);
     }
   }
 
-  // Web fallback
-  const onlineHandler = () => callback({ connected: true, connectionType: 'unknown' });
-  const offlineHandler = () => callback({ connected: false, connectionType: 'none' });
+  // Web fallback - but verify with actual connectivity test
+  const onlineHandler = async () => {
+    console.log('[NativeBridge] Browser online event fired, verifying...');
+    // Don't just trust the event - verify actual connectivity
+    const status = await getNetworkStatus();
+    callback({
+      connected: status.connected,
+      connectionType: status.connectionType
+    });
+  };
+
+  const offlineHandler = () => {
+    console.log('[NativeBridge] Browser offline event fired');
+    callback({ connected: false, connectionType: 'none' });
+  };
 
   window.addEventListener('online', onlineHandler);
   window.addEventListener('offline', offlineHandler);
