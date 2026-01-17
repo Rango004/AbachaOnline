@@ -3,6 +3,8 @@ import { route } from 'preact-router';
 import { AuthContext } from '../../services/AuthContext';
 import api from '../../services/api';
 import { useWebSocket } from '../../services/WebSocketContext';
+import OfflineSync from '../../services/OfflineSyncService';
+import { getNetworkStatus } from '../../services/NativeBridge';
 
 const statusOptions = [
   { value: 'confirmed', label: '✅ Confirm Order', color: '#4CAF50' },
@@ -26,6 +28,8 @@ export default function MerchantOrders() {
   const [showVerifyReturnModal, setShowVerifyReturnModal] = useState(false);
   const [verificationNotes, setVerificationNotes] = useState('');
   const [joinedRooms, setJoinedRooms] = useState([]);
+  const [isOffline, setIsOffline] = useState(false);
+  const [offlineMessage, setOfflineMessage] = useState(null);
 
   useEffect(() => {
     if (user?.role !== 'merchant') {
@@ -91,6 +95,38 @@ export default function MerchantOrders() {
   const loadOrders = async () => {
     try {
       setLoading(true);
+      setOfflineMessage(null);
+
+      // Check network status
+      const { connected } = await getNetworkStatus();
+      setIsOffline(!connected);
+
+      if (!connected) {
+        // Load from cache when offline
+        console.log('[MerchantOrders] Offline - loading from cache');
+        const cachedOrders = await OfflineSync.getCachedOrders();
+
+        if (cachedOrders && cachedOrders.length > 0) {
+          // Filter orders that belong to this merchant
+          const merchantOrders = cachedOrders.filter(o =>
+            o.merchant_id === user?.id ||
+            (o.items && o.items.some(item => item.merchant_id === user?.id))
+          );
+
+          const sortedOrders = merchantOrders.sort((a, b) =>
+            new Date(b.created_at) - new Date(a.created_at)
+          );
+          setOrders(sortedOrders);
+          setOfflineMessage(`Viewing ${sortedOrders.length} cached orders - offline mode`);
+          console.log(`[MerchantOrders] Loaded ${sortedOrders.length} merchant orders from cache`);
+        } else {
+          setOrders([]);
+          setOfflineMessage('No cached orders available offline');
+        }
+        return;
+      }
+
+      // Online - fetch from server
       const response = await api.request('/merchant/orders');
       const data = response.orders || response;
 
@@ -99,9 +135,36 @@ export default function MerchantOrders() {
         new Date(b.created_at) - new Date(a.created_at)
       );
       setOrders(sortedOrders);
+
+      // Cache orders for offline access
+      if (sortedOrders.length > 0) {
+        await OfflineSync.cacheOrders(sortedOrders);
+        console.log(`[MerchantOrders] Cached ${sortedOrders.length} orders for offline`);
+      }
     } catch (err) {
       console.error('Error loading orders:', err);
-      alert(err.message);
+
+      // Try cache as fallback
+      try {
+        const cachedOrders = await OfflineSync.getCachedOrders();
+        if (cachedOrders && cachedOrders.length > 0) {
+          const merchantOrders = cachedOrders.filter(o =>
+            o.merchant_id === user?.id ||
+            (o.items && o.items.some(item => item.merchant_id === user?.id))
+          );
+          const sortedOrders = merchantOrders.sort((a, b) =>
+            new Date(b.created_at) - new Date(a.created_at)
+          );
+          setOrders(sortedOrders);
+          setOfflineMessage('Using cached orders - connection failed');
+          console.log('[MerchantOrders] Using cached orders after error');
+        } else {
+          alert(err.message);
+        }
+      } catch (cacheErr) {
+        console.error('[MerchantOrders] Cache fallback failed:', cacheErr);
+        alert(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -251,6 +314,23 @@ export default function MerchantOrders() {
 
         {activeTab === 'orders' && (
           <>
+            {/* Offline Mode Banner */}
+            {offlineMessage && (
+              <div style={{
+                backgroundColor: '#fff3e0',
+                border: '1px solid #ff9800',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <span style={{ fontSize: '18px' }}>📡</span>
+                <span style={{ color: '#e65100', fontWeight: '500' }}>{offlineMessage}</span>
+              </div>
+            )}
+
             {pendingRefundsCount > 0 && (
               <div class="quick-alert" onClick={() => setActiveTab('refunds')}>
                 ⚠️ You have {pendingRefundsCount} refund request{pendingRefundsCount > 1 ? 's' : ''} requiring attention. Click here to review.

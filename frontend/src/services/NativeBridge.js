@@ -322,10 +322,16 @@ export async function vibrate(type = 'medium') {
   return { success: false, error: 'Vibration not supported' };
 }
 
+// Cache for network status to avoid excessive checks
+let lastNetworkCheck = { timestamp: 0, result: null };
+const NETWORK_CHECK_CACHE_MS = 3000; // Cache result for 3 seconds
+
 /**
  * Network Status - Get current connectivity
+ * Uses a real connectivity test for web apps since navigator.onLine is unreliable
  */
 export async function getNetworkStatus() {
+  // Use Capacitor Network plugin if available (native app)
   if (isNative && Network) {
     try {
       const status = await Network.getStatus();
@@ -335,23 +341,77 @@ export async function getNetworkStatus() {
         connectionType: status.connectionType // 'wifi', 'cellular', 'none', 'unknown'
       };
     } catch (error) {
-      console.warn('[NativeBridge] Network status error, falling back to navigator.onLine:', error.message);
-      // Fall back to navigator.onLine on error
-      return {
-        success: false,
-        connected: navigator.onLine,
-        connectionType: navigator.onLine ? 'unknown' : 'none',
-        error: error.message
-      };
+      console.warn('[NativeBridge] Network status error, falling back to web check:', error.message);
     }
   }
 
-  // Web fallback
-  return {
-    success: true,
-    connected: navigator.onLine,
-    connectionType: navigator.onLine ? 'unknown' : 'none'
-  };
+  // Check cache first
+  const now = Date.now();
+  if (lastNetworkCheck.result && (now - lastNetworkCheck.timestamp) < NETWORK_CHECK_CACHE_MS) {
+    return lastNetworkCheck.result;
+  }
+
+  // Web fallback - use navigator.onLine first, then verify with actual fetch
+  if (!navigator.onLine) {
+    // Browser is definitely offline
+    const result = {
+      success: true,
+      connected: false,
+      connectionType: 'none'
+    };
+    lastNetworkCheck = { timestamp: now, result };
+    return result;
+  }
+
+  // Browser says online, but verify with actual network request
+  try {
+    // Try to fetch a small resource to verify connectivity
+    // Use the app's own API endpoint or a reliable CDN
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+    const testUrls = [
+      '/api/health', // App's own health endpoint
+      'https://www.google.com/generate_204', // Google's connectivity check
+    ];
+
+    let connected = false;
+    for (const url of testUrls) {
+      try {
+        const response = await fetch(url, {
+          method: 'HEAD',
+          mode: 'no-cors', // Allows checking external URLs
+          cache: 'no-store',
+          signal: controller.signal
+        });
+        // If we get here without error, we're connected
+        connected = true;
+        break;
+      } catch (fetchErr) {
+        // Try next URL
+        continue;
+      }
+    }
+
+    clearTimeout(timeoutId);
+
+    const result = {
+      success: true,
+      connected,
+      connectionType: connected ? 'unknown' : 'none'
+    };
+    lastNetworkCheck = { timestamp: now, result };
+    return result;
+  } catch (error) {
+    // Network request failed - we're likely offline
+    const result = {
+      success: true,
+      connected: false,
+      connectionType: 'none'
+    };
+    lastNetworkCheck = { timestamp: now, result };
+    return result;
+  }
 }
 
 /**
@@ -363,6 +423,8 @@ export async function watchNetworkStatus(callback) {
   if (isNative && Network) {
     try {
       const handle = await Network.addListener('networkStatusChange', (status) => {
+        // Clear cache when status changes
+        lastNetworkCheck = { timestamp: 0, result: null };
         callback({
           connected: status.connected,
           connectionType: status.connectionType
@@ -374,16 +436,47 @@ export async function watchNetworkStatus(callback) {
     }
   }
 
-  // Web fallback
-  const onlineHandler = () => callback({ connected: true, connectionType: 'unknown' });
-  const offlineHandler = () => callback({ connected: false, connectionType: 'none' });
+  // Web fallback - combine events with periodic polling for reliability
+  let lastKnownStatus = navigator.onLine;
+  let pollIntervalId = null;
+
+  const checkAndNotify = async () => {
+    const status = await getNetworkStatus();
+    if (status.connected !== lastKnownStatus) {
+      lastKnownStatus = status.connected;
+      callback({
+        connected: status.connected,
+        connectionType: status.connectionType
+      });
+    }
+  };
+
+  // Listen to browser events
+  const onlineHandler = () => {
+    lastNetworkCheck = { timestamp: 0, result: null }; // Clear cache
+    checkAndNotify();
+  };
+  const offlineHandler = () => {
+    lastNetworkCheck = { timestamp: 0, result: null }; // Clear cache
+    callback({ connected: false, connectionType: 'none' });
+    lastKnownStatus = false;
+  };
 
   window.addEventListener('online', onlineHandler);
   window.addEventListener('offline', offlineHandler);
 
+  // Also poll periodically (every 10 seconds) as browser events are unreliable
+  pollIntervalId = setInterval(checkAndNotify, 10000);
+
+  // Initial check
+  checkAndNotify();
+
   return () => {
     window.removeEventListener('online', onlineHandler);
     window.removeEventListener('offline', offlineHandler);
+    if (pollIntervalId) {
+      clearInterval(pollIntervalId);
+    }
   };
 }
 

@@ -119,7 +119,7 @@ export default function Checkout() {
         console.log('[Checkout] Offline mode - queueing order:', offlineOrderId);
 
         // Queue the order creation request
-        await OfflineSync.queueRequest('POST', '/api/orders', orderData, {
+        await OfflineSync.queueRequest('/api/orders', 'POST', orderData, {
           priority: 1, // High priority for orders
           metadata: {
             orderId: offlineOrderId,
