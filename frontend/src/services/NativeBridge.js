@@ -324,6 +324,7 @@ export async function vibrate(type = 'medium') {
 
 /**
  * Network Status - Get current connectivity
+ * Uses actual connectivity test since navigator.onLine is unreliable
  */
 export async function getNetworkStatus() {
   if (isNative && Network) {
@@ -335,23 +336,50 @@ export async function getNetworkStatus() {
         connectionType: status.connectionType // 'wifi', 'cellular', 'none', 'unknown'
       };
     } catch (error) {
-      console.warn('[NativeBridge] Network status error, falling back to navigator.onLine:', error.message);
-      // Fall back to navigator.onLine on error
-      return {
-        success: false,
-        connected: navigator.onLine,
-        connectionType: navigator.onLine ? 'unknown' : 'none',
-        error: error.message
-      };
+      console.warn('[NativeBridge] Network status error, falling back to connectivity test:', error.message);
     }
   }
 
-  // Web fallback
-  return {
-    success: true,
-    connected: navigator.onLine,
-    connectionType: navigator.onLine ? 'unknown' : 'none'
-  };
+  // Web fallback - navigator.onLine is unreliable, test actual connectivity
+  if (!navigator.onLine) {
+    // Definitely offline if browser says so
+    return {
+      success: true,
+      connected: false,
+      connectionType: 'none'
+    };
+  }
+
+  // Browser says online, but verify with actual connectivity test
+  try {
+    // Use a lightweight request to check real connectivity
+    // Try to load a small file from our own domain to avoid CORS/403 issues
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
+    await fetch('/manifest.webmanifest', {
+      method: 'HEAD',
+      cache: 'no-cache',
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    // Successfully connected
+    return {
+      success: true,
+      connected: true,
+      connectionType: 'unknown'
+    };
+  } catch (error) {
+    // Fetch failed - we're offline or having connectivity issues
+    console.log('[NativeBridge] Connectivity test failed:', error.message);
+    return {
+      success: true,
+      connected: false,
+      connectionType: 'none'
+    };
+  }
 }
 
 /**

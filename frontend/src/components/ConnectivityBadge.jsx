@@ -228,11 +228,29 @@ export default function ConnectivityBadge({ syncManager }) {
       <style>{`
         .connectivity-badge {
           position: fixed;
-          bottom: 20px;
-          right: 20px;
+          top: 70px;
+          right: 16px;
           z-index: 1500;
           cursor: pointer;
           font-size: 12px;
+        }
+
+        /* Move down when offline banner is showing */
+        .app:has(.offline-banner) ~ .connectivity-badge,
+        body:has(.offline-banner) .connectivity-badge {
+          top: 106px;
+        }
+
+        @media (max-width: 480px) {
+          .connectivity-badge {
+            top: 65px;
+            right: 12px;
+          }
+
+          .app:has(.offline-banner) ~ .connectivity-badge,
+          body:has(.offline-banner) .connectivity-badge {
+            top: 97px;
+          }
         }
 
         .status-indicator {
