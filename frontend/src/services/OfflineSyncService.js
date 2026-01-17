@@ -216,10 +216,19 @@ export async function processPendingSync() {
 
     for (const req of pending) {
       try {
-        const response = await fetch(req.url, {
+        // Construct full URL with API base
+        const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? window.location.origin : 'http://localhost:3000');
+        const baseURL = `${API_BASE}/api/v1`;
+        const fullUrl = req.url.startsWith('http') ? req.url : `${baseURL}${req.url}`;
+
+        // Get auth token
+        const token = localStorage.getItem('token');
+
+        const response = await fetch(fullUrl, {
           method: req.method,
           headers: {
             'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             ...req.headers
           },
           body: req.data ? JSON.stringify(req.data) : undefined
@@ -882,7 +891,10 @@ function mergeData(local, server, type) {
  */
 export async function getUnresolvedConflicts() {
   await initOfflineDB();
-  return db.getAllFromIndex('conflicts', 'resolved', false);
+  // Get all conflicts and filter for unresolved ones
+  // Note: Cannot use getAllFromIndex with boolean keys in IndexedDB
+  const allConflicts = await db.getAll('conflicts');
+  return allConflicts.filter(c => c.resolved === false || c.resolved === undefined);
 }
 
 /**

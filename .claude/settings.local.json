@@ -24,7 +24,11 @@
       "Bash(.gradlew.bat:*)",
       "Bash(powershell -Command \"cd ''c:\\\\Users\\\\lamso\\\\OneDrive\\\\Desktop\\\\MSc thesis\\\\Project\\\\AbachaOL\\\\frontend\\\\android''; .\\\\gradlew.bat assembleDebug\")",
       "Bash(powershell:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(cd:*)",
+      "Bash(gradlew:*)",
+      "Bash(dir:*)",
+      "Bash(findstr build:*)"
     ]
   }
 }

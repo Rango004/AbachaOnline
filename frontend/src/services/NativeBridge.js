@@ -363,55 +363,16 @@ export async function getNetworkStatus() {
     return result;
   }
 
-  // Browser says online, but verify with actual network request
-  try {
-    // Try to fetch a small resource to verify connectivity
-    // Use the app's own API endpoint or a reliable CDN
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
-    const testUrls = [
-      '/api/health', // App's own health endpoint
-      'https://www.google.com/generate_204', // Google's connectivity check
-    ];
-
-    let connected = false;
-    for (const url of testUrls) {
-      try {
-        const response = await fetch(url, {
-          method: 'HEAD',
-          mode: 'no-cors', // Allows checking external URLs
-          cache: 'no-store',
-          signal: controller.signal
-        });
-        // If we get here without error, we're connected
-        connected = true;
-        break;
-      } catch (fetchErr) {
-        // Try next URL
-        continue;
-      }
-    }
-
-    clearTimeout(timeoutId);
-
-    const result = {
-      success: true,
-      connected,
-      connectionType: connected ? 'unknown' : 'none'
-    };
-    lastNetworkCheck = { timestamp: now, result };
-    return result;
-  } catch (error) {
-    // Network request failed - we're likely offline
-    const result = {
-      success: true,
-      connected: false,
-      connectionType: 'none'
-    };
-    lastNetworkCheck = { timestamp: now, result };
-    return result;
-  }
+  // Browser says online, verify with lightweight check
+  // Just trust navigator.onLine for web - it's good enough for most cases
+  // More aggressive testing causes too many 403/CORS errors
+  const result = {
+    success: true,
+    connected: true,
+    connectionType: 'unknown'
+  };
+  lastNetworkCheck = { timestamp: now, result };
+  return result;
 }
 
 /**
