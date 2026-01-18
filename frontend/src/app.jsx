@@ -99,7 +99,8 @@ class SyncManager {
    */
   async checkConnectivity() {
     try {
-      const status = await getNetworkStatus();
+      // Bypass cache for periodic checks to ensure fresh status
+      const status = await getNetworkStatus(true);
       const wasOnline = this.isOnline;
       this.isOnline = status.connected;
 

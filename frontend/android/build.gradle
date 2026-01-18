@@ -22,6 +22,15 @@ allprojects {
         google()
         mavenCentral()
     }
+
+    // Redirect build directories for Capacitor plugins (from node_modules)
+    // This fixes Windows long path issues and OneDrive file locking problems
+    afterEvaluate { project ->
+        if (project.projectDir.absolutePath.contains('node_modules')) {
+            def pluginName = project.name.replace('capacitor-', '')
+            project.buildDir = new File(rootProject.buildDir, "capacitor-plugins/${pluginName}")
+        }
+    }
 }
 
 task clean(type: Delete) {

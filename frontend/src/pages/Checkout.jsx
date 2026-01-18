@@ -5,7 +5,7 @@ import { AddressContext } from '../services/AddressContext';
 import { AuthContext } from '../services/AuthContext';
 import api from '../services/api';
 import OfflineSync from '../services/OfflineSyncService';
-import { getNetworkStatus } from '../services/NativeBridge';
+import { getNetworkStatus, watchNetworkStatus } from '../services/NativeBridge';
 
 export default function Checkout() {
   const { cart, getTotal, clearCart } = useContext(CartContext);
@@ -29,23 +29,39 @@ export default function Checkout() {
     if (defaultAddress?.id) {
       setSelectedAddressId(defaultAddress.id);
     }
-
-    // Check network status
-    checkNetworkStatus();
   }, [defaultAddress]);
 
-  const checkNetworkStatus = async () => {
-    try {
-      const { connected } = await getNetworkStatus();
-      setIsOffline(!connected);
+  // Real-time network status monitoring
+  useEffect(() => {
+    let cleanup = null;
 
-      // Force Cash on Delivery when offline
-      if (!connected) {
-        setPaymentMethod('cash');
-        console.log('[Checkout] Offline mode - payment restricted to Cash on Delivery');
+    const initNetworkWatch = async () => {
+      // Check initial status
+      try {
+        const { connected } = await getNetworkStatus();
+        updateOfflineStatus(!connected);
+      } catch (err) {
+        console.error('[Checkout] Failed to check network status:', err);
       }
-    } catch (err) {
-      console.error('[Checkout] Failed to check network status:', err);
+
+      // Watch for changes
+      cleanup = await watchNetworkStatus(({ connected }) => {
+        updateOfflineStatus(!connected);
+      });
+    };
+
+    initNetworkWatch();
+
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, []);
+
+  const updateOfflineStatus = (offline) => {
+    setIsOffline(offline);
+    if (offline) {
+      setPaymentMethod('cash');
+      console.log('[Checkout] Offline mode - payment restricted to Cash on Delivery');
     }
   };
 
@@ -119,8 +135,10 @@ export default function Checkout() {
         console.log('[Checkout] Offline mode - queueing order:', offlineOrderId);
 
         // Queue the order creation request
-        await OfflineSync.queueRequest('/api/orders', 'POST', orderData, {
-          priority: 1, // High priority for orders
+        // Note: URL should be '/orders' as OfflineSyncService adds '/api/v1' prefix
+        await OfflineSync.queueRequest('/orders', 'POST', orderData, {
+          priority: 'high', // High priority for orders
+          type: 'order',
           metadata: {
             orderId: offlineOrderId,
             userId: user?.id,

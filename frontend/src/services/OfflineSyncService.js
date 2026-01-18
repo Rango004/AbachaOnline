@@ -163,11 +163,12 @@ export async function queueRequest(url, method, data, options = {}) {
     retries: 0,
     status: 'pending',
     priority: options.priority || 'normal', // 'high', 'normal', 'low'
-    type: options.type || 'api' // 'api', 'order', 'profile'
+    type: options.type || 'api', // 'api', 'order', 'profile'
+    metadata: options.metadata || null // For tracking/display purposes
   };
 
   const id = await db.add('syncQueue', request);
-  console.log(`[OfflineSync] Queued request #${id}: ${method} ${url}`);
+  console.log(`[OfflineSync] Queued request #${id}: ${method} ${url}`, options.metadata || '');
 
   notifyListeners({ type: 'queued', id, request });
 

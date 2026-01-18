@@ -11,6 +11,11 @@ let Camera, Geolocation, PushNotifications, Haptics, StatusBar, SplashScreen, Ne
 
 const isNative = Capacitor.isNativePlatform();
 
+// Network status cache to prevent duplicate checks
+let lastNetworkCheck = null;
+let lastNetworkStatus = null;
+const NETWORK_CACHE_MS = 2000; // Cache network status for 2 seconds
+
 /**
  * Initialize native plugins (call once at app start)
  */
@@ -323,13 +328,30 @@ export async function vibrate(type = 'medium') {
 }
 
 /**
+ * Helper to cache network status
+ */
+function cacheNetworkStatus(status) {
+  lastNetworkStatus = status;
+  lastNetworkCheck = Date.now();
+  return status;
+}
+
+/**
  * Network Status - Get current connectivity
  * Uses Capacitor Network plugin for native apps, actual connectivity test for web
  *
  * IMPORTANT: navigator.onLine is UNRELIABLE on Android WebView - it returns true
  * even when connected to WiFi without internet. We must test actual connectivity.
  */
-export async function getNetworkStatus() {
+export async function getNetworkStatus(bypassCache = false) {
+  // Return cached status if recent (prevents duplicate checks)
+  if (!bypassCache && lastNetworkStatus && lastNetworkCheck) {
+    const age = Date.now() - lastNetworkCheck;
+    if (age < NETWORK_CACHE_MS) {
+      return lastNetworkStatus;
+    }
+  }
+
   // For native apps, try Capacitor Network plugin first
   if (isNative) {
     try {
@@ -337,22 +359,22 @@ export async function getNetworkStatus() {
       if (Network) {
         const status = await Network.getStatus();
         console.log('[NativeBridge] Native network status:', status);
-        return {
+        return cacheNetworkStatus({
           success: true,
           connected: status.connected,
           connectionType: status.connectionType // 'wifi', 'cellular', 'none', 'unknown'
-        };
+        });
       }
 
       // Try to dynamically import Network plugin if not loaded yet
       const { Network: NetworkPlugin } = await import('@capacitor/network');
       const status = await NetworkPlugin.getStatus();
       console.log('[NativeBridge] Native network status (dynamic):', status);
-      return {
+      return cacheNetworkStatus({
         success: true,
         connected: status.connected,
         connectionType: status.connectionType
-      };
+      });
     } catch (error) {
       console.warn('[NativeBridge] Native network check failed, falling back to connectivity test:', error.message);
     }
@@ -364,11 +386,11 @@ export async function getNetworkStatus() {
   // Quick check: if browser says offline, it's definitely offline
   if (!navigator.onLine) {
     console.log('[NativeBridge] navigator.onLine is false - definitely offline');
-    return {
+    return cacheNetworkStatus({
       success: true,
       connected: false,
       connectionType: 'none'
-    };
+    });
   }
 
   // Browser says online, but we MUST verify with actual connectivity test
@@ -403,29 +425,29 @@ export async function getNetworkStatus() {
     // Check if response is actually successful
     if (response.ok || response.status === 200) {
       console.log('[NativeBridge] Connectivity test PASSED - online');
-      return {
+      return cacheNetworkStatus({
         success: true,
         connected: true,
         connectionType: 'unknown'
-      };
+      });
     } else {
       // Got a response but it's an error (server might be having issues)
       console.log('[NativeBridge] Connectivity test got error response:', response.status);
-      return {
+      return cacheNetworkStatus({
         success: true,
         connected: true, // Network is available, just server issue
         connectionType: 'unknown'
-      };
+      });
     }
   } catch (error) {
     // Fetch failed - we're offline or having connectivity issues
     const errorMsg = error.name === 'AbortError' ? 'timeout' : error.message;
     console.log('[NativeBridge] Connectivity test FAILED - offline. Error:', errorMsg);
-    return {
+    return cacheNetworkStatus({
       success: true,
       connected: false,
       connectionType: 'none'
-    };
+    });
   }
 }
 
