@@ -111,7 +111,12 @@ class ImageCacheService {
    */
   async fetchImage(url) {
     try {
-      const response = await fetch(url);
+      // Try direct fetch first
+      const response = await fetch(url, {
+        mode: 'cors',
+        credentials: 'omit',
+        cache: 'no-cache'
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch image: ${response.status}`);
@@ -119,10 +124,46 @@ class ImageCacheService {
 
       const blob = await response.blob();
       return blob;
-    } catch (error) {
-      console.error('[ImageCache] Fetch failed:', error);
-      return null;
+    } catch (fetchError) {
+      // Fallback: Use Image element with canvas for CORS images
+      console.warn('[ImageCache] Fetch failed, trying canvas method:', fetchError.message);
+      return await this.fetchImageViaCanvas(url);
     }
+  }
+
+  /**
+   * Fetch image using Image element and canvas (for CORS images)
+   */
+  async fetchImageViaCanvas(url) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          canvas.toBlob((blob) => {
+            resolve(blob || null);
+          }, 'image/jpeg', 0.9);
+        } catch (error) {
+          console.error('[ImageCache] Canvas conversion failed:', error);
+          resolve(null);
+        }
+      };
+
+      img.onerror = () => {
+        console.error('[ImageCache] Image load failed');
+        resolve(null);
+      };
+
+      img.src = url;
+    });
   }
 
   /**

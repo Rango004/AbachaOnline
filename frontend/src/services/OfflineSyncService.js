@@ -874,11 +874,25 @@ export async function cacheImage(imageUrl, blob = null) {
 
     // If blob not provided, fetch it
     if (!imageBlob) {
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.status}`);
+      try {
+        // Try direct fetch first
+        const response = await fetch(imageUrl, {
+          mode: 'cors',
+          credentials: 'omit',
+          cache: 'no-cache'
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${response.status}`);
+        }
+        imageBlob = await response.blob();
+      } catch (fetchError) {
+        // Fallback: Use Image element with canvas conversion for CORS images
+        console.warn(`[OfflineSync] Fetch failed, trying canvas method:`, fetchError.message);
+        imageBlob = await fetchImageViaCanvas(imageUrl);
+        if (!imageBlob) {
+          throw new Error('Both fetch methods failed');
+        }
       }
-      imageBlob = await response.blob();
     }
 
     const size = imageBlob.size;
@@ -900,6 +914,50 @@ export async function cacheImage(imageUrl, blob = null) {
     console.error(`[OfflineSync] Failed to cache image ${imageUrl}:`, error.message);
     return null;
   }
+}
+
+/**
+ * Fetch image using Image element and canvas (for CORS images)
+ * @param {string} imageUrl - The image URL
+ * @returns {Promise<Blob|null>} - Image blob or null
+ */
+async function fetchImageViaCanvas(imageUrl) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      try {
+        // Create canvas and draw image
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        // Convert canvas to blob
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            resolve(null);
+          }
+        }, 'image/jpeg', 0.9);
+      } catch (error) {
+        console.error('[OfflineSync] Canvas conversion failed:', error);
+        resolve(null);
+      }
+    };
+
+    img.onerror = () => {
+      console.error('[OfflineSync] Image load failed');
+      resolve(null);
+    };
+
+    // Start loading
+    img.src = imageUrl;
+  });
 }
 
 /**
