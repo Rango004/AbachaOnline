@@ -233,6 +233,13 @@ export default function ConnectivityBadge({ syncManager }) {
           z-index: 1500;
           cursor: pointer;
           font-size: 12px;
+          /* Android WebView touch fix - only capture touch on the badge itself */
+          pointer-events: auto;
+          -webkit-transform: translate3d(0, 0, 0);
+          transform: translate3d(0, 0, 0);
+          /* Ensure badge doesn't interfere with other touch areas */
+          width: fit-content;
+          height: fit-content;
         }
 
         /* Move down when offline banner is showing */
@@ -263,6 +270,11 @@ export default function ConnectivityBadge({ syncManager }) {
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
           transition: all 0.3s ease;
           border: 2px solid #ddd;
+          /* Android WebView touch fix */
+          pointer-events: auto;
+          -webkit-transform: translate3d(0, 0, 0);
+          transform: translate3d(0, 0, 0);
+          position: relative;
         }
 
         .status-indicator.online {
