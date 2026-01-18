@@ -454,49 +454,6 @@ export async function getOfflineCart() {
  */
 
 /**
- * Cache a single image (Cloudinary URL → Blob)
- */
-export async function cacheImage(url, blob = null) {
-  await initOfflineDB();
-
-  try {
-    let imageBlob = blob;
-
-    // If blob not provided, fetch it
-    if (!blob) {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
-      imageBlob = await response.blob();
-    }
-
-    await db.put('imageCache', {
-      url,
-      blob: imageBlob,
-      cachedAt: Date.now(),
-      size: imageBlob.size
-    });
-
-    console.log(`[OfflineSync] Cached image: ${url.substring(0, 60)}... (${(imageBlob.size / 1024).toFixed(1)}KB)`);
-  } catch (error) {
-    console.error(`[OfflineSync] Failed to cache image:`, error);
-  }
-}
-
-/**
- * Get cached image as blob URL
- */
-export async function getCachedImage(url) {
-  await initOfflineDB();
-  const cached = await db.get('imageCache', url);
-
-  if (cached && cached.blob) {
-    return URL.createObjectURL(cached.blob);
-  }
-
-  return null;
-}
-
-/**
  * Batch cache product images
  */
 export async function cacheProductImages(products) {
@@ -896,6 +853,109 @@ export async function getUnresolvedConflicts() {
   // Note: Cannot use getAllFromIndex with boolean keys in IndexedDB
   const allConflicts = await db.getAll('conflicts');
   return allConflicts.filter(c => c.resolved === false || c.resolved === undefined);
+}
+
+/**
+ * Cache an image as a blob in IndexedDB
+ * @param {string} imageUrl - The image URL to cache
+ * @param {Blob} blob - Optional blob to cache directly (if already fetched)
+ */
+export async function cacheImage(imageUrl, blob = null) {
+  try {
+    await initOfflineDB();
+
+    // Check if already cached
+    const existing = await db.get('imageCache', imageUrl);
+    if (existing) {
+      return existing;
+    }
+
+    let imageBlob = blob;
+
+    // If blob not provided, fetch it
+    if (!imageBlob) {
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status}`);
+      }
+      imageBlob = await response.blob();
+    }
+
+    const size = imageBlob.size;
+
+    // Store in IndexedDB
+    const cacheEntry = {
+      url: imageUrl,
+      blob: imageBlob,
+      size,
+      cachedAt: Date.now(),
+      contentType: imageBlob.type
+    };
+
+    await db.put('imageCache', cacheEntry);
+    console.log(`[OfflineSync] Cached image: ${imageUrl} (${(size / 1024).toFixed(1)}KB)`);
+
+    return cacheEntry;
+  } catch (error) {
+    console.error(`[OfflineSync] Failed to cache image ${imageUrl}:`, error.message);
+    return null;
+  }
+}
+
+/**
+ * Get cached image blob URL
+ */
+export async function getCachedImageUrl(imageUrl) {
+  try {
+    await initOfflineDB();
+    const cached = await db.get('imageCache', imageUrl);
+
+    if (cached && cached.blob) {
+      // Create a blob URL for display
+      return URL.createObjectURL(cached.blob);
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`[OfflineSync] Failed to get cached image ${imageUrl}:`, error.message);
+    return null;
+  }
+}
+
+/**
+ * Cache multiple images in batch
+ */
+export async function cacheImages(imageUrls) {
+  const results = {
+    success: 0,
+    failed: 0,
+    skipped: 0
+  };
+
+  for (const url of imageUrls) {
+    if (!url) continue;
+
+    try {
+      // Check if already cached
+      const existing = await db.get('imageCache', url);
+      if (existing) {
+        results.skipped++;
+        continue;
+      }
+
+      const cached = await cacheImage(url);
+      if (cached) {
+        results.success++;
+      } else {
+        results.failed++;
+      }
+    } catch (error) {
+      results.failed++;
+    }
+  }
+
+  console.log(`[OfflineSync] Batch cached images: ${results.success} success, ${results.failed} failed, ${results.skipped} skipped`);
+  return results;
 }
 
 /**

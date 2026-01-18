@@ -130,15 +130,39 @@ export default function Products() {
   const loadImageUrls = async (products) => {
     const urls = {};
     const imagePromises = [];
+    const { connected } = await getNetworkStatus();
+
+    // Collect all image URLs that need to be loaded
+    const imageUrlsToCache = [];
 
     products.forEach((p) => {
       if (p.all_images && Array.isArray(p.all_images)) {
         p.all_images.forEach((img) => {
           if (img && img.publicId && !urls[img.publicId]) {
             imagePromises.push(
-              getOptimizedImageUrl(img.publicId)
-                .then(u => { urls[img.publicId] = u; })
-                .catch(() => {}) // ignore per-image failures
+              (async () => {
+                try {
+                  // Get the optimized image URL
+                  const imageUrl = await getOptimizedImageUrl(img.publicId);
+                  urls[img.publicId] = imageUrl;
+
+                  // When online, cache the image as blob for offline use
+                  if (connected && imageUrl) {
+                    imageUrlsToCache.push(imageUrl);
+                  }
+
+                  // When offline, try to use cached blob
+                  if (!connected && imageUrl) {
+                    const cachedUrl = await OfflineSync.getCachedImageUrl(imageUrl);
+                    if (cachedUrl) {
+                      urls[img.publicId] = cachedUrl;
+                    }
+                  }
+                } catch (error) {
+                  // Ignore per-image failures
+                  console.warn(`[Products] Failed to load image ${img.publicId}:`, error.message);
+                }
+              })()
             );
           }
         });
@@ -147,6 +171,14 @@ export default function Products() {
 
     await Promise.all(imagePromises);
     setImageUrls(urls);
+
+    // Cache images in background when online (don't block UI)
+    if (connected && imageUrlsToCache.length > 0) {
+      console.log(`[Products] Caching ${imageUrlsToCache.length} images in background...`);
+      OfflineSync.cacheImages(imageUrlsToCache).catch(err => {
+        console.error('[Products] Background image caching failed:', err);
+      });
+    }
   };
 
   const loadInitialData = async () => {

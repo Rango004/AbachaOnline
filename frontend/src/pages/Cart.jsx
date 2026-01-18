@@ -28,12 +28,7 @@ export default function Cart() {
       return;
     }
 
-    const { connected } = await getNetworkStatus();
-    if (!connected) {
-      alert('You are offline. Please connect to the internet to complete your order.');
-      return;
-    }
-
+    // Allow checkout even when offline - Checkout page will handle queuing
     route('/checkout');
   };
 
@@ -68,7 +63,7 @@ export default function Cart() {
           }}>
             <span style={{ fontSize: '18px' }}>📡</span>
             <span style={{ color: '#e65100', fontWeight: '500' }}>
-              Offline mode - Cart saved locally. Connect to internet to checkout.
+              Offline mode - Your cart is saved locally. You can still checkout and your order will be placed when you're back online.
             </span>
           </div>
         )}
