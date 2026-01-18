@@ -137,6 +137,7 @@ tmp/
 temp/
 *.tmp
 *.temp
+nul
 
 # OSRM data (large map files)
 backend/osrm-data/

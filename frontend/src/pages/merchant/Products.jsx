@@ -164,8 +164,9 @@ export default function MerchantProducts() {
         };
 
         // Queue the product creation request
+        // Note: URL should be '/products' as OfflineSyncService adds '/api/v1' prefix
         await OfflineSync.queueRequest(
-          '/api/products',
+          '/products',
           'POST',
           productData,
           {

@@ -28,7 +28,10 @@
       "Bash(cd:*)",
       "Bash(gradlew:*)",
       "Bash(dir:*)",
-      "Bash(findstr build:*)"
+      "Bash(findstr build:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(timeout /t 2 /nobreak)"
     ]
   }
 }
