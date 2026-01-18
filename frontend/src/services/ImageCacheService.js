@@ -29,7 +29,7 @@ class ImageCacheService {
 
       if (!connected) {
         // Try cache first when offline
-        const cached = await this.getCachedImage(url);
+        const cached = await this.getCachedImageUrl(url);
         if (cached) {
           console.log(`[ImageCache] Serving ${url.substring(0, 50)}... from cache`);
           return cached;
@@ -52,9 +52,9 @@ class ImageCacheService {
   /**
    * Get cached image as blob URL
    */
-  async getCachedImage(url) {
+  async getCachedImageUrl(url) {
     try {
-      const cached = await OfflineSync.getCachedImage(url);
+      const cached = await OfflineSync.getCachedImageUrl(url);
       return cached; // Returns blob URL or null
     } catch (error) {
       console.error('[ImageCache] Error getting cached image:', error);
@@ -267,7 +267,7 @@ class ImageCacheService {
    */
   async isCached(url) {
     try {
-      const cached = await OfflineSync.getCachedImage(url);
+      const cached = await OfflineSync.getCachedImageUrl(url);
       return cached !== null;
     } catch (error) {
       return false;

@@ -1220,7 +1220,8 @@ export default {
 
   // Images
   cacheImage,
-  getCachedImage,
+  getCachedImageUrl,
+  cacheImages,
   cacheProductImages,
 
   // Messages
