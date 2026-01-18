@@ -17,6 +17,9 @@ buildscript {
 
 apply from: "variables.gradle"
 
+// Move entire build output outside OneDrive to avoid file locking
+buildDir = new File("C:/Temp/AbachaOL-android-build")
+
 allprojects {
     repositories {
         google()

@@ -337,6 +337,34 @@ function cacheNetworkStatus(status) {
 }
 
 /**
+ * Test actual internet connectivity (for Android double-check)
+ * Returns true if internet is reachable, false otherwise
+ */
+async function testConnectivity() {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
+    const API_BASE = import.meta.env.VITE_API_URL ||
+      (import.meta.env.PROD ? window.location.origin : 'http://localhost:3000');
+
+    const response = await fetch(`${API_BASE}/health?_t=${Date.now()}`, {
+      method: 'HEAD',
+      cache: 'no-store',
+      signal: controller.signal,
+      mode: 'cors',
+      credentials: 'omit'
+    });
+
+    clearTimeout(timeoutId);
+    return response.ok || response.status === 200;
+  } catch (error) {
+    console.log('[NativeBridge] Connectivity test failed:', error.message);
+    return false;
+  }
+}
+
+/**
  * Network Status - Get current connectivity
  * Uses Capacitor Network plugin for native apps, actual connectivity test for web
  *
@@ -352,28 +380,33 @@ export async function getNetworkStatus(bypassCache = false) {
     }
   }
 
-  // For native apps, try Capacitor Network plugin first
+  // For native apps, ALWAYS use Capacitor Network plugin for accurate detection
   if (isNative) {
     try {
-      // If Network plugin is already loaded from initializeNative()
-      if (Network) {
-        const status = await Network.getStatus();
-        console.log('[NativeBridge] Native network status:', status);
+      // Ensure Network plugin is loaded
+      if (!Network) {
+        const { Network: NetworkPlugin } = await import('@capacitor/network');
+        Network = NetworkPlugin;
+      }
+
+      const status = await Network.getStatus();
+      console.log('[NativeBridge] Native network status:', status);
+
+      // On Android, also verify connectivity if plugin says we're online
+      // This catches cases where WiFi is connected but no internet
+      if (status.connected && Capacitor.getPlatform() === 'android') {
+        const isReachable = await testConnectivity();
         return cacheNetworkStatus({
           success: true,
-          connected: status.connected,
-          connectionType: status.connectionType // 'wifi', 'cellular', 'none', 'unknown'
+          connected: isReachable,
+          connectionType: isReachable ? status.connectionType : 'none'
         });
       }
 
-      // Try to dynamically import Network plugin if not loaded yet
-      const { Network: NetworkPlugin } = await import('@capacitor/network');
-      const status = await NetworkPlugin.getStatus();
-      console.log('[NativeBridge] Native network status (dynamic):', status);
       return cacheNetworkStatus({
         success: true,
         connected: status.connected,
-        connectionType: status.connectionType
+        connectionType: status.connectionType // 'wifi', 'cellular', 'none', 'unknown'
       });
     } catch (error) {
       console.warn('[NativeBridge] Native network check failed, falling back to connectivity test:', error.message);
@@ -457,31 +490,50 @@ export async function getNetworkStatus(bypassCache = false) {
  * @returns {Function} - Cleanup function to stop watching
  */
 export async function watchNetworkStatus(callback) {
-  // For native apps, use Capacitor Network plugin
+  let intervalId = null;
+  let handle = null;
+
+  // For native apps, use Capacitor Network plugin with aggressive polling on Android
   if (isNative) {
     try {
-      // If Network plugin is already loaded
-      if (Network) {
-        const handle = await Network.addListener('networkStatusChange', (status) => {
-          console.log('[NativeBridge] Native network change:', status);
+      // Ensure Network plugin is loaded
+      if (!Network) {
+        const { Network: NetworkPlugin } = await import('@capacitor/network');
+        Network = NetworkPlugin;
+      }
+
+      // Listen for network status changes
+      handle = await Network.addListener('networkStatusChange', async (status) => {
+        console.log('[NativeBridge] Native network change:', status);
+
+        // On Android, verify actual connectivity when status says online
+        let actuallyConnected = status.connected;
+        if (status.connected && Capacitor.getPlatform() === 'android') {
+          actuallyConnected = await testConnectivity();
+          console.log('[NativeBridge] Android connectivity verification:', actuallyConnected);
+        }
+
+        callback({
+          connected: actuallyConnected,
+          connectionType: actuallyConnected ? status.connectionType : 'none'
+        });
+      });
+
+      // On Android, also poll every 10 seconds to catch missed events
+      if (Capacitor.getPlatform() === 'android') {
+        intervalId = setInterval(async () => {
+          const status = await getNetworkStatus(true); // Bypass cache
           callback({
             connected: status.connected,
             connectionType: status.connectionType
           });
-        });
-        return () => handle.remove();
+        }, 10000); // Poll every 10 seconds
       }
 
-      // Try dynamic import
-      const { Network: NetworkPlugin } = await import('@capacitor/network');
-      const handle = await NetworkPlugin.addListener('networkStatusChange', (status) => {
-        console.log('[NativeBridge] Native network change (dynamic):', status);
-        callback({
-          connected: status.connected,
-          connectionType: status.connectionType
-        });
-      });
-      return () => handle.remove();
+      return () => {
+        if (handle) handle.remove();
+        if (intervalId) clearInterval(intervalId);
+      };
     } catch (error) {
       console.warn('[NativeBridge] Failed to watch native network:', error);
     }
@@ -491,7 +543,7 @@ export async function watchNetworkStatus(callback) {
   const onlineHandler = async () => {
     console.log('[NativeBridge] Browser online event fired, verifying...');
     // Don't just trust the event - verify actual connectivity
-    const status = await getNetworkStatus();
+    const status = await getNetworkStatus(true);
     callback({
       connected: status.connected,
       connectionType: status.connectionType
@@ -506,9 +558,19 @@ export async function watchNetworkStatus(callback) {
   window.addEventListener('online', onlineHandler);
   window.addEventListener('offline', offlineHandler);
 
+  // Also poll every 15 seconds for web
+  intervalId = setInterval(async () => {
+    const status = await getNetworkStatus(true);
+    callback({
+      connected: status.connected,
+      connectionType: status.connectionType
+    });
+  }, 15000);
+
   return () => {
     window.removeEventListener('online', onlineHandler);
     window.removeEventListener('offline', offlineHandler);
+    if (intervalId) clearInterval(intervalId);
   };
 }
 

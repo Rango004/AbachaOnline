@@ -18,7 +18,12 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: true // Disable in production
+    webContentsDebuggingEnabled: true, // Disable in production
+    // Fix touch input issues on Android
+    overrideUserAgent: undefined,
+    appendUserAgent: 'AbachaOnline-Android',
+    // Ensure proper viewport and touch handling
+    backgroundColor: '#FFFFFF'
   },
 
   // Plugin configurations

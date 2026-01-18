@@ -1,5 +1,8 @@
 apply plugin: 'com.android.application'
 
+// Redirect build output outside OneDrive to avoid file locking
+buildDir = new File(rootProject.buildDir, "app")
+
 // Auto-increment version code
 def getVersionCode() {
     def versionPropsFile = file('version.properties')
