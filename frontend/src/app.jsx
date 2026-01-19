@@ -9,6 +9,7 @@ import { ChatProvider } from './services/ChatContext';
 import { ThemeProvider } from './services/ThemeContext';
 import OfflineSync from './services/OfflineSyncService';
 import { getNetworkStatus, watchNetworkStatus } from './services/NativeBridge';
+import PushNotificationService from './services/PushNotificationService';
 
 // Offline UI Components
 import ConnectivityBadge from './components/ConnectivityBadge';
@@ -243,6 +244,20 @@ function AppContent() {
       }
     });
     return unsubscribe;
+  }, [user]);
+
+  // Initialize push notifications when user logs in
+  useEffect(() => {
+    if (user) {
+      PushNotificationService.initialize().catch(err => {
+        console.error('[App] Push notification initialization failed:', err);
+      });
+    } else {
+      // Cleanup when user logs out
+      PushNotificationService.cleanup().catch(err => {
+        console.error('[App] Push notification cleanup failed:', err);
+      });
+    }
   }, [user]);
 
   const handleRoute = (e) => {

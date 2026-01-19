@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const NotificationService = require('./NotificationService');
 
 /**
  * Sanitize text to prevent XSS attacks
@@ -294,6 +295,25 @@ class ChatService {
         // Update unread count for receiver
         const unreadCount = await this.getUnreadCount(receiverId);
         await this.wsService.sendUnreadUpdate(receiverId, unreadCount);
+      }
+
+      // Send push notification to receiver
+      try {
+        const senderName = senderQuery.rows[0]?.name || 'Someone';
+        const messagePreview = sanitizedText.length > 100
+          ? sanitizedText.substring(0, 100) + '...'
+          : sanitizedText;
+
+        await NotificationService.createNotification(
+          receiverId,
+          'chat',
+          `💬 ${senderName}`,
+          messagePreview,
+          { conversationId: conversationId, senderId: senderId }
+        );
+      } catch (pushError) {
+        console.error('[ChatService] Push notification failed:', pushError.message);
+        // Don't fail the message send if push notification fails
       }
 
       return messageWithSender;

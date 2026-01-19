@@ -3,6 +3,8 @@ const crypto = require('crypto');
 const RiderAssignmentService = require('./RiderAssignmentService');
 const RouteOptimizationService = require('./RouteOptimizationService');
 const MerchantPaymentService = require('./MerchantPaymentService');
+const FirebaseService = require('./FirebaseService');
+const NotificationService = require('./NotificationService');
 
 class OrderService {
   constructor() {
@@ -693,6 +695,33 @@ class OrderService {
           console.error('WebSocket notification failed:', wsError.message);
           // Don't fail the status update if WebSocket fails
         }
+      }
+
+      // Send push notifications
+      try {
+        const statusMessages = {
+          pending: { title: '📦 Order Placed', body: 'Your order has been placed successfully' },
+          confirmed: { title: '✅ Order Confirmed', body: 'Your order has been confirmed by the merchant' },
+          preparing: { title: '👨‍🍳 Order Preparing', body: 'Your order is being prepared' },
+          ready: { title: '🎉 Order Ready', body: 'Your order is ready for pickup' },
+          in_delivery: { title: '🚚 Out for Delivery', body: 'Your order is on its way' },
+          delivered: { title: '✅ Order Delivered', body: 'Your order has been delivered' },
+          cancelled: { title: '❌ Order Cancelled', body: 'Your order has been cancelled' }
+        };
+
+        const message = statusMessages[newStatus];
+        if (message) {
+          await NotificationService.createNotification(
+            updatedOrder.student_id,
+            'order_status',
+            message.title,
+            message.body,
+            { orderId: orderId, status: newStatus, trackingNumber: updatedOrder.tracking_number }
+          );
+        }
+      } catch (pushError) {
+        console.error('[OrderService] Push notification failed:', pushError.message);
+        // Don't fail the status update if push notification fails
       }
 
       return updatedOrder;
