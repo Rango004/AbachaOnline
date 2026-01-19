@@ -28,7 +28,7 @@ def getVersionName() {
     def packageJson = file('../../package.json')
     if (packageJson.exists()) {
         def packageJsonText = packageJson.text
-        def versionMatch = packageJsonText =~ /"version":\s*"([^"]+)"/
+        def versionMatch = packageJsonText =~ /"version": "([^"]+)"/
         return versionMatch ? versionMatch[0][1] : "1.0.0"
     }
     return "1.0.0"
