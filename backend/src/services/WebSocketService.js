@@ -108,6 +108,19 @@ class WebSocketService {
       await this.handleNotificationRead(socket, data);
     });
 
+    // Chat events
+    socket.on('chat:typing', async (data) => {
+      await this.handleTypingIndicator(socket, data);
+    });
+
+    socket.on('chat:message_read', async (data) => {
+      await this.handleMessageRead(socket, data);
+    });
+
+    socket.on('chat:messages_seen', async (data) => {
+      await this.handleMessagesSeen(socket, data);
+    });
+
     // Heartbeat (keep-alive)
     socket.on('ping', () => {
       socket.emit('pong');
@@ -403,6 +416,102 @@ class WebSocketService {
       connectedAt: socket.handshake.time,
       ip: socket.handshake.address
     }));
+  }
+
+  /**
+   * Handle typing indicator event from client
+   */
+  async handleTypingIndicator(socket, data) {
+    try {
+      const { conversationId, isTyping, receiverId, senderName } = data;
+
+      if (!conversationId || !receiverId) {
+        return;
+      }
+
+      await this.sendTypingIndicator(receiverId, conversationId, isTyping, senderName);
+    } catch (error) {
+      console.error('[WebSocketService] Error handling typing indicator:', error);
+    }
+  }
+
+  /**
+   * Handle message read event
+   */
+  async handleMessageRead(socket, data) {
+    try {
+      const { messageId, conversationId, senderId } = data;
+
+      if (!messageId) {
+        return;
+      }
+
+      // Mark message as read in database
+      await db.query(
+        `UPDATE messages SET is_read = TRUE, read_at = NOW() WHERE id = $1`,
+        [messageId]
+      );
+
+      // Notify sender that message was read
+      if (senderId) {
+        const senderSockets = this.getUserSockets(senderId);
+        senderSockets.forEach(socket => {
+          socket.emit('chat:message_read_receipt', {
+            message_id: messageId,
+            conversation_id: conversationId,
+            read_at: new Date(),
+            read_by: socket.userId
+          });
+        });
+      }
+
+      console.log(`[Chat] Message ${messageId} marked as read`);
+    } catch (error) {
+      console.error('[WebSocketService] Error handling message read:', error);
+    }
+  }
+
+  /**
+   * Handle messages seen event (mark all messages in conversation as read)
+   */
+  async handleMessagesSeen(socket, data) {
+    try {
+      const { conversationId, senderId } = data;
+
+      if (!conversationId) {
+        return;
+      }
+
+      // Mark all unread messages in conversation as read
+      const result = await db.query(
+        `UPDATE messages
+         SET is_read = TRUE, read_at = NOW()
+         WHERE conversation_id = $1
+         AND receiver_id = $2
+         AND is_read = FALSE
+         RETURNING id`,
+        [conversationId, socket.userId]
+      );
+
+      const readMessageIds = result.rows.map(row => row.id);
+
+      // Notify sender that messages were read
+      if (senderId && readMessageIds.length > 0) {
+        const senderSockets = this.getUserSockets(senderId);
+        senderSockets.forEach(senderSocket => {
+          senderSocket.emit('chat:messages_read_receipt', {
+            conversation_id: conversationId,
+            message_ids: readMessageIds,
+            read_at: new Date(),
+            read_by: socket.userId
+          });
+        });
+      }
+
+      console.log(`[Chat] ${readMessageIds.length} messages marked as read in conversation ${conversationId}`);
+    } catch (error) {
+      console.error('[WebSocketService] Error handling messages seen:', error);
+    }
   }
 
   // =====================================================

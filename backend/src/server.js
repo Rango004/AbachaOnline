@@ -4,6 +4,7 @@ const http = require('http');
 const { Server: SocketIO } = require('socket.io');
 const WebSocketService = require('./services/WebSocketService');
 const ForecastJobQueue = require('./services/ForecastJobQueue');
+const FirebaseService = require('./services/FirebaseService');
 const { runMigrations } = require('./config/migrations');
 require('dotenv').config();
 
@@ -46,6 +47,9 @@ RASAChatbotService.setWebSocketService(wsService);
 // Initialize ChatService with WebSocket service
 const ChatService = require('./services/ChatService');
 ChatService.setWebSocketService(wsService);
+
+// Initialize Firebase for push notifications
+FirebaseService.initialize();
 
 // Run database migrations on startup
 runMigrations().then(() => {
