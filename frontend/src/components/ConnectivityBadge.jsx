@@ -80,9 +80,12 @@ export default function ConnectivityBadge({ syncManager }) {
   const details = syncManager?.getStatus() || { pendingOperations: [] };
 
   return (
-    <div class="connectivity-badge" onClick={() => setShowDetails(!showDetails)}>
+    <div class="connectivity-badge">
       {/* Status indicator */}
-      <div class={`status-indicator ${status.isOnline ? 'online' : 'offline'}`}>
+      <div
+        class={`status-indicator ${status.isOnline ? 'online' : 'offline'}`}
+        onClick={() => setShowDetails(!showDetails)}
+      >
         <span class="status-dot"></span>
         <span class="status-text">
           {status.isOnline
@@ -230,16 +233,15 @@ export default function ConnectivityBadge({ syncManager }) {
           position: fixed;
           top: 70px;
           right: 16px;
-          z-index: 1500;
-          cursor: pointer;
+          z-index: 999;
           font-size: 12px;
-          /* Android WebView touch fix - only capture touch on the badge itself */
-          pointer-events: auto;
-          -webkit-transform: translate3d(0, 0, 0);
-          transform: translate3d(0, 0, 0);
+          /* CRITICAL: Allow touches to pass through container to elements below */
+          pointer-events: none;
           /* Ensure badge doesn't interfere with other touch areas */
           width: fit-content;
           height: fit-content;
+          max-width: 150px;
+          max-height: 50px;
         }
 
         /* Move down when offline banner is showing */
@@ -270,11 +272,15 @@ export default function ConnectivityBadge({ syncManager }) {
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
           transition: all 0.3s ease;
           border: 2px solid #ddd;
-          /* Android WebView touch fix */
+          /* CRITICAL: Re-enable pointer events for this clickable element */
           pointer-events: auto;
+          cursor: pointer;
           -webkit-transform: translate3d(0, 0, 0);
           transform: translate3d(0, 0, 0);
           position: relative;
+          /* Ensure strict bounds */
+          width: fit-content;
+          height: fit-content;
         }
 
         .status-indicator.online {
@@ -330,6 +336,8 @@ export default function ConnectivityBadge({ syncManager }) {
           font-weight: bold;
           border: 2px solid white;
           animation: badge-pulse 2s infinite;
+          /* Allow interaction */
+          pointer-events: auto;
         }
 
         @keyframes badge-pulse {
@@ -349,6 +357,8 @@ export default function ConnectivityBadge({ syncManager }) {
           overflow-y: auto;
           z-index: 1501;
           animation: slideUp 0.3s ease;
+          /* CRITICAL: Re-enable pointer events for details panel */
+          pointer-events: auto;
         }
 
         @keyframes slideUp {
@@ -380,6 +390,7 @@ export default function ConnectivityBadge({ syncManager }) {
           padding: 0;
           width: 24px;
           height: 24px;
+          pointer-events: auto;
         }
 
         .details-content {
@@ -527,6 +538,7 @@ export default function ConnectivityBadge({ syncManager }) {
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s;
+          pointer-events: auto;
         }
 
         .btn-sync {

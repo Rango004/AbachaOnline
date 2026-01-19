@@ -1,6 +1,6 @@
 {
   "name": "abachaonline-frontend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "AbachaOnline - Offline-first Campus Delivery PWA",
   "type": "module",
   "scripts": {
