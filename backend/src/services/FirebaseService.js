@@ -66,8 +66,10 @@ class FirebaseService {
           priority: 'high',
           notification: {
             sound: 'default',
-            channelId: 'default',
+            channelId: 'abachaonline',
             priority: 'high',
+            defaultSound: true,
+            defaultVibrateTimings: true,
             clickAction: 'FLUTTER_NOTIFICATION_CLICK'
           }
         },
@@ -122,8 +124,10 @@ class FirebaseService {
           priority: 'high',
           notification: {
             sound: 'default',
-            channelId: 'default',
-            priority: 'high'
+            channelId: 'abachaonline',
+            priority: 'high',
+            defaultSound: true,
+            defaultVibrateTimings: true
           }
         },
         tokens // Send to multiple tokens

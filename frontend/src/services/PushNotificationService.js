@@ -24,6 +24,20 @@ class PushNotificationService {
     }
 
     try {
+      // Create notification channel for Android (required for Android 8+)
+      if (Capacitor.getPlatform() === 'android') {
+        await PushNotifications.createChannel({
+          id: 'abachaonline',
+          name: 'AbachaOnline Notifications',
+          description: 'Order updates, messages, and delivery notifications',
+          importance: 5, // Maximum importance
+          sound: 'default',
+          vibration: true,
+          visibility: 1 // Public
+        });
+        console.log('[PushNotifications] Notification channel created');
+      }
+
       // Request permission
       let permStatus = await PushNotifications.checkPermissions();
 
