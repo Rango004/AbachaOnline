@@ -123,13 +123,46 @@ class PushNotificationService {
     const { data } = notification.notification;
 
     // Navigate based on notification type
-    if (data) {
-      if (data.type === 'order' && data.orderId) {
-        window.location.href = `/orders/${data.orderId}`;
-      } else if (data.type === 'chat' && data.chatId) {
-        window.location.href = `/chat/${data.chatId}`;
-      } else if (data.type === 'delivery' && data.orderId) {
-        window.location.href = `/rider?order=${data.orderId}`;
+    if (data && data.type) {
+      console.log('[PushNotifications] Notification tapped:', data);
+
+      switch (data.type) {
+        case 'new_order':
+          // Merchant: navigate to orders page
+          window.location.href = '/merchant/orders';
+          break;
+
+        case 'order_status':
+          // Student: navigate to specific order
+          if (data.orderId) {
+            window.location.href = `/orders/${data.orderId}`;
+          } else {
+            window.location.href = '/orders';
+          }
+          break;
+
+        case 'order_assigned':
+          // Rider: navigate to rider dashboard
+          if (data.orderId) {
+            window.location.href = `/rider?order=${data.orderId}`;
+          } else {
+            window.location.href = '/rider';
+          }
+          break;
+
+        case 'chat':
+          // Navigate to chat conversation
+          if (data.conversationId) {
+            window.location.href = `/chat?conversation=${data.conversationId}`;
+          } else if (data.senderId) {
+            // If we don't have conversation ID, navigate to chat and let it load
+            window.location.href = '/chat';
+          }
+          break;
+
+        default:
+          console.log('[PushNotifications] Unknown notification type:', data.type);
+          break;
       }
     }
   }

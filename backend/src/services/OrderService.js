@@ -119,31 +119,51 @@ class OrderService {
 
       await client.query('COMMIT');
 
+      // Send push notification to merchant about new order
+      try {
+        await NotificationService.createNotification(
+          merchantId,
+          'new_order',
+          '🛒 New Order Received',
+          `Order #${trackingNumber} - ${validatedItems.length} item(s) - SLL ${totalAmount.toLocaleString()}`,
+          {
+            orderId: order.id,
+            trackingNumber: trackingNumber,
+            totalAmount: totalAmount,
+            itemCount: validatedItems.length
+          }
+        );
+      } catch (notifError) {
+        console.error('[OrderService] Merchant notification failed:', notifError.message);
+      }
+
       try {
         console.log('Attempting auto-assignment for order:', order.id);
         const assignment = await RiderAssignmentService.autoAssignRider(order.id);
         console.log('Auto-assignment successful:', assignment.message);
-        
-        // Send notification to rider
+
+        // Send push notification to rider
         if (assignment.assigned_rider) {
           try {
             const orderDetails = await this.getOrderById(order.id, userId);
-            await db.query(
-              `INSERT INTO notifications (user_id, type, title, message, data, is_read)
-               VALUES ($1, 'order_assigned', 'New Delivery Assigned', $2, $3, false)`,
-              [
-                assignment.assigned_rider.id,
-                `Order #${orderDetails.tracking_number} - Pickup: ${orderDetails.merchant_name}, Deliver to: ${orderDetails.delivery_address}`,
-                JSON.stringify({
-                  order_id: order.id,
-                  tracking_number: orderDetails.tracking_number,
-                  customer_name: orderDetails.customer_name,
-                  customer_phone: orderDetails.customer_phone,
-                  delivery_address: orderDetails.delivery_address,
-                  total_amount: orderDetails.total_amount
-                })
-              ]
+
+            // Use NotificationService for push notifications
+            await NotificationService.createNotification(
+              assignment.assigned_rider.id,
+              'order_assigned',
+              '🚚 New Delivery Assigned',
+              `Order #${orderDetails.tracking_number} - Pickup: ${orderDetails.merchant_name}`,
+              {
+                orderId: order.id,
+                trackingNumber: orderDetails.tracking_number,
+                customerName: orderDetails.customer_name,
+                customerPhone: orderDetails.customer_phone,
+                deliveryAddress: orderDetails.delivery_address,
+                totalAmount: orderDetails.total_amount,
+                merchantName: orderDetails.merchant_name
+              }
             );
+
             await RouteOptimizationService.sendRouteInstructions(order.id, assignment.assigned_rider);
           } catch (error) {
             console.error('Notification failed:', error.message);

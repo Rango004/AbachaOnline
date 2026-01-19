@@ -55,10 +55,17 @@ class NotificationService {
       if (tokens.length > 0) {
         // Send push notification via Firebase
         try {
+          // Convert all data values to strings (Firebase requirement)
+          const stringData = {};
+          Object.keys(data).forEach(key => {
+            stringData[key] = String(data[key]);
+          });
+          stringData.type = type; // Add notification type to data
+
           const response = await FirebaseService.sendToMultipleDevices(
             tokens,
             { title, body },
-            data
+            stringData
           );
 
           // Handle failed tokens
