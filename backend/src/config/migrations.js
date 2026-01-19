@@ -140,6 +140,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   title VARCHAR(255) NOT NULL,
   message TEXT NOT NULL,
   type VARCHAR(50),
+  data JSONB,
   is_read BOOLEAN DEFAULT FALSE,
   reference_id INT,
   reference_type VARCHAR(50),
@@ -147,6 +148,13 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
+
+-- Add data column if missing (for existing databases)
+DO $$ BEGIN
+  ALTER TABLE notifications ADD COLUMN IF NOT EXISTS data JSONB;
+EXCEPTION
+  WHEN duplicate_column THEN NULL;
+END $$;
 
 -- Reviews table
 CREATE TABLE IF NOT EXISTS reviews (
@@ -169,32 +177,58 @@ CREATE TABLE IF NOT EXISTS wishlists (
   UNIQUE(user_id, product_id)
 );
 
--- Chat conversations table
-CREATE TABLE IF NOT EXISTS chat_conversations (
+-- Conversations table (for merchant-customer chat)
+CREATE TABLE IF NOT EXISTS conversations (
   id SERIAL PRIMARY KEY,
   customer_id INT REFERENCES users(id) ON DELETE CASCADE,
   merchant_id INT REFERENCES users(id) ON DELETE CASCADE,
   product_id INT REFERENCES products(id) ON DELETE SET NULL,
   last_message_at TIMESTAMP DEFAULT NOW(),
-  created_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(customer_id, merchant_id)
+  customer_unread_count INT DEFAULT 0,
+  merchant_unread_count INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Add unique constraint for conversations
+DO $$ BEGIN
+  ALTER TABLE conversations ADD CONSTRAINT unique_conversation
+    UNIQUE(customer_id, merchant_id, product_id);
+EXCEPTION
+  WHEN duplicate_table THEN NULL;
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_conversations_customer ON conversations(customer_id, last_message_at DESC);
+CREATE INDEX IF NOT EXISTS idx_conversations_merchant ON conversations(merchant_id, last_message_at DESC);
 
 -- Chat messages table
 CREATE TABLE IF NOT EXISTS chat_messages (
   id SERIAL PRIMARY KEY,
-  conversation_id INT REFERENCES chat_conversations(id) ON DELETE CASCADE,
+  conversation_id INT REFERENCES conversations(id) ON DELETE CASCADE,
   sender_id INT REFERENCES users(id) ON DELETE SET NULL,
   receiver_id INT REFERENCES users(id) ON DELETE SET NULL,
   message_text TEXT NOT NULL,
   message_type VARCHAR(50) DEFAULT 'text',
+  message_metadata JSONB DEFAULT '{}',
   is_read BOOLEAN DEFAULT FALSE,
   is_deleted BOOLEAN DEFAULT FALSE,
-  metadata JSONB DEFAULT '{}',
+  read_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation ON chat_messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation ON chat_messages(conversation_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_unread ON chat_messages(receiver_id, is_read) WHERE is_read = FALSE;
+
+-- Add missing columns to existing tables if they don't exist
+DO $$ BEGIN
+  ALTER TABLE conversations ADD COLUMN IF NOT EXISTS customer_unread_count INT DEFAULT 0;
+  ALTER TABLE conversations ADD COLUMN IF NOT EXISTS merchant_unread_count INT DEFAULT 0;
+  ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS message_metadata JSONB DEFAULT '{}';
+  ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS read_at TIMESTAMP;
+EXCEPTION
+  WHEN duplicate_column THEN NULL;
+  WHEN undefined_table THEN NULL;
+END $$;
 
 -- Chatbot sessions table
 CREATE TABLE IF NOT EXISTS chatbot_sessions (
