@@ -755,65 +755,63 @@ class OrderService {
 
   async autoAssignRider(orderId, assignedBy) {
     const assignment = await RiderAssignmentService.autoAssignRider(orderId);
-    
+
     // Send notification to rider
     if (assignment.assigned_rider) {
       try {
         const order = await this.getOrderById(orderId);
-        await db.query(
-          `INSERT INTO notifications (user_id, type, title, message, data, is_read)
-           VALUES ($1, 'order_assigned', 'New Delivery Assigned', $2, $3, false)`,
-          [
-            assignment.assigned_rider.id,
-            `Order #${order.tracking_number} - Pickup: ${order.merchant_name}, Deliver to: ${order.delivery_address}`,
-            JSON.stringify({
-              order_id: orderId,
-              tracking_number: order.tracking_number,
-              customer_name: order.customer_name,
-              customer_phone: order.customer_phone,
-              delivery_address: order.delivery_address,
-              total_amount: order.total_amount
-            })
-          ]
+        // Use NotificationService for proper WebSocket and push notification delivery
+        await NotificationService.createNotification(
+          assignment.assigned_rider.id,
+          'order_assigned',
+          '🚚 New Delivery Assigned',
+          `Order #${order.tracking_number} - Pickup: ${order.merchant_name}, Deliver to: ${order.delivery_address}`,
+          {
+            orderId: orderId,
+            trackingNumber: order.tracking_number,
+            customerName: order.customer_name,
+            customerPhone: order.customer_phone,
+            deliveryAddress: order.delivery_address,
+            totalAmount: order.total_amount
+          }
         );
         await RouteOptimizationService.sendRouteInstructions(orderId, assignment.assigned_rider);
       } catch (error) {
         console.error('Notification failed:', error.message);
       }
     }
-    
+
     return assignment;
   }
 
   async assignRider(orderId, riderId, assignedBy) {
     const assignment = await RiderAssignmentService.assignRider(orderId, riderId, assignedBy);
-    
+
     // Send notification to rider
     if (assignment.assigned_rider) {
       try {
         const order = await this.getOrderById(orderId);
-        await db.query(
-          `INSERT INTO notifications (user_id, type, title, message, data, is_read)
-           VALUES ($1, 'order_assigned', 'New Delivery Assigned', $2, $3, false)`,
-          [
-            assignment.assigned_rider.id,
-            `Order #${order.tracking_number} - Pickup: ${order.merchant_name}, Deliver to: ${order.delivery_address}`,
-            JSON.stringify({
-              order_id: orderId,
-              tracking_number: order.tracking_number,
-              customer_name: order.customer_name,
-              customer_phone: order.customer_phone,
-              delivery_address: order.delivery_address,
-              total_amount: order.total_amount
-            })
-          ]
+        // Use NotificationService for proper WebSocket and push notification delivery
+        await NotificationService.createNotification(
+          assignment.assigned_rider.id,
+          'order_assigned',
+          '🚚 New Delivery Assigned',
+          `Order #${order.tracking_number} - Pickup: ${order.merchant_name}, Deliver to: ${order.delivery_address}`,
+          {
+            orderId: orderId,
+            trackingNumber: order.tracking_number,
+            customerName: order.customer_name,
+            customerPhone: order.customer_phone,
+            deliveryAddress: order.delivery_address,
+            totalAmount: order.total_amount
+          }
         );
         await RouteOptimizationService.sendRouteInstructions(orderId, assignment.assigned_rider);
       } catch (error) {
         console.error('Notification failed:', error.message);
       }
     }
-    
+
     return assignment;
   }
 

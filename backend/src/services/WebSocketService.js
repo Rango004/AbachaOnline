@@ -448,19 +448,20 @@ class WebSocketService {
 
       // Mark message as read in database
       await db.query(
-        `UPDATE messages SET is_read = TRUE, read_at = NOW() WHERE id = $1`,
+        `UPDATE chat_messages SET is_read = TRUE, read_at = NOW() WHERE id = $1`,
         [messageId]
       );
 
       // Notify sender that message was read
       if (senderId) {
+        const readerId = socket.userId; // Store reader's userId before iterating
         const senderSockets = this.getUserSockets(senderId);
-        senderSockets.forEach(socket => {
-          socket.emit('chat:message_read_receipt', {
+        senderSockets.forEach(senderSocket => {
+          senderSocket.emit('chat:message_read_receipt', {
             message_id: messageId,
             conversation_id: conversationId,
             read_at: new Date(),
-            read_by: socket.userId
+            read_by: readerId
           });
         });
       }
@@ -484,7 +485,7 @@ class WebSocketService {
 
       // Mark all unread messages in conversation as read
       const result = await db.query(
-        `UPDATE messages
+        `UPDATE chat_messages
          SET is_read = TRUE, read_at = NOW()
          WHERE conversation_id = $1
          AND receiver_id = $2

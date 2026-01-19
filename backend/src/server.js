@@ -48,6 +48,10 @@ RASAChatbotService.setWebSocketService(wsService);
 const ChatService = require('./services/ChatService');
 ChatService.setWebSocketService(wsService);
 
+// Initialize NotificationService with WebSocket service for real-time notifications
+const NotificationService = require('./services/NotificationService');
+NotificationService.setWebSocketService(wsService);
+
 // Initialize Firebase for push notifications
 FirebaseService.initialize();
 

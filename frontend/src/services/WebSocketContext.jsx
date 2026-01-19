@@ -125,6 +125,31 @@ export function WebSocketProvider({ children }) {
         window.dispatchEvent(new CustomEvent('route:optimized', { detail: routeData }));
       });
 
+      // Chat message received
+      newSocket.on('chat:message', (message) => {
+        window.dispatchEvent(new CustomEvent('chat:message', { detail: message }));
+      });
+
+      // Typing indicator received
+      newSocket.on('chat:typing', (data) => {
+        window.dispatchEvent(new CustomEvent('chat:typing', { detail: data }));
+      });
+
+      // Message read receipt received
+      newSocket.on('chat:message_read_receipt', (data) => {
+        window.dispatchEvent(new CustomEvent('chat:message_read_receipt', { detail: data }));
+      });
+
+      // Multiple messages read receipt received
+      newSocket.on('chat:messages_read_receipt', (data) => {
+        window.dispatchEvent(new CustomEvent('chat:messages_read_receipt', { detail: data }));
+      });
+
+      // Chat unread count update
+      newSocket.on('chat:unread_update', (data) => {
+        window.dispatchEvent(new CustomEvent('chat:unread_update', { detail: data }));
+      });
+
       // Error handler
       newSocket.on('error', (error) => {
         console.error('WebSocket error:', error);
@@ -157,6 +182,11 @@ export function WebSocketProvider({ children }) {
           newSocket.off('delivery:progress');
           newSocket.off('rider:location_updated');
           newSocket.off('route:optimized');
+          newSocket.off('chat:message');
+          newSocket.off('chat:typing');
+          newSocket.off('chat:message_read_receipt');
+          newSocket.off('chat:messages_read_receipt');
+          newSocket.off('chat:unread_update');
           newSocket.off('error');
           newSocket.off('connect_error');
           newSocket.disconnect();
@@ -233,6 +263,45 @@ export function WebSocketProvider({ children }) {
     setNotifications([]);
   }, []);
 
+  /**
+   * Send typing indicator to other user
+   */
+  const sendTypingIndicator = useCallback((conversationId, receiverId, isTyping, senderName) => {
+    if (socket && socket.connected) {
+      socket.emit('chat:typing', {
+        conversationId,
+        receiverId,
+        isTyping,
+        senderName
+      });
+    }
+  }, [socket]);
+
+  /**
+   * Mark a message as read
+   */
+  const markMessageAsRead = useCallback((messageId, conversationId, senderId) => {
+    if (socket && socket.connected) {
+      socket.emit('chat:message_read', {
+        messageId,
+        conversationId,
+        senderId
+      });
+    }
+  }, [socket]);
+
+  /**
+   * Mark all messages in conversation as seen
+   */
+  const markMessagesAsSeen = useCallback((conversationId, senderId) => {
+    if (socket && socket.connected) {
+      socket.emit('chat:messages_seen', {
+        conversationId,
+        senderId
+      });
+    }
+  }, [socket]);
+
   return (
     <WebSocketContext.Provider
       value={{
@@ -246,7 +315,10 @@ export function WebSocketProvider({ children }) {
         updateLocation,
         emitOrderStatusChange,
         markNotificationAsRead,
-        clearNotifications
+        clearNotifications,
+        sendTypingIndicator,
+        markMessageAsRead,
+        markMessagesAsSeen
       }}
     >
       {children}

@@ -85,6 +85,40 @@ export function ChatProvider({ children }) {
     setUnreadCount(data.unread_count || 0);
   }, []);
 
+  // Handle single message read receipt
+  const handleMessageReadReceipt = useCallback((data) => {
+    console.log('[Chat] Message read receipt:', data);
+    const { message_id, conversation_id, read_at } = data;
+
+    setMessages(prev => {
+      const conversationMessages = prev[conversation_id] || [];
+      return {
+        ...prev,
+        [conversation_id]: conversationMessages.map(msg =>
+          msg.id === message_id ? { ...msg, is_read: true, read_at } : msg
+        )
+      };
+    });
+  }, []);
+
+  // Handle multiple messages read receipt
+  const handleMessagesReadReceipt = useCallback((data) => {
+    console.log('[Chat] Messages read receipt:', data);
+    const { conversation_id, message_ids, read_at } = data;
+
+    if (!message_ids || !Array.isArray(message_ids)) return;
+
+    setMessages(prev => {
+      const conversationMessages = prev[conversation_id] || [];
+      return {
+        ...prev,
+        [conversation_id]: conversationMessages.map(msg =>
+          message_ids.includes(msg.id) ? { ...msg, is_read: true, read_at } : msg
+        )
+      };
+    });
+  }, []);
+
   // Register WebSocket event listeners
   useEffect(() => {
     if (!socket) return;
@@ -92,13 +126,17 @@ export function ChatProvider({ children }) {
     socket.on('chat:message', handleIncomingMessage);
     socket.on('chat:typing', handleTypingIndicator);
     socket.on('chat:unread_update', handleUnreadUpdate);
+    socket.on('chat:message_read_receipt', handleMessageReadReceipt);
+    socket.on('chat:messages_read_receipt', handleMessagesReadReceipt);
 
     return () => {
       socket.off('chat:message', handleIncomingMessage);
       socket.off('chat:typing', handleTypingIndicator);
       socket.off('chat:unread_update', handleUnreadUpdate);
+      socket.off('chat:message_read_receipt', handleMessageReadReceipt);
+      socket.off('chat:messages_read_receipt', handleMessagesReadReceipt);
     };
-  }, [socket, handleIncomingMessage, handleTypingIndicator, handleUnreadUpdate]);
+  }, [socket, handleIncomingMessage, handleTypingIndicator, handleUnreadUpdate, handleMessageReadReceipt, handleMessagesReadReceipt]);
 
   // =====================================================
   // CONVERSATION OPERATIONS

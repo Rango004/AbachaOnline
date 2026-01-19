@@ -2,6 +2,19 @@ const db = require('../config/database');
 const FirebaseService = require('./FirebaseService');
 
 class NotificationService {
+  constructor() {
+    this.wsService = null;
+  }
+
+  /**
+   * Set WebSocket service instance for real-time notifications
+   * @param {WebSocketService} wsService - WebSocket service instance
+   */
+  setWebSocketService(wsService) {
+    this.wsService = wsService;
+    console.log('[NotificationService] WebSocket service configured');
+  }
+
   async getUserNotifications(userId, limit = 50, offset = 0) {
     try {
       const result = await db.query(
@@ -85,7 +98,30 @@ class NotificationService {
       }
 
       await client.query('COMMIT');
-      return notifResult.rows[0];
+
+      const notification = notifResult.rows[0];
+
+      // Send real-time WebSocket notification for in-app UI updates
+      if (this.wsService) {
+        try {
+          // Emit directly to user's room for instant UI update
+          this.wsService.io.to(`user:${userId}`).emit('notification:new', {
+            id: notification.id,
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            data: data,
+            is_read: false,
+            created_at: notification.created_at,
+            timestamp: new Date()
+          });
+          console.log(`[NotificationService] WebSocket notification sent to user ${userId}`);
+        } catch (wsError) {
+          console.error('[NotificationService] WebSocket notification failed:', wsError.message);
+        }
+      }
+
+      return notification;
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('[NotificationService] Create notification error:', error);
