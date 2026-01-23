@@ -74,6 +74,38 @@
   font-weight: 600;
 }
 
+.notification-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.notification-toggle-btn {
+  background: none;
+  border: 1px solid #e0e0e0;
+  cursor: pointer;
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  opacity: 0.6;
+}
+
+.notification-toggle-btn.active {
+  opacity: 1;
+  border-color: #4CAF50;
+  background-color: rgba(76, 175, 80, 0.08);
+}
+
+.notification-toggle-btn:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
 .mark-all-read-btn {
   background: none;
   border: none;

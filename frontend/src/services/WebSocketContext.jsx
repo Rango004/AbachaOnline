@@ -2,8 +2,35 @@ import { createContext } from 'preact';
 import { useState, useEffect, useRef, useCallback, useContext } from 'preact/hooks';
 import { io } from 'socket.io-client';
 import { AuthContext } from './AuthContext';
+import { notifyUser, getNotificationType, initAudioContext } from './NotificationUtils';
 
 export const WebSocketContext = createContext();
+
+// Track if audio context has been initialized (requires user interaction)
+let audioInitialized = false;
+
+// Initialize audio on first user interaction
+function setupAudioInit() {
+  const initOnInteraction = () => {
+    if (!audioInitialized) {
+      initAudioContext();
+      audioInitialized = true;
+    }
+    // Remove listeners after first interaction
+    document.removeEventListener('click', initOnInteraction);
+    document.removeEventListener('touchstart', initOnInteraction);
+    document.removeEventListener('keydown', initOnInteraction);
+  };
+
+  document.addEventListener('click', initOnInteraction, { once: true });
+  document.addEventListener('touchstart', initOnInteraction, { once: true });
+  document.addEventListener('keydown', initOnInteraction, { once: true });
+}
+
+// Setup audio initialization listeners
+if (typeof document !== 'undefined') {
+  setupAudioInit();
+}
 
 export function WebSocketProvider({ children }) {
   const { user, token } = useContext(AuthContext);
@@ -53,6 +80,11 @@ export function WebSocketProvider({ children }) {
       newSocket.on('connect', () => {
         setIsConnected(true);
         setWsError(null); // Clear error on successful connection
+        // Initialize audio context if not already done
+        if (!audioInitialized) {
+          initAudioContext();
+          audioInitialized = true;
+        }
       });
 
       // Connection lost
@@ -73,6 +105,9 @@ export function WebSocketProvider({ children }) {
       // New notification received
       newSocket.on('notification:new', (notification) => {
         setNotifications(prev => [notification, ...prev].slice(0, 50));
+        // Play sound and vibrate for notification
+        const notifType = getNotificationType(notification);
+        notifyUser(notifType);
         // Dispatch event for other components to listen to
         window.dispatchEvent(new CustomEvent('notification:new', {
           detail: notification
@@ -101,6 +136,8 @@ export function WebSocketProvider({ children }) {
 
       // Order status updated
       newSocket.on('order:status_updated', (update) => {
+        // Play sound and vibrate for order updates
+        notifyUser('order');
         // Trigger re-fetch of orders in the component using this context
         window.dispatchEvent(new CustomEvent('order:status_updated', { detail: update }));
       });
@@ -127,6 +164,11 @@ export function WebSocketProvider({ children }) {
 
       // Chat message received
       newSocket.on('chat:message', (message) => {
+        // Play sound and vibrate for incoming chat message
+        // Only notify if the message is from someone else
+        if (message.sender_id !== user?.id) {
+          notifyUser('chat');
+        }
         window.dispatchEvent(new CustomEvent('chat:message', { detail: message }));
       });
 

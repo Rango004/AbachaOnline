@@ -2,6 +2,13 @@ import { h } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
 import api from '../services/api';
 import { useWebSocket } from '../services/WebSocketContext';
+import {
+  isSoundEnabled,
+  setSoundEnabled,
+  isVibrationEnabled,
+  setVibrationEnabled,
+  playNotificationSound
+} from '../services/NotificationUtils';
 import './NotificationBell.css';
 
 export default function NotificationBell() {
@@ -9,7 +16,31 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [soundOn, setSoundOn] = useState(isSoundEnabled());
+  const [vibrateOn, setVibrateOn] = useState(isVibrationEnabled());
   const { isConnected, notifications: wsNotifications } = useWebSocket();
+
+  // Toggle sound setting
+  const toggleSound = () => {
+    const newValue = !soundOn;
+    setSoundOn(newValue);
+    setSoundEnabled(newValue);
+    // Play a test sound when enabling
+    if (newValue) {
+      playNotificationSound('notification');
+    }
+  };
+
+  // Toggle vibration setting
+  const toggleVibration = () => {
+    const newValue = !vibrateOn;
+    setVibrateOn(newValue);
+    setVibrationEnabled(newValue);
+    // Test vibration when enabling
+    if (newValue && navigator.vibrate) {
+      navigator.vibrate(100);
+    }
+  };
 
   useEffect(() => {
     loadNotifications();
@@ -163,14 +194,30 @@ export default function NotificationBell() {
         <div class="notification-dropdown">
           <div class="notification-header">
             <h3>Notifications</h3>
-            {unreadCount > 0 && (
+            <div class="notification-header-actions">
               <button
-                class="mark-all-read-btn"
-                onClick={handleMarkAllAsRead}
+                class={`notification-toggle-btn ${soundOn ? 'active' : ''}`}
+                onClick={toggleSound}
+                title={soundOn ? 'Mute sounds' : 'Enable sounds'}
               >
-                Mark all read
+                {soundOn ? '🔊' : '🔇'}
               </button>
-            )}
+              <button
+                class={`notification-toggle-btn ${vibrateOn ? 'active' : ''}`}
+                onClick={toggleVibration}
+                title={vibrateOn ? 'Disable vibration' : 'Enable vibration'}
+              >
+                {vibrateOn ? '📳' : '📴'}
+              </button>
+              {unreadCount > 0 && (
+                <button
+                  class="mark-all-read-btn"
+                  onClick={handleMarkAllAsRead}
+                >
+                  Mark all read
+                </button>
+              )}
+            </div>
           </div>
 
           <div class="notification-list">
