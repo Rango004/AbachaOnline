@@ -45,20 +45,47 @@ class NotificationService {
   }
 
   async createNotification(userId, type, title, body, data = {}) {
-    const client = await db.getClient();
-    try {
-      await client.query('BEGIN');
+    let notification = null;
 
-      // Create notification record
-      const notifResult = await client.query(
+    // Step 1: Create notification record in database
+    try {
+      const notifResult = await db.query(
         `INSERT INTO notifications (user_id, type, title, message, data, is_read, created_at)
          VALUES ($1, $2, $3, $4, $5, false, NOW())
          RETURNING *`,
         [userId, type, title, body, JSON.stringify(data)]
       );
+      notification = notifResult.rows[0];
+      console.log(`[NotificationService] Notification created for user ${userId}: ${title}`);
+    } catch (dbError) {
+      console.error('[NotificationService] Failed to create notification in DB:', dbError.message);
+      throw dbError;
+    }
 
-      // Get user's device tokens
-      const tokensResult = await client.query(
+    // Step 2: Send real-time WebSocket notification (independent of DB)
+    if (this.wsService) {
+      try {
+        this.wsService.io.to(`user:${userId}`).emit('notification:new', {
+          id: notification.id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          data: data,
+          is_read: false,
+          created_at: notification.created_at,
+          timestamp: new Date()
+        });
+        console.log(`[NotificationService] WebSocket notification sent to user ${userId}`);
+      } catch (wsError) {
+        console.error('[NotificationService] WebSocket notification failed:', wsError.message);
+      }
+    } else {
+      console.warn('[NotificationService] No WebSocket service - real-time notification skipped');
+    }
+
+    // Step 3: Send push notification via Firebase (independent, non-blocking)
+    try {
+      const tokensResult = await db.query(
         'SELECT token FROM device_tokens WHERE user_id = $1',
         [userId]
       );
@@ -66,69 +93,32 @@ class NotificationService {
       const tokens = tokensResult.rows.map(row => row.token);
 
       if (tokens.length > 0) {
-        // Send push notification via Firebase
-        try {
-          // Convert all data values to strings (Firebase requirement)
-          const stringData = {};
-          Object.keys(data).forEach(key => {
-            stringData[key] = String(data[key]);
-          });
-          stringData.type = type; // Add notification type to data
+        const stringData = {};
+        Object.keys(data).forEach(key => {
+          stringData[key] = String(data[key]);
+        });
+        stringData.type = type;
 
-          const response = await FirebaseService.sendToMultipleDevices(
-            tokens,
-            { title, body },
-            stringData
+        const response = await FirebaseService.sendToMultipleDevices(
+          tokens,
+          { title, body },
+          stringData
+        );
+
+        if (response?.failedTokens && response.failedTokens.length > 0) {
+          await db.query(
+            'DELETE FROM device_tokens WHERE token = ANY($1)',
+            [response.failedTokens]
           );
-
-          // Handle failed tokens
-          if (response?.failedTokens && response.failedTokens.length > 0) {
-            await client.query(
-              'DELETE FROM device_tokens WHERE token = ANY($1)',
-              [response.failedTokens]
-            );
-            console.log(`[NotificationService] Cleaned up ${response.failedTokens.length} invalid tokens`);
-          }
-        } catch (firebaseError) {
-          // Log but don't fail - notification record is still created
-          console.error('[NotificationService] Firebase send failed:', firebaseError.message);
-        }
-      } else {
-        console.log(`[NotificationService] No device tokens found for user ${userId}`);
-      }
-
-      await client.query('COMMIT');
-
-      const notification = notifResult.rows[0];
-
-      // Send real-time WebSocket notification for in-app UI updates
-      if (this.wsService) {
-        try {
-          // Emit directly to user's room for instant UI update
-          this.wsService.io.to(`user:${userId}`).emit('notification:new', {
-            id: notification.id,
-            type: notification.type,
-            title: notification.title,
-            message: notification.message,
-            data: data,
-            is_read: false,
-            created_at: notification.created_at,
-            timestamp: new Date()
-          });
-          console.log(`[NotificationService] WebSocket notification sent to user ${userId}`);
-        } catch (wsError) {
-          console.error('[NotificationService] WebSocket notification failed:', wsError.message);
+          console.log(`[NotificationService] Cleaned up ${response.failedTokens.length} invalid tokens`);
         }
       }
-
-      return notification;
-    } catch (error) {
-      await client.query('ROLLBACK');
-      console.error('[NotificationService] Create notification error:', error);
-      throw error;
-    } finally {
-      client.release();
+    } catch (pushError) {
+      // Push notification failure should never prevent notification creation
+      console.log(`[NotificationService] Push notification skipped: ${pushError.message}`);
     }
+
+    return notification;
   }
 
   async markAsRead(notificationId, userId) {

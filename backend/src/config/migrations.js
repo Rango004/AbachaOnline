@@ -343,6 +343,18 @@ CREATE TABLE IF NOT EXISTS refund_requests (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Device tokens table (for push notifications)
+CREATE TABLE IF NOT EXISTS device_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  platform VARCHAR(20),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_device_tokens_user ON device_tokens(user_id);
+
 -- Insert default zones if not exists
 INSERT INTO zones (name, description)
 SELECT 'Zone A - Main Campus', 'Central campus area'
