@@ -3,53 +3,86 @@ apply plugin: 'com.android.application'
 // Redirect build output outside OneDrive to avoid file locking
 buildDir = new File(rootProject.buildDir, "app")
 
-// Auto-increment version code
-def getVersionCode() {
-    def versionPropsFile = file('version.properties')
-    if (versionPropsFile.canRead()) {
-        def Properties versionProps = new Properties()
-        versionProps.load(new FileInputStream(versionPropsFile))
-        def code = (versionProps['VERSION_CODE'] ?: "0").toInteger() + 1
-        versionProps['VERSION_CODE'] = code.toString()
-        versionProps.store(versionPropsFile.newWriter(), null)
-        return code
-    } else {
-        // First build, create the file
-        def code = 1
-        def Properties versionProps = new Properties()
-        versionProps['VERSION_CODE'] = code.toString()
-        versionProps.store(versionPropsFile.newWriter(), "Auto-generated version code")
-        return code
-    }
-}
-
-// Get version name from package.json (semantic versioning)
+// Helper function to read version name
 def getVersionName() {
-    def packageJson = file('../../package.json')
-    if (packageJson.exists()) {
-        def packageJsonText = packageJson.text
-        def versionMatch = packageJsonText =~ /"version": "([^"]+)"/
-        return versionMatch ? versionMatch[0][1] : "1.0.0"
+    try {
+        def packageJsonFile = new File(rootProject.projectDir.parentFile, 'package.json')
+        if (packageJsonFile.exists()) {
+            def json = new groovy.json.JsonSlurper().parseText(packageJsonFile.text)
+            return json.version ?: "1.0.0"
+        }
+    } catch (Exception e) {
+        println "DEBUG: Error parsing package.json: ${e.message}"
     }
     return "1.0.0"
+}
+
+// Helper function to read version code
+def getVersionCode() {
+    try {
+        def versionPropsFile = file('version.properties')
+        if (versionPropsFile.exists()) {
+            def props = new Properties()
+            versionPropsFile.withInputStream { props.load(it) }
+            return (props['VERSION_CODE'] ?: "1").toInteger()
+        }
+    } catch (Exception e) {
+        println "DEBUG: Error reading version.properties: ${e.message}"
+    }
+    return 1
+}
+
+// Calculate versions once at the top level
+def computedVersionName = getVersionName()
+def computedVersionCode = getVersionCode()
+
+// Logic to increment version code ONLY during a real build
+// This prevents the version code from skipping numbers during Gradle syncs
+def runTasks = gradle.startParameter.taskNames
+if (runTasks.any { it.toLowerCase().contains("assemble") || it.toLowerCase().contains("bundle") }) {
+    computedVersionCode++
+    def versionPropsFile = file('version.properties')
+    def props = new Properties()
+    if (versionPropsFile.exists()) {
+        versionPropsFile.withInputStream { props.load(it) }
+    }
+    props['VERSION_CODE'] = computedVersionCode.toString()
+    versionPropsFile.withOutputStream { props.store(it, "Auto-incremented during build") }
 }
 
 android {
     namespace "com.abachaonline.app"
     compileSdk rootProject.ext.compileSdkVersion
+    
     defaultConfig {
         applicationId "com.abachaonline.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode getVersionCode()
-        versionName getVersionName()
+        
+        // These MUST be set here for the manifest merger to pick them up
+        versionCode computedVersionCode
+        versionName computedVersionName
+        
+        println "-------------------------------------------------------"
+        println " BUILDING: AbachaOnline v${computedVersionName} (Code: ${computedVersionCode})"
+        println "-------------------------------------------------------"
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
-             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
-             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+
+    // Rename the output APK to include version info
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            // This only affects APKs, not AABs (bundles)
+            if (outputFileName.endsWith('.apk')) {
+                outputFileName = "AbachaOnline-v${computedVersionName}-${computedVersionCode}-${variant.name}.apk"
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -80,9 +113,9 @@ apply from: 'capacitor.build.gradle'
 
 try {
     def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
+    if (servicesJSON.exists()) {
         apply plugin: 'com.google.gms.google-services'
     }
 } catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+    logger.info("google-services.json not found, plugin not applied")
 }
