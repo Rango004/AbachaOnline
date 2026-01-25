@@ -11,8 +11,8 @@ export default function ImageUpload({ onImagesChange, maxImages = 5, existingIma
     if (!file.type.startsWith('image/')) {
       return 'Only image files are allowed';
     }
-    if (file.size > 1024 * 1024) {
-      return 'Image must be less than 1MB';
+    if (file.size > 2 * 1024 * 1024) {
+      return 'Image must be less than 2MB';
     }
     return null;
   };

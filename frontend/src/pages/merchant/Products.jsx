@@ -470,7 +470,7 @@ export default function MerchantProducts() {
                 </div>
 
                 <div class="form-group">
-                  <label>Product Images (Max 5, 1MB each)</label>
+                  <label>Product Images (Max 5, 2MB each)</label>
                   <ImageUpload
                     onImagesChange={(images) => setFormData(prev => ({ ...prev, images }))}
                     maxImages={5}
