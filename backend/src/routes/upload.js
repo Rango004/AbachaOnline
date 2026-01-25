@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { upload, cloudinary } = require('../config/cloudinary');
+const { upload, cloudinary, uploadToCloudinary } = require('../config/cloudinary');
 const { authenticateToken, requireRole } = require('../middleware/auth');
 
 // Upload product images (merchant only)
-router.post('/products', 
-  authenticateToken, 
+router.post('/products',
+  authenticateToken,
   requireRole(['merchant']),
   upload.array('images', 5),
   async (req, res) => {
@@ -14,11 +14,15 @@ router.post('/products',
         return res.status(400).json({ error: 'No images uploaded' });
       }
 
-      const imageUrls = req.files.map(file => ({
-        url: file.path,
-        publicId: file.filename,
-        width: file.width,
-        height: file.height
+      // Upload each file buffer to Cloudinary
+      const uploadPromises = req.files.map(file => uploadToCloudinary(file.buffer));
+      const results = await Promise.all(uploadPromises);
+
+      const imageUrls = results.map(result => ({
+        url: result.secure_url,
+        publicId: result.public_id,
+        width: result.width,
+        height: result.height
       }));
 
       res.json({

@@ -1,27 +1,15 @@
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 
-// Handle both old and new multer-storage-cloudinary API
-const multerStorageCloudinary = require('multer-storage-cloudinary');
-const CloudinaryStorage = multerStorageCloudinary.CloudinaryStorage || multerStorageCloudinary;
-
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'abachaonline/products',
-    allowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [
-      { width: 800, height: 800, crop: 'limit', quality: 'auto:good' },
-      { fetch_format: 'auto' }
-    ]
-  }
-});
+// Use memory storage instead of multer-storage-cloudinary
+// This is more reliable and works across all versions
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -38,4 +26,27 @@ const upload = multer({
   }
 });
 
-module.exports = { cloudinary, upload };
+// Helper function to upload buffer to Cloudinary
+const uploadToCloudinary = (buffer, options = {}) => {
+  return new Promise((resolve, reject) => {
+    const uploadOptions = {
+      folder: 'abachaonline/products',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+      transformation: [
+        { width: 800, height: 800, crop: 'limit', quality: 'auto:good' },
+        { fetch_format: 'auto' }
+      ],
+      ...options
+    };
+
+    cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(result);
+      }
+    }).end(buffer);
+  });
+};
+
+module.exports = { cloudinary, upload, uploadToCloudinary };
