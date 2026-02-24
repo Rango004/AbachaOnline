@@ -5,8 +5,7 @@ services:
     dockerfilePath: ./backend/rasa_chatbot/Dockerfile
     dockerContext: ./backend/rasa_chatbot
     plan: free
+    healthCheckPath: /
     envVars:
-      - key: PORT
-        value: 5005
       - key: RASA_LOG_LEVEL
         value: INFO
