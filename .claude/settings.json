@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/lamso/OneDrive/Desktop/MSc thesis/Project/wego/backend/scripts/**)"
+    ]
+  }
+}
