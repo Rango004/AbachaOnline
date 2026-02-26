@@ -96,7 +96,12 @@ backend/rasa_chatbot/test*.py
 *.osm.pbf
 
 # Development scripts folder (not needed for production)
-backend/scripts/
+backend/scripts/*
+!backend/scripts/features.py
+!backend/scripts/forecast.py
+!backend/scripts/xgboost_residuals.py
+!backend/scripts/context_rules.py
+!backend/scripts/ensemble_weights.py
 
 # Misc files
 *.txt
