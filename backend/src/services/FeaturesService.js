@@ -37,7 +37,7 @@ class FeaturesService {
         }
 
         // Determine Python executable
-        const pythonExecutable = process.platform === 'win32' ? 'python' : 'python3';
+        const pythonExecutable = process.platform === 'win32' ? 'python' : (process.env.PYTHON_PATH || 'python3');
 
         // Script path
         const scriptPath = path.join(__dirname, '..', '..', 'scripts', 'features.py');
@@ -130,7 +130,7 @@ class FeaturesService {
   ) {
     return new Promise((resolve, reject) => {
       try {
-        const pythonExecutable = process.platform === 'win32' ? 'python' : 'python3';
+        const pythonExecutable = process.platform === 'win32' ? 'python' : (process.env.PYTHON_PATH || 'python3');
         const scriptPath = path.join(__dirname, '..', '..', 'scripts', 'features.py');
 
         const pythonProcess = spawn(pythonExecutable, [scriptPath], {

@@ -30,7 +30,7 @@ class PredictionScriptsService {
         }
 
         // Determine Python executable
-        const pythonExecutable = process.platform === 'win32' ? 'py' : (process.env.PYTHON_PATH || '/app/.venv/bin/python3');
+        const pythonExecutable = process.platform === 'win32' ? 'py' : (process.env.PYTHON_PATH || 'python3');
 
         // Script path
         const scriptPath = path.join(__dirname, '..', '..', 'scripts', 'forecast.py');
@@ -267,7 +267,7 @@ class PredictionScriptsService {
   async runLayer2ResidualCorrection(salesData, layer1Predictions, regressors, forecastDates = null) {
     return new Promise((resolve, reject) => {
       try {
-        const pythonExecutable = process.platform === 'win32' ? 'py' : (process.env.PYTHON_PATH || '/app/.venv/bin/python3');
+        const pythonExecutable = process.platform === 'win32' ? 'py' : (process.env.PYTHON_PATH || 'python3');
         const scriptPath = path.join(__dirname, '..', '..', 'scripts', 'xgboost_residuals.py');
 
         const pythonProcess = spawn(pythonExecutable, [scriptPath], {
@@ -334,7 +334,7 @@ class PredictionScriptsService {
   async runLayer3ContextRules(layer2Predictions, regressors) {
     return new Promise((resolve, reject) => {
       try {
-        const pythonExecutable = process.platform === 'win32' ? 'py' : (process.env.PYTHON_PATH || '/app/.venv/bin/python3');
+        const pythonExecutable = process.platform === 'win32' ? 'py' : (process.env.PYTHON_PATH || 'python3');
         const scriptPath = path.join(__dirname, '..', '..', 'scripts', 'context_rules.py');
 
         const pythonProcess = spawn(pythonExecutable, [scriptPath], {
@@ -401,7 +401,7 @@ class PredictionScriptsService {
                                 actualValues = null, productId = null, forecastHorizon = 'medium') {
     return new Promise((resolve, reject) => {
       try {
-        const pythonExecutable = process.platform === 'win32' ? 'py' : (process.env.PYTHON_PATH || '/app/.venv/bin/python3');
+        const pythonExecutable = process.platform === 'win32' ? 'py' : (process.env.PYTHON_PATH || 'python3');
         const scriptPath = path.join(__dirname, '..', '..', 'scripts', 'ensemble_weights.py');
 
         const pythonProcess = spawn(pythonExecutable, [scriptPath], {
