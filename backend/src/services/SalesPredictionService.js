@@ -278,16 +278,18 @@ class SalesPredictionService {
 
           console.log(`[StoreForecast] Storing ${forecastData.length} predictions for product ${forecast.product_id}`);
 
+          // Remove stale predictions for this product before inserting fresh ones
+          await client.query(
+            'DELETE FROM sales_predictions WHERE merchant_id = $1 AND product_id = $2',
+            [merchantId, forecast.product_id]
+          );
+
           // Insert each forecast date
           for (const prediction of forecastData) {
             await client.query(
               `INSERT INTO sales_predictions
                (merchant_id, product_id, prediction_date, predicted_quantity, trend)
-               VALUES ($1, $2, $3, $4, $5)
-               ON CONFLICT (merchant_id, product_id, prediction_date) DO UPDATE
-               SET predicted_quantity = EXCLUDED.predicted_quantity,
-                   trend = EXCLUDED.trend,
-                   updated_at = CURRENT_TIMESTAMP`,
+               VALUES ($1, $2, $3, $4, $5)`,
               [
                 merchantId,
                 forecast.product_id,
