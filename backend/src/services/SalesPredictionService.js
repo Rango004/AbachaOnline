@@ -206,7 +206,8 @@ class SalesPredictionService {
         const salesHistory = await this.getProductSalesHistory(product.id);
 
         // Only forecast products with enough historical data
-        if (salesHistory.length >= 60) {
+        // Phase 1 (moving average) handles <14 days, so 7 days minimum is sufficient
+        if (salesHistory.length >= 7) {
           // Get relevant events
           const events = await EventCalendarService.getRelevantEvents();
 
