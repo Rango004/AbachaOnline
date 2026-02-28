@@ -7,4 +7,4 @@ cmds = ["npm ci", "python3 -m venv /app/.venv", "/app/.venv/bin/pip install -r r
 [phases.build]
 
 [start]
-cmd = "export PATH=/app/.venv/bin:$PATH && npm start"
+cmd = "npm start"
