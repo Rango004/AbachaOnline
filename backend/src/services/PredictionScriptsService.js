@@ -29,8 +29,8 @@ class PredictionScriptsService {
           return reject(new Error('Interval width must be 0.8 or 0.95'));
         }
 
-        // Determine Python executable (use 'py' launcher on Windows for Python 3.14)
-        const pythonExecutable = process.platform === 'win32' ? 'py' : 'python3';
+        // Determine Python executable
+        const pythonExecutable = process.platform === 'win32' ? 'py' : (process.env.PYTHON_PATH || 'python3');
 
         // Script path
         const scriptPath = path.join(__dirname, '..', '..', 'scripts', 'forecast.py');
