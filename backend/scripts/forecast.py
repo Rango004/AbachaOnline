@@ -21,10 +21,13 @@ from datetime import datetime, timedelta
 import warnings
 from typing import Dict, List, Optional, Tuple
 
-# Optional Prophet support
+# Optional Prophet support — suppress the noisy "Importing plotly failed" stderr message
 PROPHET_AVAILABLE = False
 try:
-    from prophet import Prophet
+    import io
+    import contextlib
+    with contextlib.redirect_stderr(io.StringIO()):
+        from prophet import Prophet
     PROPHET_AVAILABLE = True
 except ImportError:
     pass
@@ -175,7 +178,7 @@ class AbachaForecastEnsemble:
 
     def _get_regressor_columns(self):
         """Get list of regressor columns to use"""
-        if not self.df or not self.regressor_features:
+        if self.df is None or len(self.df) == 0 or not self.regressor_features:
             return []
 
         available_cols = self.df.columns.tolist()
@@ -352,7 +355,6 @@ class AbachaForecastEnsemble:
                 weekly_seasonality=len(self.df) > 14,
                 seasonality_mode='additive',
                 seasonality_prior_scale=10,
-                seasonality_strong_prior=10,
                 changepoint_prior_scale=0.05,
                 interval_width=self.interval_width,
                 holidays=holidays_df
